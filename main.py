@@ -52,6 +52,23 @@ def init_database(config):
         return db
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
+        # Fallback: try connecting without retryWrites & appName (some Atlas setups require it)
+        try:
+            uri = config["MONGODB_URI"]
+            if "?retryWrites" in uri or "retryWrites" in uri:
+                # Strip extra params that may cause issues
+                clean_uri = uri.split("?")[0] + "?w=majority"
+                logger.info(f"Retrying with cleaned URI: {clean_uri}")
+                db = MongoDB(clean_uri, config["MONGO_DB"])
+                if db.rules.count_documents({}) == 0:
+                    db.rules.insert_many([
+                        {"name": "Strip @usernames", "type": "regex", "pattern": r"@\w+", "replacement": "[username]", "priority": 1, "active": True},
+                        {"name": "Branding Footer", "type": "footer", "replacement": "Forwarded by Telegram Forwarder Pro", "priority": 99, "active": True},
+                    ])
+                logger.info("Database connected (fallback mode)")
+                return db
+        except Exception as fallback_error:
+            logger.error(f"Fallback database connection also failed: {fallback_error}")
         return None
 
 
