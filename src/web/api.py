@@ -16,6 +16,8 @@ from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
 
+from src.utils.config import load_config, get_config
+
 logger = logging.getLogger(__name__)
 
 # Load environment variables
@@ -80,6 +82,21 @@ def api_status():
         "connected": forwarder_status["connected"],
         "last_update": forwarder_status["last_update"],
     })
+
+
+@app.route("/api/debug")
+def api_debug():
+    """Debug endpoint — shows config status (development only)."""
+    db = get_db()
+    config_info = {
+        "db_connected": db is not None,
+        "mongo_uri_set": bool(os.environ.get("MONGODB_URI") or os.environ.get("MONGO_URI")),
+        "api_id_set": bool(os.environ.get("API_ID")),
+        "api_hash_set": bool(os.environ.get("API_HASH")),
+        "session_string_set": bool(os.environ.get("SESSION_STRING")),
+        "config_mongodb_uri": bool(get_config().get("MONGODB_URI", "")),
+    }
+    return jsonify(config_info)
 
 
 @app.route("/api/rules")
