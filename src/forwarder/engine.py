@@ -49,6 +49,17 @@ class ForwarderEngine:
         logger.info(f"Forwarder started as @{me.username}")
 
         self._running = True
+
+        # Update Flask app status if accessible
+        try:
+            from src.web.api import forwarder_status
+            import datetime
+            forwarder_status["running"] = True
+            forwarder_status["connected"] = True
+            forwarder_status["last_update"] = datetime.datetime.utcnow().isoformat()
+        except Exception:
+            pass  # Flask app may not be running
+
         await self._run_forwarding_loop()
 
     async def stop(self):

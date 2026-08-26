@@ -8,6 +8,8 @@ import os
 import sys
 import logging
 import datetime
+import threading
+from unittest.mock import MagicMock
 from dotenv import load_dotenv
 
 # Ensure project root is in path
@@ -62,6 +64,22 @@ def main():
     db = init_database(config)
     if db:
         app.db = db  # Attach to Flask app
+
+    # Start the forwarder engine in a background thread
+    if config["SESSION_STRING"] and config["API_ID"]:
+        from src.forwarder.engine import ForwarderEngine
+
+        def run_forwarder():
+            try:
+                forwarder = ForwarderEngine(config, db if db else MagicMock())
+                import asyncio
+                asyncio.run(forwarder.start())
+            except Exception as e:
+                logger.error(f"Forwarder engine failed: {e}", exc_info=True)
+
+        thread = threading.Thread(target=run_forwarder, daemon=True)
+        thread.start()
+        logger.info("Forwarder engine started in background thread")
 
     # Log startup
     logger.info("Telegram Forwarder Pro starting...")
