@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: telegram-forwarder-pro
+    runtime: python
+    build:
+      buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 main:app
+    env:
+      - key: MONGO_URI
+        valueFromSecret: /mongodb-uri
+      - key: API_ID
+        sync: false
+      - key: API_HASH
+        sync: false
+      - key: SESSION_STRING
+        sync: false
+      - key: SECRET_KEY
+        generateValue: true
+    plan: free
+    healthCheck:
+      path: /api/status
+    autoDeploy: true

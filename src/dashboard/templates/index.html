@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Forwarder Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen">
+    <!-- Header -->
+    <header class="bg-gray-800 border-b border-gray-700 px-6 py-4">
+        <h1 class="text-2xl font-bold text-white">Telegram Forwarder Pro</h1>
+        <p class="text-gray-400 text-sm">24/7 Automated Post Forwarding & Content Transformation</p>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-6">
+        <!-- Status Bar -->
+        <div class="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700 flex items-center justify-between">
+            <div class="flex items-center space-x-4">
+                <div id="status-indicator" class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
+                <span id="status-text" class="text-sm font-medium">Disconnected</span>
+            </div>
+            <div class="flex space-x-2">
+                <button id="start-btn"
+                        class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-sm font-medium transition">
+                    Start Forwarder
+                </button>
+                <button id="stop-btn"
+                        class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-sm font-medium transition"
+                        disabled>
+                    Stop
+                </button>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="flex space-x-1 mb-6 bg-gray-800 rounded-lg p-1 border border-gray-700">
+            <button onclick="showTab('rules')" class="tab-btn active px-4 py-2 text-sm font-medium rounded">
+                Forwarding Rules
+            </button>
+            <button onclick="showTab('blacklist')" class="tab-btn px-4 py-2 text-sm font-medium rounded hover:bg-gray-700">
+                Blacklist
+            </button>
+            <button onclick="showTab('rules-editor')" class="tab-btn px-4 py-2 text-sm font-medium rounded hover:bg-gray-700">
+                Text Rules
+            </button>
+            <button onclick="showTab('logs')" class="tab-btn px-4 py-2 text-sm font-medium rounded hover:bg-gray-700">
+                Logs
+            </button>
+        </div>
+
+        <!-- Rules Tab -->
+        <div id="tab-rules" class="tab-content">
+            <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Active Forwarding Rules</h2>
+                    <button onclick="openRuleModal()"
+                            class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">
+                        Add Rule
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="pb-2 text-gray-400">ID</th>
+                                <th class="pb-2 text-gray-400">Source → Target</th>
+                                <th class="pb-2 text-gray-400">Type</th>
+                                <th class="pb-2 text-gray-400">Pattern</th>
+                                <th class="pb-2 text-gray-400">Active</th>
+                            </tr>
+                        </thead>
+                        <tbody id="rules-table-body">
+                            <tr>
+                                <td colspan="5" class="py-8 text-center text-gray-500">
+                                    Loading rules...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Blacklist Tab -->
+        <div id="tab-blacklist" class="tab-content hidden">
+            <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Blacklisted Channels</h2>
+                    <button onclick="openBlacklistModal()"
+                            class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
+                        Add Blacklist Entry
+                    </button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead>
+                            <tr class="border-b border-gray-700">
+                                <th class="pb-2 text-gray-400">_id</th>
+                                <th class="pb-2 text-gray-400">Channel ID</th>
+                                <th class="pb-2 text-gray-400">Reason</th>
+                                <th class="pb-2 text-gray-400">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="blacklist-table-body">
+                            <tr>
+                                <td colspan="4" class="py-8 text-center text-gray-500">
+                                    Loading blacklist...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Text Rules Editor Tab -->
+        <div id="tab-rules-editor" class="tab-content hidden">
+            <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Text Transformation Rules</h2>
+                    <button onclick="openRuleEditModal()"
+                            class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm">
+                        Add Transformation Rule
+                    </button>
+                </div>
+                <p class="text-gray-400 text-sm mb-4">
+                    Configure text replacement, regex patterns, footers, and blacklists.
+                    Rules are applied in priority order (lower number = higher priority).
+                </p>
+                <div id="transformation-rules-list" class="space-y-2">
+                    <p class="text-gray-500">Click above to add your first transformation rule.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Logs Tab -->
+        <div id="tab-logs" class="tab-content hidden">
+            <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold">Real-Time Logs</h2>
+                    <button onclick="refreshLogs()"
+                            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">
+                        Refresh
+                    </button>
+                </div>
+                <div id="log-container" class="bg-black rounded border border-gray-700 p-3 h-96 overflow-y-auto font-mono text-xs text-gray-300">
+                    <p class="text-gray-500">Loading logs...</p>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Tab navigation
+        function showTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
+            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-blue-600'));
+            event.target.classList.add('active', 'bg-blue-600');
+        }
+
+        // Load rules from API
+        async function loadRules() {
+            try {
+                const res = await fetch('/api/rules');
+                const data = await res.json();
+                const tbody = document.getElementById('rules-table-body');
+                if (!data.rules || data.rules.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-gray-500">No rules configured</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.rules.map(rule => `
+                    <tr class="border-b border-gray-700">
+                        <td class="py-2">${rule._id?.substring(0, 8)}</td>
+                        <td class="py-2">${rule.source_id ?? '—'} → ${rule.target_id ?? '—'}</td>
+                        <td class="py-2">${rule.type}</td>
+                        <td class="py-2">${rule.pattern ?? '—'}</td>
+                        <td class="py-2">${rule.active ? '✅' : '❌'}</td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                document.getElementById('rules-table-body').innerHTML =
+                    '<tr><td colspan="5" class="py-8 text-center text-red-500">Error loading rules</td></tr>';
+            }
+        }
+
+        async function loadBlacklist() {
+            try {
+                const res = await fetch('/api/blacklist');
+                const data = await res.json();
+                const tbody = document.getElementById('blacklist-table-body');
+                if (!data.blacklist || data.blacklist.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-gray-500">No blacklisted channels</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.blacklist.map(entry => `
+                    <tr class="border-b border-gray-700">
+                        <td class="py-2">${entry._id?.substring(0, 8)}</td>
+                        <td class="py-2">${entry.channel_id}</td>
+                        <td class="py-2">${entry.reason ?? '—'}</td>
+                        <td class="py-2">
+                            <button onclick="removeBlacklist(${entry.channel_id})"
+                                    class="text-red-400 hover:text-red-300">Remove</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } catch (e) {
+                document.getElementById('blacklist-table-body').innerHTML =
+                    '<tr><td colspan="4" class="py-8 text-center text-red-500">Error loading blacklist</td></tr>';
+            }
+        }
+
+        async function loadLogs() {
+            const container = document.getElementById('log-container');
+            container.innerHTML = '<p class="text-gray-500">Loading logs...</p>';
+            try {
+                const res = await fetch('/api/logs');
+                const data = await res.json();
+                if (!data.logs || data.logs.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500">No logs yet.</p>';
+                    return;
+                }
+                container.innerHTML = data.logs.map(log =>
+                    `[${log.timestamp} | ${log.level || 'INFO'}] ${log.message}`
+                ).join('<br>');
+            } catch (e) {
+                container.innerHTML = '<p class="text-red-500">Error loading logs</p>';
+            }
+        }
+
+        async function loadStatus() {
+            try {
+                const res = await fetch('/api/status');
+                const data = await res.json();
+                const indicator = document.getElementById('status-indicator');
+                const text = document.getElementById('status-text');
+                if (data.running && data.connected) {
+                    indicator.className = 'w-3 h-3 bg-green-500 rounded-full';
+                    text.textContent = 'Running & Connected';
+                    document.getElementById('start-btn').disabled = true;
+                    document.getElementById('stop-btn').disabled = false;
+                } else {
+                    indicator.className = 'w-3 h-3 bg-red-500 rounded-full animate-pulse';
+                    text.textContent = 'Disconnected';
+                    document.getElementById('start-btn').disabled = false;
+                    document.getElementById('stop-btn').disabled = true;
+                }
+            } catch (e) {
+                console.error('Status load error:', e);
+            }
+        }
+
+        async function startForwarder() {
+            const res = await fetch('/api/forward/start', {method: 'POST'});
+            const data = await res.json();
+            loadStatus();
+        }
+
+        async function stopForwarder() {
+            const res = await fetch('/api/forward/stop', {method: 'POST'});
+            const data = await res.json();
+            loadStatus();
+        }
+
+        async function removeBlacklist(channelId) {
+            await fetch(`/api/blacklist/${channelId}`, {method: 'DELETE'});
+            loadBlacklist();
+        }
+
+        async function refreshLogs() {
+            loadLogs();
+        }
+
+        function openRuleModal() {
+            alert('Add Forwarding Rule dialog would open here.\nFor now, use the Text Rules tab to add rules.');
+        }
+
+        function openBlacklistModal() {
+            const channelId = prompt('Enter Channel ID to blacklist:');
+            if (channelId) {
+                fetch('/api/blacklist', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({channel_id: parseInt(channelId), reason: 'Manually blacklisted'})
+                }).then(() => loadBlacklist());
+            }
+        }
+
+        function openRuleEditModal() {
+            alert('Text Transformation Rule editor would open here.\nUse the web API to add rules programmatically for now.');
+        }
+
+        // Initial load
+        loadStatus();
+        loadRules();
+        loadBlacklist();
+        loadLogs();
+
+        // Auto-refresh status and logs every 5 seconds
+        setInterval(() => {
+            loadStatus();
+            loadLogs();
+        }, 5000);
+    </script>
+</body>
+</html>
+    
