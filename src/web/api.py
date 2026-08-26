@@ -124,36 +124,14 @@ def api_test_mongo():
         result["pymongo_version"] = f"FAILED: {e}"
         return jsonify(result)
 
-    # Attempt 1: Full URI
+    # Attempt 1: Full URI with short timeout
     try:
-        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=10000)
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=3000, connectTimeoutMS=3000, socketTimeoutMS=3000)
         client.admin.command("ping")
         result["attempts"].append({"step": "full_uri", "status": "success"})
         client.close()
     except Exception as e:
-        result["attempts"].append({"step": "full_uri", "status": "failed", "error": str(e)[:200]})
-
-    # Attempt 2: Cleaned URI (strip query params)
-    try:
-        clean_uri = mongo_uri.split("?")[0] + "?retryWrites=true&w=majority"
-        client = MongoClient(clean_uri, serverSelectionTimeoutMS=10000)
-        client.admin.command("ping")
-        result["attempts"].append({"step": "cleaned_uri", "status": "success"})
-        client.close()
-    except Exception as e:
-        result["attempts"].append({"step": "cleaned_uri", "status": "failed", "error": str(e)[:200]})
-
-    # Attempt 3: Direct SRV lookup (for mongodb+srv://)
-    if "mongodb+srv://" in mongo_uri:
-        try:
-            # Convert to standard URI for direct host
-            base_uri = mongo_uri.replace("mongodb+srv://", "mongodb://")
-            client = MongoClient(base_uri, serverSelectionTimeoutMS=10000)
-            client.admin.command("ping")
-            result["attempts"].append({"step": "srv_fallback", "status": "success"})
-            client.close()
-        except Exception as e:
-            result["attempts"].append({"step": "srv_fallback", "status": "failed", "error": str(e)[:200]})
+        result["attempts"].append({"step": "full_uri", "status": "failed", "error": str(e)[:300]})
 
     return jsonify(result)
 
