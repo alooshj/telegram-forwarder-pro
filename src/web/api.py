@@ -105,6 +105,59 @@ def api_debug():
     return jsonify(config_info)
 
 
+@app.route("/api/test-mongo")
+def api_test_mongo():
+    """Actually try connecting to MongoDB and return detailed error."""
+    config = load_config()
+    mongo_uri = config.get("MONGODB_URI", "")
+    db_name = config.get("MONGO_DB", "telegram_forwarder")
+    result = {
+        "uri_preview": mongo_uri[:60] + "..." if len(mongo_uri) > 60 else mongo_uri,
+        "db_name": db_name,
+        "attempts": [],
+    }
+
+    try:
+        from pymongo import MongoClient
+        result["pymongo_version"] = "OK"
+    except ImportError as e:
+        result["pymongo_version"] = f"FAILED: {e}"
+        return jsonify(result)
+
+    # Attempt 1: Full URI
+    try:
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=10000)
+        client.admin.command("ping")
+        result["attempts"].append({"step": "full_uri", "status": "success"})
+        client.close()
+    except Exception as e:
+        result["attempts"].append({"step": "full_uri", "status": "failed", "error": str(e)[:200]})
+
+    # Attempt 2: Cleaned URI (strip query params)
+    try:
+        clean_uri = mongo_uri.split("?")[0] + "?retryWrites=true&w=majority"
+        client = MongoClient(clean_uri, serverSelectionTimeoutMS=10000)
+        client.admin.command("ping")
+        result["attempts"].append({"step": "cleaned_uri", "status": "success"})
+        client.close()
+    except Exception as e:
+        result["attempts"].append({"step": "cleaned_uri", "status": "failed", "error": str(e)[:200]})
+
+    # Attempt 3: Direct SRV lookup (for mongodb+srv://)
+    if "mongodb+srv://" in mongo_uri:
+        try:
+            # Convert to standard URI for direct host
+            base_uri = mongo_uri.replace("mongodb+srv://", "mongodb://")
+            client = MongoClient(base_uri, serverSelectionTimeoutMS=10000)
+            client.admin.command("ping")
+            result["attempts"].append({"step": "srv_fallback", "status": "success"})
+            client.close()
+        except Exception as e:
+            result["attempts"].append({"step": "srv_fallback", "status": "failed", "error": str(e)[:200]})
+
+    return jsonify(result)
+
+
 @app.route("/api/rules")
 def api_get_rules():
     """Get all forwarding rules."""
