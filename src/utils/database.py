@@ -17,9 +17,10 @@ from datetime import datetime
 
 # Re-export bson.ObjectId for external use, with fallback
 try:
-    from bson import ObjectId
-    from bson.objectid import ObjectId as BsonObjectId
     from pymongo import MongoClient
+    import bson
+    ObjectId = bson.ObjectId
+    BsonObjectId = bson.ObjectId
     MONGO_AVAILABLE = True
 except ImportError:
     MONGO_AVAILABLE = False

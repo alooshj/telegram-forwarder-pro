@@ -151,8 +151,13 @@ def api_delete_rule(rule_id):
     if not db:
         return jsonify({"error": "Database not connected"}), 500
 
-    from bson import ObjectId
-    db.rules.delete_one({"_id": ObjectId(rule_id)})
+    try:
+        from bson import ObjectId
+        object_id = ObjectId(rule_id)
+    except ImportError:
+        object_id = rule_id  # Fallback to string ID for SQLite
+
+    db.rules.delete_one({"_id": object_id})
     return jsonify({"success": True})
 
 
@@ -164,14 +169,18 @@ def api_update_rule(rule_id):
         return jsonify({"error": "Database not connected"}), 500
 
     data = request.get_json()
-    from bson import ObjectId
+    try:
+        from bson import ObjectId
+        object_id = ObjectId(rule_id)
+    except ImportError:
+        object_id = rule_id
 
     update_data = {}
     for key in ["name", "type", "pattern", "replacement", "priority", "active", "source_id", "target_id"]:
         if key in data:
             update_data[key] = data[key]
 
-    db.rules.update_one({"_id": ObjectId(rule_id)}, {"$set": update_data})
+    db.rules.update_one({"_id": object_id}, {"$set": update_data})
     return jsonify({"success": True})
 
 
