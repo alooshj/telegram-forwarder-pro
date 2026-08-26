@@ -86,15 +86,21 @@ def api_status():
 
 @app.route("/api/debug")
 def api_debug():
-    """Debug endpoint — shows config status (development only)."""
+    """Debug endpoint — shows config and DB connection status."""
     db = get_db()
+    db_type = "none"
+    if db:
+        db_type = type(db).__name__
+    config = load_config()
     config_info = {
         "db_connected": db is not None,
+        "db_type": db_type,
         "mongo_uri_set": bool(os.environ.get("MONGODB_URI") or os.environ.get("MONGO_URI")),
         "api_id_set": bool(os.environ.get("API_ID")),
         "api_hash_set": bool(os.environ.get("API_HASH")),
         "session_string_set": bool(os.environ.get("SESSION_STRING")),
-        "config_mongodb_uri": bool(get_config().get("MONGODB_URI", "")),
+        "config_mongodb_uri_set": bool(config.get("MONGODB_URI", "")),
+        "config_mongodb_uri_preview": config.get("MONGODB_URI", "")[:50] + "..." if len(config.get("MONGODB_URI", "")) > 50 else config.get("MONGODB_URI", ""),
     }
     return jsonify(config_info)
 

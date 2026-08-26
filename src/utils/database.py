@@ -351,26 +351,30 @@ class MongoDB:
 
 
 def get_db_connection(mongo_uri: str, db_name: str):
-    """
-    Factory: try MongoDB first, fall back to SQLite if MongoDB is unavailable.
+    """Factory: try MongoDB first, fall back to SQLite if MongoDB is unavailable."""
+    # Log what we're working with
+    logger.info(f"Attempting DB connection with URI: {mongo_uri[:50]}...{mongo_uri[-10:] if len(mongo_uri) > 60 else ''}")
+    logger.info(f"DB name: {db_name}, URI starts with: {mongo_uri[:20]}")
 
-    This ensures the application always has a working database layer,
-    even when deployed on free tiers where network access is restricted.
-    """
     # If MongoDB URI is explicitly set and looks valid, try MongoDB
-    if mongo_uri and not mongo_uri.startswith("mongodb://localhost"):
+    if mongo_uri and not mongo_uri.startswith("mongodb://localhost") and not mongo_uri.startswith("mongodb+srv://"):
+        logger.warning(f"Unrecognized MongoDB URI scheme — falling back to SQLite")
+
+    if mongo_uri and (mongo_uri.startswith("mongodb://") or mongo_uri.startswith("mongodb+srv://")):
         try:
             db = MongoDB(mongo_uri, db_name)
             logger.info("Using MongoDB backend")
             return db
         except Exception as e:
-            logger.warning(f"MongoDB connection failed, falling back to SQLite: {e}")
+            logger.error(f"MongoDB connection failed with URI '{mongo_uri[:80]}...': {e}")
+            logger.error(f"Falling back to SQLite...")
 
     # Fallback to SQLite
     sqlite_path = os.path.join(
         os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
         "..", "data", f"{db_name}.db"
     )
+    os.makedirs(os.path.dirname(sqlite_path), exist_ok=True)
     db = SQLiteDB(sqlite_path)
     logger.info("Using SQLite fallback backend")
     return db
