@@ -103,6 +103,14 @@ def load_config():
     }
 
 
+# --- Initialize database at module load time (for gunicorn compatibility) ---
+# This ensures the DB is initialized even when startCommand uses gunicorn directly
+try:
+    get_db()  # Calls the DB initialization logic
+except Exception as e:
+    logger.error(f"Background DB initialization failed: {e}")
+
+
 # --- API Routes ---
 
 @app.route("/")
