@@ -29,3 +29,5 @@ build/
 .coverage
 .pytest_cache/
 .tox/
+.session_string
+anon.session
