@@ -101,21 +101,24 @@ def api_create_rule():
     db = get_db()
     if not db:
         return jsonify({"error": "Database not connected"}), 500
-
-    data = request.get_json()
-    rule = {
-        "name": data.get("name", "Unnamed Rule"),
-        "type": data.get("type", "replace"),
-        "source_id": data.get("source_id"),
-        "target_id": data.get("target_id"),
-        "pattern": data.get("pattern", ""),
-        "replacement": data.get("replacement", ""),
-        "priority": data.get("priority", 0),
-        "active": data.get("active", True),
-    }
-    result = db.rules.insert_one(rule)
-    rule["_id"] = str(result.inserted_id)
-    return jsonify({"success": True, "rule": rule})
+    try:
+        data = request.get_json()
+        rule = {
+            "name": data.get("name", "Unnamed Rule"),
+            "type": data.get("type", "replace"),
+            "source_id": data.get("source_id"),
+            "target_id": data.get("target_id"),
+            "pattern": data.get("pattern", ""),
+            "replacement": data.get("replacement", ""),
+            "priority": data.get("priority", 0),
+            "active": data.get("active", True),
+        }
+        result = db.rules.insert_one(rule)
+        rule["_id"] = str(result.inserted_id)
+        return jsonify({"success": True, "rule": rule})
+    except Exception as e:
+        logger.error(f"Failed to create rule: {e}")
+        return jsonify({"error": "Failed to create rule", "detail": str(e)}), 500
 
 
 @app.route("/api/rules/<rule_id>", methods=["DELETE"])
@@ -155,11 +158,14 @@ def api_get_blacklist():
     db = get_db()
     if not db:
         return jsonify({"blacklist": [], "warning": "Database not connected"}), 200
-
-    entries = list(db.blacklist.find({}))
-    for entry in entries:
-        entry["_id"] = str(entry["_id"])
-    return jsonify({"blacklist": entries})
+    try:
+        entries = list(db.blacklist.find({}))
+        for entry in entries:
+            entry["_id"] = str(entry["_id"])
+        return jsonify({"blacklist": entries})
+    except Exception as e:
+        logger.error(f"Failed to fetch blacklist: {e}")
+        return jsonify({"blacklist": [], "error": "Database query failed"}), 200
 
 
 @app.route("/api/blacklist", methods=["POST"])
@@ -197,12 +203,15 @@ def api_get_logs():
     db = get_db()
     if not db:
         return jsonify({"logs": [], "warning": "Database not connected"}), 200
-
-    logs = list(db.logs.find().sort("timestamp", -1).limit(100))
-    for log in logs:
-        log["_id"] = str(log["_id"])
-        log["timestamp"] = log["timestamp"].isoformat()
-    return jsonify({"logs": logs})
+    try:
+        logs = list(db.logs.find().sort("timestamp", -1).limit(100))
+        for log in logs:
+            log["_id"] = str(log["_id"])
+            log["timestamp"] = log["timestamp"].isoformat()
+        return jsonify({"logs": logs})
+    except Exception as e:
+        logger.error(f"Failed to fetch logs: {e}")
+        return jsonify({"logs": [], "error": "Database query failed"}), 200
 
 
 @app.route("/api/forward/start", methods=["POST"])

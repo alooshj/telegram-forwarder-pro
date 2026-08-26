@@ -27,45 +27,69 @@ logger = logging.getLogger(__name__)
 class ForwarderEngine:
     """Telegram post forwarder with transformation and rate-limit handling."""
 
-    def __init__(self, config: dict, db: MongoDB):
+    def __init__(self, config: dict, db):
         self.config = config
         self.db = db
         self.rules_engine = RulesEngine(db)
-
-        self.client = TelegramClient(
-            StringSession(config["SESSION_STRING"]),
-            config["API_ID"],
-            config["API_HASH"],
-        )
 
         self._running = False
         self._last_flood_wait = {}  # channel_id -> timestamp
         self._pending_flood = []    # queued messages during flood wait
 
+        # Initialize Telethon client with error handling
+        try:
+            self.client = TelegramClient(
+                StringSession(config["SESSION_STRING"]),
+                config["API_ID"],
+                config["API_HASH"],
+            )
+        except Exception as e:
+            logger.error(f"Failed to initialize Telegram client: {e}")
+            self.client = None
+
     async def start(self):
         """Start the forwarder and begin monitoring source channels."""
-        await self.client.start()
-        me = await self.client.get_me()
-        logger.info(f"Forwarder started as @{me.username}")
+        if not self.client:
+            logger.error("Telegram client not initialized — cannot start forwarder")
+            return
 
-        self._running = True
-
-        # Update Flask app status if accessible
         try:
-            from src.web.api import forwarder_status
-            import datetime
-            forwarder_status["running"] = True
-            forwarder_status["connected"] = True
-            forwarder_status["last_update"] = datetime.datetime.utcnow().isoformat()
-        except Exception:
-            pass  # Flask app may not be running
+            await self.client.start()
+            me = await self.client.get_me()
+            logger.info(f"Forwarder started as @{me.username}")
 
-        await self._run_forwarding_loop()
+            self._running = True
+
+            # Update Flask app status if accessible
+            try:
+                from src.web.api import forwarder_status
+                forwarder_status["running"] = True
+                forwarder_status["connected"] = True
+                forwarder_status["last_update"] = datetime.utcnow().isoformat()
+            except Exception:
+                pass  # Flask app may not be running
+
+            await self._run_forwarding_loop()
+
+        except errors.FloodWaitError as e:
+            logger.warning(f"FLOOD_WAIT on startup: {e.seconds}s")
+            await asyncio.sleep(e.seconds)
+            await self.start()  # Retry after flood wait
+        except (errors.RPCError, ConnectionError, OSError) as e:
+            logger.error(f"Connection error during forwarder start: {e}", exc_info=True)
+            await self.auto_reconnect()
+        except Exception as e:
+            logger.error(f"Unexpected error starting forwarder: {e}", exc_info=True)
+            await self.auto_reconnect()
 
     async def stop(self):
         """Stop the forwarder gracefully."""
         self._running = False
-        await self.client.disconnect()
+        if self.client:
+            try:
+                await self.client.disconnect()
+            except Exception:
+                pass
         logger.info("Forwarder stopped")
 
     async def _run_forwarding_loop(self):
@@ -189,6 +213,10 @@ class ForwarderEngine:
 
     async def auto_reconnect(self):
         """Auto-reconnect logic for connection stability."""
+        if not self.client:
+            logger.error("Cannot reconnect — Telethon client is not initialized")
+            return False
+
         max_reconnects = self.config.get("MAX_RETRIES", 3)
         retry_delay = self.config.get("RETRY_DELAY", 10)
 
