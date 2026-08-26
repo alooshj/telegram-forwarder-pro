@@ -26,7 +26,7 @@ app = Flask(
     template_folder=os.path.join(os.path.dirname(__file__), "..", "dashboard", "templates"),
     static_folder=os.path.join(os.path.dirname(__file__), "..", "dashboard", "static"),
 )
-CORS(app)
+CORS(app, supports_credentials=True)
 
 # Global state
 forwarder_status = {"running": False, "connected": False, "last_update": None}

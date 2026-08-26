@@ -586,10 +586,25 @@
         }
 
         // Initial load
-        loadStatus();
-        loadRules();
-        loadBlacklist();
-        loadLogs();
+        async function initialize() {
+            console.log('[TFP] Initializing dashboard...');
+            try {
+                await loadStatus();
+                await loadRules();
+                await loadBlacklist();
+                await loadLogs();
+                console.log('[TFP] Dashboard initialized successfully');
+            } catch (err) {
+                console.error('[TFP] Initialization error:', err);
+                document.getElementById('status-text').textContent = 'Init error — see console';
+                document.getElementById('status-indicator').className = 'w-3 h-3 bg-yellow-500 rounded-full animate-pulse';
+            }
+        }
+
+        // Run initialization - wait for DOM to be fully loaded
+        document.addEventListener('DOMContentLoaded', function() {
+            initialize();
+        });
 
         // Auto-refresh
         setInterval(() => {
