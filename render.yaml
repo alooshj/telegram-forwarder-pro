@@ -1,24 +1,36 @@
+# Telegram Forwarder Pro — Render Blueprint
+# Zero-cost deployment: Free web service + MongoDB Atlas M0
+# No credit card required.
+
 services:
   - type: web
     name: telegram-forwarder-pro
     runtime: python
-    build:
-      buildCommand: pip install -r requirements.txt
-    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 main:app
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 src.web.api:app
     env:
       - key: MONGODB_URI
-        valueFromSecret: /mongodb-uri
+        fromSecret: mongoldb-uri
       - key: MONGO_DB
         value: telegram_forwarder
       - key: API_ID
-        sync: false
+        value: "39284987"
       - key: API_HASH
         sync: false
       - key: SESSION_STRING
         sync: false
       - key: SECRET_KEY
         generateValue: true
+      - key: WEB_HOST
+        value: "0.0.0.0"
+      - key: LOG_LEVEL
+        value: INFO
+      - key: CHECK_INTERVAL
+        value: "30"
+      - key: MAX_RETRIES
+        value: "3"
+      - key: RETRY_DELAY
+        value: "10"
     plan: free
-    healthCheck:
-      path: /api/status
+    healthCheckPath: /api/status
     autoDeploy: true
