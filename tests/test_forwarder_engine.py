@@ -126,5 +126,40 @@ class FloodWaitTest(unittest.TestCase):
         self.assertEqual(engine._last_flood_wait, {})
 
 
+class ForwardingLoopFloodWaitTest(unittest.TestCase):
+    """Verify _run_forwarding_loop handles FLOOD_WAIT gracefully even when
+    source_id is not yet assigned (FloodWait raised before the per-rule loop).
+    Uses mock objects — no real Telegram connection needed.
+    """
+
+    @patch.object(fe.asyncio, "sleep", new_callable=AsyncMock)
+    def test_loop_survives_flood_wait_before_channel_assignment(self, mock_sleep):
+        """If db.rules.find raises FloodWaitError, the loop must not crash
+        with UnboundLocalError on source_id."""
+        from telethon import errors as tele_errors
+
+        db = MagicMock()
+        # rules.find raises FloodWaitError (e.g. from a DB/Telegram call)
+        db.rules.find.side_effect = tele_errors.FloodWaitError(
+            request="test", capture=10
+        )
+        engine = make_engine(db)
+        engine._running = True
+
+        handle_calls = []
+
+        async def fake_handle(channel_id, seconds):
+            handle_calls.append((channel_id, seconds))
+            engine._running = False  # stop loop after one flood-wait
+
+        engine._handle_flood_wait = fake_handle
+        engine._is_flood_waited = lambda channel_id: False
+
+        # Should complete without raising UnboundLocalError
+        asyncio.get_event_loop().run_until_complete(engine._run_forwarding_loop())
+        self.assertEqual(len(handle_calls), 1)
+        self.assertEqual(handle_calls[0][1], 10)  # seconds passed through
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

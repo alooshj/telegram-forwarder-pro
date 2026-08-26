@@ -33,12 +33,20 @@ forwarder_status = {"running": False, "connected": False, "last_update": None}
 
 
 def load_config():
-    """Load configuration from environment variables."""
+    """Load configuration from environment variables.
+    
+    Supports both MONGODB_URI and MONGO_URI env vars.
+    MONGODB_URI takes precedence (MongoDB Atlas standard naming).
+    """
+    # Support both MONGODB_URI and MONGO_URI (MONGODB_URI takes precedence)
+    mongo_uri = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or ""
+    
     return {
         "API_ID": int(os.getenv("API_ID", 0)),
         "API_HASH": os.getenv("API_HASH", ""),
         "SESSION_STRING": os.getenv("SESSION_STRING", ""),
-        "MONGO_URI": os.getenv("MONGO_URI", ""),
+        "MONGODB_URI": mongo_uri,
+        "MONGO_URI": mongo_uri,  # Backward compatibility
         "MONGO_DB": os.getenv("MONGO_DB", "telegram_forwarder"),
         "WEB_HOST": os.getenv("WEB_HOST", "0.0.0.0"),
         "WEB_PORT": int(os.getenv("WEB_PORT", 5000)),

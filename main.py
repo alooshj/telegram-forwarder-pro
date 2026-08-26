@@ -14,8 +14,9 @@ from dotenv import load_dotenv
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 from src.utils.database import MongoDB
+from src.utils.config import load_config
 from src.forwarder.engine import ForwarderEngine
-from src.web.api import app, load_config, db_ref
+from src.web.api import app
 
 # Configure logging
 logging.basicConfig(
@@ -32,7 +33,7 @@ logger = logging.getLogger("telegram-forwarder-pro")
 def init_database(config):
     """Initialize MongoDB connection and create default data."""
     try:
-        db = MongoDB(config["MONGO_URI"], config["MONGO_DB"])
+        db = MongoDB(config["MONGODB_URI"], config["MONGO_DB"])
         # Create default rules if none exist
         if db.rules.count_documents({}) == 0:
             db.rules.insert_many([

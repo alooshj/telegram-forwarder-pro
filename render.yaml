@@ -6,8 +6,10 @@ services:
       buildCommand: pip install -r requirements.txt
     startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 main:app
     env:
-      - key: MONGO_URI
+      - key: MONGODB_URI
         valueFromSecret: /mongodb-uri
+      - key: MONGO_DB
+        value: telegram_forwarder
       - key: API_ID
         sync: false
       - key: API_HASH

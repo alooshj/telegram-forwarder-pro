@@ -9,7 +9,8 @@ import os
 os.environ.setdefault("API_ID", "123456")
 os.environ.setdefault("API_HASH", "testhash")
 os.environ.setdefault("SESSION_STRING", "test")
-os.environ.setdefault("MONGO_URI", "mongodb://localhost:27017/test")
+os.environ.setdefault("MONGODB_URI", "mongodb://localhost:27017/test")
+os.environ.setdefault("MONGO_URI", "mongodb://localhost:27017/test")  # backward compat
 os.environ.setdefault("MONGO_DB", "telegram_forwarder_test")
 os.environ.setdefault("WEB_HOST", "127.0.0.1")
 os.environ.setdefault("WEB_PORT", "5000")
