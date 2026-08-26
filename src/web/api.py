@@ -34,6 +34,51 @@ CORS(app, supports_credentials=True)
 forwarder_status = {"running": False, "connected": False, "last_update": None}
 
 
+def get_db():
+    """Get the database connection, initializing if needed."""
+    if not hasattr(app, "_db_initialized"):
+        try:
+            config = load_config()
+            from src.utils.database import get_db_connection
+            db = get_db_connection(config.get("MONGODB_URI", ""), config.get("MONGO_DB", "telegram_forwarder"))
+
+            # Create default rules if none exist
+            if db.rules.count_documents({}) == 0:
+                db.rules.insert_many([
+                    {"name": "Strip @usernames", "type": "regex", "pattern": r"@\w+", "replacement": "[username]", "priority": 1, "active": True},
+                    {"name": "Branding Footer", "type": "footer", "replacement": "Forwarded by Telegram Forwarder Pro", "priority": 99, "active": True},
+                ])
+                logger.info("Created default transformation rules")
+
+            app.db = db
+            app._db_initialized = True
+            logger.info(f"Database initialized: {type(db).__name__}")
+
+            # Try starting the forwarder engine if credentials are available
+            if config.get("SESSION_STRING") and config.get("API_ID"):
+                import threading
+                import asyncio
+                from src.forwarder.engine import ForwarderEngine
+                from unittest.mock import MagicMock
+
+                def run_forwarder():
+                    try:
+                        engine = ForwarderEngine(config, db)
+                        asyncio.run(engine.start())
+                    except Exception as e:
+                        logger.error(f"Forwarder engine failed: {e}", exc_info=True)
+
+                thread = threading.Thread(target=run_forwarder, daemon=True)
+                thread.start()
+                logger.info("Forwarder engine started in background thread")
+
+        except Exception as e:
+            logger.error(f"Database initialization failed: {e}")
+            app._db_initialized = False
+            return None
+    return getattr(app, "db", None)
+
+
 def load_config():
     """Load configuration from environment variables.
     
@@ -56,14 +101,6 @@ def load_config():
         "MAX_RETRIES": int(os.getenv("MAX_RETRIES", 3)),
         "RETRY_DELAY": int(os.getenv("RETRY_DELAY", 10)),
     }
-
-
-# --- Database dependency ---
-db_ref = None  # Will be set on app start
-
-
-def get_db():
-    return db_ref
 
 
 # --- API Routes ---
