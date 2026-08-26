@@ -352,23 +352,23 @@ class MongoDB:
 
 
 def get_db_connection(mongo_uri: str, db_name: str):
-    """Factory: try MongoDB first, fall back to SQLite if MongoDB is unavailable."""
-    # Log what we're working with
-    logger.info(f"Attempting DB connection with URI: {mongo_uri[:50]}...{mongo_uri[-10:] if len(mongo_uri) > 60 else ''}")
-    logger.info(f"DB name: {db_name}, URI starts with: {mongo_uri[:20]}")
+    """Factory: try MongoDB first, fall back to SQLite if MongoDB is unavailable.
 
-    # If MongoDB URI is explicitly set and looks valid, try MongoDB
-    if mongo_uri and not mongo_uri.startswith("mongodb://localhost") and not mongo_uri.startswith("mongodb+srv://"):
-        logger.warning(f"Unrecognized MongoDB URI scheme — falling back to SQLite")
+    If MONGODB_FORCE_FALLBACK=true is set in env, always use SQLite.
+    Otherwise, attempt MongoDB and fall back automatically on any failure.
+    """
+    # Allow forcing SQLite via env var (useful when Atlas rejects SSL/IP)
+    force_fallback = os.environ.get("MONGODB_FORCE_FALLBACK", "").lower() in ("true", "1", "yes")
 
-    if mongo_uri and (mongo_uri.startswith("mongodb://") or mongo_uri.startswith("mongodb+srv://")):
+    # If MongoDB URI is explicitly set and looks valid, try MongoDB (unless forced to fallback)
+    if not force_fallback and mongo_uri and (mongo_uri.startswith("mongodb://") or mongo_uri.startswith("mongodb+srv://")):
         try:
             db = MongoDB(mongo_uri, db_name)
             logger.info("Using MongoDB backend")
             return db
         except Exception as e:
-            logger.error(f"MongoDB connection failed with URI '{mongo_uri[:80]}...': {e}")
-            logger.error(f"Falling back to SQLite...")
+            logger.error(f"MongoDB connection failed: {e}")
+            logger.warning("Falling back to SQLite...")
 
     # Fallback to SQLite
     sqlite_path = os.path.join(
@@ -377,5 +377,5 @@ def get_db_connection(mongo_uri: str, db_name: str):
     )
     os.makedirs(os.path.dirname(sqlite_path), exist_ok=True)
     db = SQLiteDB(sqlite_path)
-    logger.info("Using SQLite fallback backend")
+    logger.info(f"Using SQLite fallback backend at {sqlite_path}")
     return db

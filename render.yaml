@@ -1,5 +1,5 @@
 # Telegram Forwarder Pro — Render Blueprint
-# Zero-cost deployment: Free web service + MongoDB Atlas M0
+# Zero-cost deployment: Free web service + fallback to SQLite
 # No credit card required.
 
 services:
@@ -10,9 +10,11 @@ services:
     startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 src.web.api:app
     env:
       - key: MONGODB_URI
-        fromSecret: mongoldb-uri
+        fromSecret: mongodb-uri
       - key: MONGO_DB
         value: telegram_forwarder
+      - key: MONGODB_FORCE_FALLBACK
+        value: "true"
       - key: API_ID
         value: "39284987"
       - key: API_HASH
