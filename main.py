@@ -15,7 +15,7 @@ from dotenv import load_dotenv
 # Ensure project root is in path
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from src.utils.database import MongoDB
+from src.utils.database import MongoDB, get_db_connection
 from src.utils.config import load_config
 from src.forwarder.engine import ForwarderEngine
 from src.web.api import app
@@ -33,9 +33,14 @@ logger = logging.getLogger("telegram-forwarder-pro")
 
 
 def init_database(config):
-    """Initialize MongoDB connection and create default data."""
+    """Initialize database connection and create default data.
+
+    Tries MongoDB Atlas first; falls back to SQLite if unavailable.
+    This ensures the app always has a working database layer.
+    """
     try:
-        db = MongoDB(config["MONGODB_URI"], config["MONGO_DB"])
+        db = get_db_connection(config["MONGODB_URI"], config["MONGO_DB"])
+
         # Create default rules if none exist
         if db.rules.count_documents({}) == 0:
             db.rules.insert_many([
@@ -52,23 +57,6 @@ def init_database(config):
         return db
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
-        # Fallback: try connecting without retryWrites & appName (some Atlas setups require it)
-        try:
-            uri = config["MONGODB_URI"]
-            if "?retryWrites" in uri or "retryWrites" in uri:
-                # Strip extra params that may cause issues
-                clean_uri = uri.split("?")[0] + "?w=majority"
-                logger.info(f"Retrying with cleaned URI: {clean_uri}")
-                db = MongoDB(clean_uri, config["MONGO_DB"])
-                if db.rules.count_documents({}) == 0:
-                    db.rules.insert_many([
-                        {"name": "Strip @usernames", "type": "regex", "pattern": r"@\w+", "replacement": "[username]", "priority": 1, "active": True},
-                        {"name": "Branding Footer", "type": "footer", "replacement": "Forwarded by Telegram Forwarder Pro", "priority": 99, "active": True},
-                    ])
-                logger.info("Database connected (fallback mode)")
-                return db
-        except Exception as fallback_error:
-            logger.error(f"Fallback database connection also failed: {fallback_error}")
         return None
 
 
