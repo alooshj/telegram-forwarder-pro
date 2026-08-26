@@ -87,7 +87,7 @@ def api_get_rules():
     """Get all forwarding rules."""
     db = get_db()
     if not db:
-        return jsonify({"error": "Database not connected"}), 500
+        return jsonify({"rules": [], "warning": "Database not connected"}), 200
 
     rules = list(db.rules.find({}))
     for rule in rules:
@@ -154,7 +154,7 @@ def api_get_blacklist():
     """Get all blacklisted channels."""
     db = get_db()
     if not db:
-        return jsonify({"error": "Database not connected"}), 500
+        return jsonify({"blacklist": [], "warning": "Database not connected"}), 200
 
     entries = list(db.blacklist.find({}))
     for entry in entries:
@@ -196,7 +196,7 @@ def api_get_logs():
     """Get recent logs."""
     db = get_db()
     if not db:
-        return jsonify({"error": "Database not connected"}), 500
+        return jsonify({"logs": [], "warning": "Database not connected"}), 200
 
     logs = list(db.logs.find().sort("timestamp", -1).limit(100))
     for log in logs:

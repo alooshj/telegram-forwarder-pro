@@ -23,11 +23,11 @@
                 <span id="status-text" class="text-sm font-medium">Disconnected</span>
             </div>
             <div class="flex space-x-2">
-                <button id="start-btn"
+                <button id="start-btn" onclick="startForwarder()"
                         class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-sm font-medium transition">
                     Start Forwarder
                 </button>
-                <button id="stop-btn"
+                <button id="stop-btn" onclick="stopForwarder()"
                         class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-sm font-medium transition"
                         disabled>
                     Stop
@@ -37,26 +37,30 @@
 
         <!-- Tabs -->
         <div class="flex space-x-1 mb-6 bg-gray-800 rounded-lg p-1 border border-gray-700">
-            <button onclick="showTab('rules')" class="tab-btn active px-4 py-2 text-sm font-medium rounded">
+            <button onclick="showTab('rules')" id="tab-rules-btn"
+                    class="tab-btn active px-4 py-2 text-sm font-medium rounded bg-blue-600">
                 Forwarding Rules
             </button>
-            <button onclick="showTab('blacklist')" class="tab-btn px-4 py-2 text-sm font-medium rounded hover:bg-gray-700">
+            <button onclick="showTab('blacklist')" id="tab-blacklist-btn"
+                    class="tab-btn px-4 py-2 text-sm font-medium rounded hover:bg-gray-700">
                 Blacklist
             </button>
-            <button onclick="showTab('rules-editor')" class="tab-btn px-4 py-2 text-sm font-medium rounded hover:bg-gray-700">
+            <button onclick="showTab('rules-editor')" id="tab-editor-btn"
+                    class="tab-btn px-4 py-2 text-sm font-medium rounded hover:bg-gray-700">
                 Text Rules
             </button>
-            <button onclick="showTab('logs')" class="tab-btn px-4 py-2 text-sm font-medium rounded hover:bg-gray-700">
+            <button onclick="showTab('logs')" id="tab-logs-btn"
+                    class="tab-btn px-4 py-2 text-sm font-medium rounded hover:bg-gray-700">
                 Logs
             </button>
         </div>
 
-        <!-- Rules Tab -->
+        <!-- Forwarding Rules Tab -->
         <div id="tab-rules" class="tab-content">
             <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold">Active Forwarding Rules</h2>
-                    <button onclick="openRuleModal()"
+                    <button onclick="openForwardingRuleForm()"
                             class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">
                         Add Rule
                     </button>
@@ -89,7 +93,7 @@
             <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold">Blacklisted Channels</h2>
-                    <button onclick="openBlacklistModal()"
+                    <button onclick="openBlacklistForm()"
                             class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
                         Add Blacklist Entry
                     </button>
@@ -121,7 +125,7 @@
             <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
                 <div class="flex justify-between items-center mb-4">
                     <h2 class="text-xl font-semibold">Text Transformation Rules</h2>
-                    <button onclick="openRuleEditModal()"
+                    <button onclick="openTransformRuleForm()"
                             class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm">
                         Add Transformation Rule
                     </button>
@@ -153,52 +157,342 @@
         </div>
     </main>
 
+    <!-- Modals -->
+    <!-- Forwarding Rule Modal -->
+    <div id="forwarding-rule-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
+            <h3 class="text-lg font-semibold mb-4">Add Forwarding Rule</h3>
+            <form id="forwarding-rule-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">Name</label>
+                    <input type="text" id="rule-name" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">Source Channel ID</label>
+                    <input type="text" id="source-id" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">Target Channel ID</label>
+                    <input type="text" id="target-id" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" required>
+                </div>
+                <div class="flex justify-end space-x-2 pt-4">
+                    <button type="button" onclick="closeModal('forwarding-rule-modal')"
+                            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">
+                        Save Rule
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Blacklist Modal -->
+    <div id="blacklist-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
+            <h3 class="text-lg font-semibold mb-4">Add Blacklist Entry</h3>
+            <form id="blacklist-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">Channel ID</label>
+                    <input type="text" id="blacklist-channel-id" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">Reason</label>
+                    <input type="text" id="blacklist-reason" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" value="Blacklisted">
+                </div>
+                <div class="flex justify-end space-x-2 pt-4">
+                    <button type="button" onclick="closeModal('blacklist-modal')"
+                            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
+                        Add to Blacklist
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Transformation Rule Modal -->
+    <div id="transform-rule-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
+            <h3 class="text-lg font-semibold mb-4">Add Transformation Rule</h3>
+            <form id="transform-rule-form" class="space-y-4">
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">Name</label>
+                    <input type="text" id="transform-name" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" required>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">Type</label>
+                    <select id="transform-type" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" required>
+                        <option value="replace">Replace</option>
+                        <option value="regex">Regex</option>
+                        <option value="strip">Strip</option>
+                        <option value="footer">Footer</option>
+                        <option value="prefix">Prefix</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">Pattern</label>
+                    <input type="text" id="transform-pattern" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">Replacement</label>
+                    <input type="text" id="transform-replacement" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white">
+                </div>
+                <div>
+                    <label class="block text-sm text-gray-300 mb-1">Priority</label>
+                    <input type="number" id="transform-priority" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" value="0">
+                </div>
+                <div class="flex items-center">
+                    <input type="checkbox" id="transform-active" class="mr-2" checked>
+                    <label class="text-sm text-gray-300">Active</label>
+                </div>
+                <div class="flex justify-end space-x-2 pt-4">
+                    <button type="button" onclick="closeModal('transform-rule-modal')"
+                            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">
+                        Cancel
+                    </button>
+                    <button type="submit"
+                            class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm">
+                        Save Rule
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
         // Tab navigation
         function showTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
             document.getElementById(`tab-${tabId}`).classList.remove('hidden');
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-blue-600'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('hover:bg-gray-700'));
             event.target.classList.add('active', 'bg-blue-600');
+            event.target.classList.remove('hover:bg-gray-700');
         }
 
-        // Load rules from API
+        // Modal functions
+        function openForwardingRuleForm() {
+            document.getElementById('forwarding-rule-modal').classList.remove('hidden');
+        }
+
+        function openBlacklistForm() {
+            document.getElementById('blacklist-modal').classList.remove('hidden');
+        }
+
+        function openTransformRuleForm() {
+            document.getElementById('transform-rule-modal').classList.remove('hidden');
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.add('hidden');
+        }
+
+        // Close modals when clicking outside
+        document.querySelectorAll('[id$="-modal"]').forEach(modal => {
+            modal.addEventListener('click', e => {
+                if (e.target === modal) closeModal(modal.id);
+            });
+        });
+
+        // API helper
+        async function apiFetch(url, options = {}) {
+            try {
+                const response = await fetch(url, {
+                    headers: { 'Content-Type': 'application/json', ...options.headers },
+                    ...options
+                });
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+                return await response.json();
+            } catch (error) {
+                console.error('API Error:', error);
+                if (url.includes('status') || url.includes('start') || url.includes('stop')) {
+                    return { error: error.message };
+                }
+                showNotification('Connection error — check if the server is running', 'error');
+                return null;
+            }
+        }
+
+        // Notification helper (replaces alert() calls)
+        function showNotification(message, type = 'info') {
+            const existing = document.getElementById('notification');
+            if (existing) existing.remove();
+
+            const el = document.createElement('div');
+            el.id = 'notification';
+            el.className = `fixed bottom-4 right-4 px-4 py-2 rounded text-sm font-medium shadow-lg transition-transform z-50 ${
+                type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-green-600' : 'bg-blue-600'
+            }`;
+            el.textContent = message;
+            document.body.appendChild(el);
+            setTimeout(() => el.remove(), 3000);
+        }
+
+        // Forwarding Rule Form Submit
+        document.getElementById('forwarding-rule-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const name = document.getElementById('rule-name').value.trim();
+            const sourceId = document.getElementById('source-id').value.trim();
+            const targetId = document.getElementById('target-id').value.trim();
+
+            if (!name || !sourceId || !targetId) {
+                showNotification('Please fill in all fields', 'error');
+                return;
+            }
+
+            await apiFetch('/api/rules', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: name,
+                    type: 'replace',
+                    source_id: sourceId,
+                    target_id: targetId,
+                    pattern: '',
+                    replacement: '',
+                    priority: 0,
+                    active: true
+                })
+            });
+
+            closeModal('forwarding-rule-modal');
+            showNotification(`Rule "${name}" added successfully`, 'success');
+            loadRules();
+            e.target.reset();
+        });
+
+        // Blacklist Form Submit
+        document.getElementById('blacklist-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const channelId = document.getElementById('blacklist-channel-id').value.trim();
+            const reason = document.getElementById('blacklist-reason').value.trim() || 'Blacklisted';
+
+            if (!channelId) {
+                showNotification('Channel ID is required', 'error');
+                return;
+            }
+
+            await apiFetch('/api/blacklist', {
+                method: 'POST',
+                body: JSON.stringify({
+                    channel_id: parseInt(channelId),
+                    reason: reason
+                })
+            });
+
+            closeModal('blacklist-modal');
+            showNotification(`Channel ${channelId} added to blacklist`, 'success');
+            loadBlacklist();
+            e.target.reset();
+        });
+
+        // Transform Rule Form Submit
+        document.getElementById('transform-rule-form').addEventListener('submit', async e => {
+            e.preventDefault();
+            const name = document.getElementById('transform-name').value.trim();
+            const type = document.getElementById('transform-type').value;
+            const pattern = document.getElementById('transform-pattern').value.trim();
+            const replacement = document.getElementById('transform-replacement').value.trim();
+            const priority = parseInt(document.getElementById('transform-priority').value) || 0;
+            const active = document.getElementById('transform-active').checked;
+
+            if (!name) {
+                showNotification('Rule name is required', 'error');
+                return;
+            }
+
+            await apiFetch('/api/rules', {
+                method: 'POST',
+                body: JSON.stringify({
+                    name: name,
+                    type: type,
+                    pattern: pattern,
+                    replacement: replacement,
+                    priority: priority,
+                    active: active
+                })
+            });
+
+            closeModal('transform-rule-modal');
+            showNotification(`Transformation rule "${name}" added successfully`, 'success');
+            loadRules();
+            e.target.reset();
+        });
+
+        // Load rules
         async function loadRules() {
             try {
-                const res = await fetch('/api/rules');
-                const data = await res.json();
-                const tbody = document.getElementById('rules-table-body');
-                if (!data.rules || data.rules.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="5" class="py-8 text-center text-gray-500">No rules configured</td></tr>';
+                const data = await apiFetch('/api/rules');
+                if (!data || data.error) {
+                    document.getElementById('rules-table-body').innerHTML =
+                        '<tr><td colspan="5" class="py-8 text-center text-gray-400">No rules configured (DB not connected)</td></tr>';
+                    document.getElementById('transformation-rules-list').innerHTML =
+                        '<p class="text-gray-400">No transformation rules (DB not connected)</p>';
                     return;
                 }
-                tbody.innerHTML = data.rules.map(rule => `
+                const rules = data.rules || [];
+                if (rules.length === 0) {
+                    document.getElementById('rules-table-body').innerHTML =
+                        '<tr><td colspan="5" class="py-8 text-center text-gray-500">No rules configured</td></tr>';
+                    document.getElementById('transformation-rules-list').innerHTML =
+                        '<p class="text-gray-500">Click "Add Transformation Rule" to create your first rule.</p>';
+                    return;
+                }
+                const tbody = document.getElementById('rules-table-body');
+                tbody.innerHTML = rules.map(rule => `
                     <tr class="border-b border-gray-700">
-                        <td class="py-2">${rule._id?.substring(0, 8)}</td>
+                        <td class="py-2">${rule._id?.substring(0, 8) || '—'}</td>
                         <td class="py-2">${rule.source_id ?? '—'} → ${rule.target_id ?? '—'}</td>
                         <td class="py-2">${rule.type}</td>
                         <td class="py-2">${rule.pattern ?? '—'}</td>
                         <td class="py-2">${rule.active ? '✅' : '❌'}</td>
                     </tr>
                 `).join('');
+
+                const list = document.getElementById('transformation-rules-list');
+                list.innerHTML = rules.map(rule => `
+                    <div class="bg-gray-700 rounded p-3 border border-gray-600 flex justify-between items-center">
+                        <div>
+                            <span class="font-medium">${rule.name}</span>
+                            <span class="text-xs text-gray-400">(${rule.type})" + " &middot; priority: ${rule.priority}</span>
+                        </div>
+                        <span class="${rule.active ? 'text-green-400' : 'text-red-400'}">
+                            ${rule.active ? 'Active' : 'Inactive'}
+                        </span>
+                    </div>
+                `).join('');
             } catch (e) {
                 document.getElementById('rules-table-body').innerHTML =
-                    '<tr><td colspan="5" class="py-8 text-center text-red-500">Error loading rules</td></tr>';
+                    '<tr><td colspan="5" class="py-8 text-center text-yellow-400">Could not load rules</td></tr>';
             }
         }
 
+        // Load blacklist
         async function loadBlacklist() {
             try {
-                const res = await fetch('/api/blacklist');
-                const data = await res.json();
-                const tbody = document.getElementById('blacklist-table-body');
-                if (!data.blacklist || data.blacklist.length === 0) {
-                    tbody.innerHTML = '<tr><td colspan="4" class="py-8 text-center text-gray-500">No blacklisted channels</td></tr>';
+                const data = await apiFetch('/api/blacklist');
+                if (!data || data.error) {
+                    document.getElementById('blacklist-table-body').innerHTML =
+                        '<tr><td colspan="4" class="py-8 text-center text-gray-400">Blacklist not available (DB not connected)</td></tr>';
                     return;
                 }
-                tbody.innerHTML = data.blacklist.map(entry => `
+                const entries = data.blacklist || [];
+                if (entries.length === 0) {
+                    document.getElementById('blacklist-table-body').innerHTML =
+                        '<tr><td colspan="4" class="py-8 text-center text-gray-500">No blacklisted channels</td></tr>';
+                    return;
+                }
+                const tbody = document.getElementById('blacklist-table-body');
+                tbody.innerHTML = entries.map(entry => `
                     <tr class="border-b border-gray-700">
-                        <td class="py-2">${entry._id?.substring(0, 8)}</td>
+                        <td class="py-2">${entry._id?.substring(0, 8) || '—'}</td>
                         <td class="py-2">${entry.channel_id}</td>
                         <td class="py-2">${entry.reason ?? '—'}</td>
                         <td class="py-2">
@@ -209,88 +503,86 @@
                 `).join('');
             } catch (e) {
                 document.getElementById('blacklist-table-body').innerHTML =
-                    '<tr><td colspan="4" class="py-8 text-center text-red-500">Error loading blacklist</td></tr>';
+                    '<tr><td colspan="4" class="py-8 text-center text-yellow-400">Could not load blacklist</td></tr>';
             }
-        }
-
-        async function loadLogs() {
-            const container = document.getElementById('log-container');
-            container.innerHTML = '<p class="text-gray-500">Loading logs...</p>';
-            try {
-                const res = await fetch('/api/logs');
-                const data = await res.json();
-                if (!data.logs || data.logs.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500">No logs yet.</p>';
-                    return;
-                }
-                container.innerHTML = data.logs.map(log =>
-                    `[${log.timestamp} | ${log.level || 'INFO'}] ${log.message}`
-                ).join('<br>');
-            } catch (e) {
-                container.innerHTML = '<p class="text-red-500">Error loading logs</p>';
-            }
-        }
-
-        async function loadStatus() {
-            try {
-                const res = await fetch('/api/status');
-                const data = await res.json();
-                const indicator = document.getElementById('status-indicator');
-                const text = document.getElementById('status-text');
-                if (data.running && data.connected) {
-                    indicator.className = 'w-3 h-3 bg-green-500 rounded-full';
-                    text.textContent = 'Running & Connected';
-                    document.getElementById('start-btn').disabled = true;
-                    document.getElementById('stop-btn').disabled = false;
-                } else {
-                    indicator.className = 'w-3 h-3 bg-red-500 rounded-full animate-pulse';
-                    text.textContent = 'Disconnected';
-                    document.getElementById('start-btn').disabled = false;
-                    document.getElementById('stop-btn').disabled = true;
-                }
-            } catch (e) {
-                console.error('Status load error:', e);
-            }
-        }
-
-        async function startForwarder() {
-            const res = await fetch('/api/forward/start', {method: 'POST'});
-            const data = await res.json();
-            loadStatus();
-        }
-
-        async function stopForwarder() {
-            const res = await fetch('/api/forward/stop', {method: 'POST'});
-            const data = await res.json();
-            loadStatus();
         }
 
         async function removeBlacklist(channelId) {
-            await fetch(`/api/blacklist/${channelId}`, {method: 'DELETE'});
+            await apiFetch(`/api/blacklist/${channelId}`, { method: 'DELETE' });
+            showNotification(`Channel ${channelId} removed from blacklist`, 'success');
             loadBlacklist();
+        }
+
+        // Load logs
+        async function loadLogs() {
+            const container = document.getElementById('log-container');
+            try {
+                const data = await apiFetch('/api/logs');
+                if (!data || data.error) {
+                    container.innerHTML = '<p class="text-gray-400">Logs not available (DB not connected)</p>';
+                    return;
+                }
+                const logs = data.logs || [];
+                if (logs.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500">No logs yet.</p>';
+                    return;
+                }
+                container.innerHTML = logs.map(log =>
+                    `[${log.timestamp} | ${log.level || 'INFO'}] ${log.message}`
+                ).join('<br>');
+            } catch (e) {
+                container.innerHTML = '<p class="text-yellow-400">Could not load logs</p>';
+            }
         }
 
         async function refreshLogs() {
             loadLogs();
         }
 
-        function openRuleModal() {
-            alert('Add Forwarding Rule dialog would open here.\nFor now, use the Text Rules tab to add rules.');
-        }
+        // Status management
+        async function loadStatus() {
+            const data = await apiFetch('/api/status');
+            if (!data || data.error) {
+                document.getElementById('status-text').textContent = 'Cannot reach server';
+                document.getElementById('status-indicator').className = 'w-3 h-3 bg-yellow-500 rounded-full animate-pulse';
+                return;
+            }
+            const indicator = document.getElementById('status-indicator');
+            const text = document.getElementById('status-text');
+            const startBtn = document.getElementById('start-btn');
+            const stopBtn = document.getElementById('stop-btn');
 
-        function openBlacklistModal() {
-            const channelId = prompt('Enter Channel ID to blacklist:');
-            if (channelId) {
-                fetch('/api/blacklist', {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({channel_id: parseInt(channelId), reason: 'Manually blacklisted'})
-                }).then(() => loadBlacklist());
+            if (data.running && data.connected) {
+                indicator.className = 'w-3 h-3 bg-green-500 rounded-full';
+                text.textContent = 'Running & Connected';
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+            } else {
+                indicator.className = 'w-3 h-3 bg-red-500 rounded-full animate-pulse';
+                text.textContent = 'Stopped / Disconnected';
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
             }
         }
 
-        function openRuleEditModal() {
-            alert('Text Transformation Rule editor would open here.\nUse the web API to add rules programmatically for now.');
+        async function startForwarder() {
+            const data = await apiFetch('/api/forward/start', { method: 'POST' });
+            if (data && !data.error) {
+                showNotification('Forwarder started', 'success');
+                loadStatus();
+            } else {
+                showNotification('Failed to start forwarder', 'error');
+            }
+        }
+
+        async function stopForwarder() {
+            const data = await apiFetch('/api/forward/stop', { method: 'POST' });
+            if (data && !data.error) {
+                showNotification('Forwarder stopped', 'success');
+                loadStatus();
+            } else {
+                showNotification('Failed to stop forwarder', 'error');
+            }
         }
 
         // Initial load
@@ -299,7 +591,7 @@
         loadBlacklist();
         loadLogs();
 
-        // Auto-refresh status and logs every 5 seconds
+        // Auto-refresh
         setInterval(() => {
             loadStatus();
             loadLogs();
@@ -307,4 +599,3 @@
     </script>
 </body>
 </html>
-    
