@@ -133,16 +133,20 @@ def api_debug():
     except Exception:
         db_error = None
     config = load_config()
+    mongo_raw = config.get("MONGODB_URI", "")
+    mongo_clean = mongo_raw.split("?")[0] if mongo_raw else ""
     config_info = {
         "db_connected": db is not None,
         "db_type": db_type,
         "mongo_error": db_error,
         "mongo_uri_set": bool(os.environ.get("MONGODB_URI") or os.environ.get("MONGO_URI")),
+        "mongo_force_fallback": os.environ.get("MONGODB_FORCE_FALLBACK", "false"),
+        "mongo_raw_preview": (mongo_raw[:60] + "...") if len(mongo_raw) > 60 else mongo_raw,
+        "mongo_clean_preview": (mongo_clean[:60] + "...") if len(mongo_clean) > 60 else mongo_clean,
         "api_id_set": bool(os.environ.get("API_ID")),
         "api_hash_set": bool(os.environ.get("API_HASH")),
         "session_string_set": bool(os.environ.get("SESSION_STRING")),
-        "config_mongodb_uri_set": bool(config.get("MONGODB_URI", "")),
-        "config_mongodb_uri_preview": (config.get("MONGODB_URI", "")[:50] + "...") if len(config.get("MONGODB_URI", "")) > 50 else config.get("MONGODB_URI", ""),
+        "config_mongodb_uri_set": bool(mongo_raw),
     }
     return jsonify(config_info)
 
