@@ -31,3 +31,8 @@ build/
 .tox/
 .session_string
 anon.session
+
+# SQLite local database files (generated at runtime)
+data/*.db
+data/*.db-journal
+data/*.db-wal

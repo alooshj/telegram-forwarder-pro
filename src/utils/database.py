@@ -13,6 +13,7 @@ The backend is selected automatically based on which URI is provided.
 import os
 import sqlite3
 import threading
+import ssl
 from datetime import datetime
 
 # Re-export bson.ObjectId for external use, with fallback
@@ -358,12 +359,19 @@ class MongoDB:
             "retryWrites": True,
             "w": "majority",
             "appname": "TelegramForwarderPro",
+            "tls": True,
+            "tlsAllowInvalidCertificates": False,
         }
         if _MONGO_TLS_CA:
             client_kwargs["tlsCAFile"] = _MONGO_TLS_CA
-            client_kwargs["tlsAllowInvalidCertificates"] = False
 
-        self.client = MongoClient(mongo_uri, **client_kwargs)
+        # IMPORTANT: The Atlas-generated URI sometimes ends with
+        # "?appName=Cluster0" (or retryWrites params). Passing appName inside
+        # the connection string query can trigger a TLS handshake alert on
+        # certain Python/OpenSSL builds (TLSV1_ALERT_INTERNAL_ERROR).
+        # We strip query params from the URI and pass appname as a kwarg instead.
+        clean_uri = mongo_uri.split("?")[0] if mongo_uri else mongo_uri
+        self.client = MongoClient(clean_uri, **client_kwargs)
         self.db = self.client[db_name]
         self._test_connection()
 

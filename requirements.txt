@@ -10,7 +10,7 @@ flask-socketio>=5.3.0
 pymongo>=4.6.0
 dnspython>=2.4.0
 motor>=3.3.0
-certifi>=2023.7.22
+certifi>=2024.7.4
 
 # Utilities
 python-dotenv>=1.0.0
