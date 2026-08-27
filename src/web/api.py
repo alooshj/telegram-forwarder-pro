@@ -358,6 +358,21 @@ def api_update_rule(rule_id):
     return jsonify({"success": True})
 
 
+@app.route("/api/channels")
+def api_get_my_channels():
+    """Fetch all Telegram channels joined by the account."""
+    global _engine_instance
+    if not _engine_instance or not _engine_instance.client:
+        return jsonify({"channels": [], "connected": False}), 200
+
+    try:
+        channels = asyncio.run(_engine_instance.get_my_channels())
+        return jsonify({"channels": channels, "connected": True})
+    except Exception as e:
+        logger.error(f"Failed to fetch channels: {e}")
+        return jsonify({"channels": [], "error": str(e)}), 200
+
+
 @app.route("/api/blacklist")
 def api_get_blacklist():
     """Get all blacklisted channels."""

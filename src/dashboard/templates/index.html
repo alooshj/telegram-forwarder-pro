@@ -483,12 +483,26 @@
                 
                 <!-- Channel Source & Multiple Targets -->
                 <div class="space-y-3">
+                    <div class="p-3 bg-brand-500/10 border border-brand-500/20 rounded-xl text-xs space-y-1">
+                        <div class="flex items-center space-x-1.5 rtl:space-x-reverse font-semibold text-brand-300">
+                            <span>💡</span>
+                            <span>نصيحة لتفادي أي حظر أو تأخير من تليجرام:</span>
+                        </div>
+                        <p class="text-slate-400 text-[11px] leading-relaxed">
+                            استخدم <strong>معرف القناة ID</strong> (مثل <code class="text-brand-300">-1001234567890</code>) أو <strong>اسم المستخدم العام</strong> (مثل <code class="text-brand-300">@my_channel</code>). تجنب روابط الدعوة المؤقتة (<code class="text-amber-400">t.me/+...</code>) لأن تليجرام يفرض عليها فترات انتظار مؤقتة.
+                        </p>
+                    </div>
+
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_source_channel">Source Channel (ID or @username)</label>
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-slate-400" data-i18n="form_source_channel">Source Channel (ID or @username)</label>
+                            <button type="button" onclick="loadMyChannels()" class="text-[10px] text-brand-400 hover:text-brand-300 font-semibold">📋 قنوات الحساب المتاحة</button>
+                        </div>
                         <div class="relative">
-                            <input type="text" id="rule-form-source" required placeholder="e.g. @source_news or -1001234567890" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500 pl-8 rtl:pr-8">
+                            <input type="text" id="rule-form-source" required placeholder="e.g. @source_news or -1001234567890" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500 pl-8 rtl:pr-8 font-mono">
                             <span class="absolute left-2.5 rtl:right-2.5 top-2.5 text-xs text-brand-400">📥</span>
                         </div>
+                        <div id="source-channels-quick-list" class="hidden flex-wrap gap-1.5 pt-1.5"></div>
                     </div>
                     <div>
                         <div class="flex items-center justify-between mb-1">
@@ -496,9 +510,10 @@
                             <span class="text-[10px] text-cyan-400 font-mono">1 ➔ Many Supported</span>
                         </div>
                         <div class="relative">
-                            <input type="text" id="rule-form-target" oninput="updateTargetTagsPreview()" required placeholder="e.g. @my_channel, @backup_channel, -1009876543210" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 pl-8 rtl:pr-8">
+                            <input type="text" id="rule-form-target" oninput="updateTargetTagsPreview()" required placeholder="e.g. @my_channel, @backup_channel, -1009876543210" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 pl-8 rtl:pr-8 font-mono">
                             <span class="absolute left-2.5 rtl:right-2.5 top-2.5 text-xs text-cyan-400">📤</span>
                         </div>
+                        <div id="target-channels-quick-list" class="hidden flex-wrap gap-1.5 pt-1.5"></div>
                         <!-- Live Target Tags Preview -->
                         <div id="target-tags-preview" class="flex flex-wrap gap-1.5 pt-2"></div>
                     </div>
@@ -1179,10 +1194,61 @@
             }
         }
 
+        async function loadMyChannels() {
+            const res = await api('/api/channels');
+            const channels = res.channels || [];
+            const srcList = document.getElementById('source-channels-quick-list');
+            const tgtList = document.getElementById('target-channels-quick-list');
+
+            if (channels.length === 0) {
+                showToast(currentLang === 'ar' ? 'لم يتم العثور على قنوات أو المحرك غير متصل' : 'No joined channels found or engine connecting', 'warning');
+                return;
+            }
+
+            const renderPills = (targetInputId) => channels.map(c => `
+                <button type="button" onclick="selectQuickChannel('${targetInputId}', '${c.id}')" class="inline-flex items-center space-x-1 rtl:space-x-reverse px-2.5 py-1 rounded-lg text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 transition">
+                    <span>${c.is_channel ? '📢' : '👥'}</span>
+                    <span class="font-semibold truncate max-w-[120px]">${c.title}</span>
+                    <span class="text-[10px] text-slate-500 font-mono">${c.id}</span>
+                </button>
+            `).join('');
+
+            if (srcList) {
+                srcList.innerHTML = `<span class="text-[10px] text-slate-400 w-full mb-1">اضغط لاختيار المصدر:</span>` + renderPills('rule-form-source');
+                srcList.classList.remove('hidden');
+                srcList.classList.add('flex');
+            }
+            if (tgtList) {
+                tgtList.innerHTML = `<span class="text-[10px] text-slate-400 w-full mb-1">اضغط لاختيار الهدف:</span>` + renderPills('rule-form-target');
+                tgtList.classList.remove('hidden');
+                tgtList.classList.add('flex');
+            }
+        }
+
+        function selectQuickChannel(inputId, channelId) {
+            const el = document.getElementById(inputId);
+            if (!el) return;
+            if (inputId === 'rule-form-target') {
+                const current = el.value.trim();
+                if (current && !current.includes(channelId)) {
+                    el.value = `${current}, ${channelId}`;
+                } else {
+                    el.value = channelId;
+                }
+                updateTargetTagsPreview();
+            } else {
+                el.value = channelId;
+            }
+        }
+
         function openRuleModal() {
             document.getElementById('rule-form').reset();
             document.getElementById('rule-form-id').value = '';
             document.getElementById('target-tags-preview').innerHTML = '';
+            const srcList = document.getElementById('source-channels-quick-list');
+            const tgtList = document.getElementById('target-channels-quick-list');
+            if (srcList) srcList.classList.add('hidden');
+            if (tgtList) tgtList.classList.add('hidden');
             selectedMediaTypes = new Set(ALL_MEDIA_TYPES);
             renderMediaChipsState();
             document.getElementById('rule-modal-title').textContent = currentLang === 'ar' ? 'إضافة مسار توجيه جديد' : 'Add New Forwarding Pipeline';

@@ -414,6 +414,26 @@ class ForwarderEngine:
             except Exception as e:
                 logger.debug(f"Invite import attempt: {e}")
 
+        # Check if entity_id matches any joined dialog's title, username, or ID
+        try:
+            dialogs = await self.client.get_dialogs(limit=100)
+            clean_lookup = str(entity_id).strip().lower().lstrip('@')
+            for d in dialogs:
+                # 1. Match title
+                if str(d.title or d.name or "").strip().lower() == clean_lookup:
+                    self._entity_cache[entity_id] = d.entity
+                    return d.entity
+                # 2. Match username
+                if getattr(d.entity, 'username', None) and d.entity.username.lower() == clean_lookup:
+                    self._entity_cache[entity_id] = d.entity
+                    return d.entity
+                # 3. Match ID
+                if str(d.id) == str(entity_id) or str(getattr(d.entity, 'id', '')) == str(entity_id):
+                    self._entity_cache[entity_id] = d.entity
+                    return d.entity
+        except Exception:
+            pass
+
         # Regular entity resolution (username, integer ID, etc.)
         try:
             entity = await self.client.get_entity(entity_id)
@@ -440,6 +460,35 @@ class ForwarderEngine:
             return None
 
         return None
+
+    async def get_my_channels(self):
+        """Fetch all channels and groups joined by the userbot account."""
+        if not self.client or not self.client.is_connected():
+            return []
+        try:
+            dialogs = await self.client.get_dialogs(limit=100)
+            channels = []
+            for d in dialogs:
+                if d.is_channel or d.is_group:
+                    is_admin = False
+                    if hasattr(d.entity, "admin_rights") and d.entity.admin_rights:
+                        is_admin = True
+                    elif getattr(d.entity, "creator", False):
+                        is_admin = True
+
+                    channels.append({
+                        "id": str(d.id),
+                        "numeric_id": d.id,
+                        "title": d.title or d.name or str(d.id),
+                        "username": f"@{d.entity.username}" if getattr(d.entity, "username", None) else None,
+                        "is_admin": is_admin,
+                        "is_channel": bool(d.is_channel),
+                        "is_group": bool(d.is_group),
+                    })
+            return channels
+        except Exception as e:
+            logger.error(f"Error fetching user channels: {e}")
+            return []
 
     async def _process_channel(self, source_id, target_id, rule: dict):
         """Backward-compatible single-target channel processing."""
