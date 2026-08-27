@@ -304,7 +304,7 @@ def api_get_logs():
     if not db:
         return jsonify({"logs": [], "warning": "Database not connected"}), 200
     try:
-        logs = db.logs.find(sort=("timestamp", -1), limit=100)
+        logs = list(db.logs.find({}).sort("timestamp", -1).limit(100))
         for log in logs:
             log["_id"] = str(log["_id"])
             if log.get("timestamp"):
