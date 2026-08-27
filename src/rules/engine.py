@@ -19,17 +19,43 @@ class RulesEngine:
         self.db = db
 
     def load_rules(self, source_id=None, target_id=None) -> list:
-        """Load rules from database, optionally filtered by source/target channel."""
+        """Load active rules matching global rules and channel-specific rules."""
         if self.db is None:
             return []
 
-        query = {}
-        if source_id or target_id:
-            query["source_id"] = source_id
-            query["target_id"] = target_id
+        all_rules = list(self.db.rules.find({"active": True}))
+        if not source_id and not target_id:
+            return all_rules
 
-        rules = list(self.db.rules.find(query))
-        return rules
+        matching_rules = []
+        for r in all_rules:
+            r_src = r.get("source_id")
+            r_tgt = r.get("target_id")
+            r_targets = r.get("target_ids") or []
+
+            # 1. Global rules (no specific source and target) apply to all channels
+            is_global = not r_src and not r_tgt and not r_targets
+            if is_global:
+                matching_rules.append(r)
+                continue
+
+            # 2. Check source match
+            src_match = True
+            if r_src:
+                src_match = (str(r_src).strip().lower() == str(source_id).strip().lower())
+
+            # 3. Check target match
+            tgt_match = True
+            if r_tgt or r_targets:
+                norm_tgt = str(target_id).strip().lower()
+                matches_main = bool(r_tgt and str(r_tgt).strip().lower() == norm_tgt)
+                matches_list = any(str(t).strip().lower() == norm_tgt for t in r_targets)
+                tgt_match = matches_main or matches_list
+
+            if src_match and tgt_match:
+                matching_rules.append(r)
+
+        return matching_rules
 
     def apply_rules(self, text: str, source_id=None, target_id=None) -> str:
         """Apply all matching rules to the text in priority order."""

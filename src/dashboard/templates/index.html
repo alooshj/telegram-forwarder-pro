@@ -648,6 +648,11 @@
                     <label id="transform-replacement-label" class="block text-xs font-semibold text-slate-400 mb-1">Replacement Text / Footer Content</label>
                     <textarea id="transform-form-replacement" rows="2" placeholder="e.g. @MyChannel or custom branding message" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500 resize-none"></textarea>
                 </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1">نطاق تطبيق القاعدة (القناة الهدف)</label>
+                    <input type="text" id="transform-form-target" placeholder="اتركه فارغاً للتطبيق على كل القنوات، أو ضع ID القناة الهدف مثل 1001234567890-" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500 font-mono">
+                    <p class="text-[11px] text-slate-500 mt-1">اتركه فارغاً للتطبيق على جميع القنوات، أو حدد ID القناة لتطبيق هذا التعديل عليها حصراً.</p>
+                </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_priority">Priority (1 = highest)</label>
@@ -1422,18 +1427,20 @@
 
         async function saveTransformRule(e) {
             e.preventDefault();
+            const targetScope = document.getElementById('transform-form-target').value.trim() || null;
             const payload = {
                 name: document.getElementById('transform-form-name').value,
                 type: document.getElementById('transform-form-type').value,
                 pattern: document.getElementById('transform-form-pattern').value,
                 replacement: document.getElementById('transform-form-replacement').value,
+                target_id: targetScope,
                 priority: parseInt(document.getElementById('transform-form-priority').value) || 1,
                 active: document.getElementById('transform-form-active').checked
             };
 
             const res = await api('/api/rules', 'POST', payload);
             if (res.success) {
-                showToast(currentLang === 'ar' ? 'تمت إضافة قاعدة التحويل' : 'Transformation rule saved', 'success');
+                showToast(currentLang === 'ar' ? 'تمت إضافة وتفعيل قاعدة التحويل' : 'Transformation rule saved & activated', 'success');
                 closeTransformModal();
                 await loadRules();
             } else {
