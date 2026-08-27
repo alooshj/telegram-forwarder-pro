@@ -35,6 +35,7 @@ class ForwarderEngine:
         self._running = False
         self._last_flood_wait = {}  # channel_id -> timestamp
         self._pending_flood = []    # queued messages during flood wait
+        self._entity_cache = {}     # channel_id/invite -> Telegram Entity
 
         # Initialize Telethon client with error handling
         try:
@@ -49,21 +50,27 @@ class ForwarderEngine:
 
     def _log_event(self, level: str, message: str):
         """Log to standard logger and persist to database logs collection."""
+        clean_msg = message
+        if "caused by CheckChatInviteRequest" in clean_msg:
+            clean_msg = clean_msg.split("(caused by")[0].strip()
+        if "A wait of" in clean_msg and "seconds is required" in clean_msg:
+            clean_msg = f"⏳ Telegram Rate Limit: {clean_msg}"
+
         if level == "INFO":
-            logger.info(message)
+            logger.info(clean_msg)
         elif level == "WARNING":
-            logger.warning(message)
+            logger.warning(clean_msg)
         elif level == "ERROR":
-            logger.error(message)
+            logger.error(clean_msg)
         else:
-            logger.debug(message)
+            logger.debug(clean_msg)
 
         if self.db and hasattr(self.db, "logs"):
             try:
                 self.db.logs.insert_one({
                     "timestamp": datetime.now(timezone.utc),
                     "level": level,
-                    "message": message,
+                    "message": clean_msg,
                 })
             except Exception:
                 pass
@@ -232,28 +239,99 @@ class ForwarderEngine:
             return True
         return media_type in allowed
 
+    def _extract_invite_hash(self, entity_id) -> str:
+        """Extract invite hash from private channel link if present (e.g. t.me/+hash or +hash)."""
+        if not isinstance(entity_id, str):
+            return None
+        import re
+        m = re.search(r'(?:t\.me\/(?:\+|joinchat\/)|\+)([a-zA-Z0-9_-]+)', entity_id)
+        if m:
+            return m.group(1)
+        return None
+
     def _is_flood_waited(self, channel_id) -> bool:
         """Check if channel is still in flood wait."""
         wait_until = self._last_flood_wait.get(channel_id, 0)
         return time.time() < wait_until
 
     async def _handle_flood_wait(self, channel_id, seconds: int):
-        """Handle FLOOD_WAIT by pausing and retrying later."""
-        self._log_event("WARNING", f"⏳ Telegram FLOOD_WAIT on channel {channel_id}: waiting {seconds}s")
+        """Handle FLOOD_WAIT by recording timestamp and pausing."""
         self._last_flood_wait[channel_id] = time.time() + seconds + 5  # extra 5s buffer
+        self._log_event("WARNING", f"⏳ Telegram FloodWait on channel ({channel_id}): rate limited for {seconds}s (auto-paused).")
         await asyncio.sleep(seconds)
 
     async def _get_entity_safe(self, entity_id):
-        """Get Telegram entity with automatic dialogs cache refresh if missing."""
+        """Get Telegram entity with automatic cache, dialogs refresh, and private invite handling."""
+        if not entity_id:
+            return None
+
+        # Check in-memory cache
+        if entity_id in self._entity_cache:
+            return self._entity_cache[entity_id]
+
+        # Check flood wait
+        if self._is_flood_waited(entity_id):
+            return None
+
+        invite_hash = self._extract_invite_hash(str(entity_id))
+
+        if invite_hash:
+            # Handle private invite links
+            try:
+                # 1. Try to join private channel via invite hash
+                from telethon.tl.functions.messages import ImportChatInviteRequest
+                updates = await self.client(ImportChatInviteRequest(invite_hash))
+                if hasattr(updates, 'chats') and updates.chats:
+                    chat = updates.chats[0]
+                    self._entity_cache[entity_id] = chat
+                    self._log_event("INFO", f"🔗 Joined and resolved private channel: {entity_id}")
+                    return chat
+            except errors.UserAlreadyParticipantError:
+                # Account is already in the channel! Find entity in dialogs
+                try:
+                    dialogs = await self.client.get_dialogs(limit=100)
+                    for dialog in dialogs:
+                        if getattr(dialog.entity, 'username', None) == entity_id:
+                            self._entity_cache[entity_id] = dialog.entity
+                            return dialog.entity
+                except Exception:
+                    pass
+            except errors.FloodWaitError as e:
+                await self._handle_flood_wait(entity_id, e.seconds)
+                return None
+            except (errors.InviteHashExpiredError, errors.InviteHashInvalidError):
+                self._last_flood_wait[entity_id] = time.time() + 3600
+                self._log_event("WARNING", f"⚠️ Private invite link has expired or is invalid: {entity_id}")
+                return None
+            except Exception as e:
+                logger.debug(f"Invite import attempt: {e}")
+
+        # Regular entity resolution (username, integer ID, etc.)
         try:
-            return await self.client.get_entity(entity_id)
+            entity = await self.client.get_entity(entity_id)
+            if entity:
+                self._entity_cache[entity_id] = entity
+                return entity
+        except errors.FloodWaitError as e:
+            await self._handle_flood_wait(entity_id, e.seconds)
+            return None
         except (ValueError, errors.RPCError):
             try:
-                # Refresh entity cache by loading recent dialogs
+                # Refresh cache by loading recent dialogs
                 await self.client.get_dialogs(limit=100)
-                return await self.client.get_entity(entity_id)
+                entity = await self.client.get_entity(entity_id)
+                if entity:
+                    self._entity_cache[entity_id] = entity
+                    return entity
+            except errors.FloodWaitError as e:
+                await self._handle_flood_wait(entity_id, e.seconds)
+                return None
             except Exception:
-                raise
+                return None
+        except Exception:
+            return None
+
+        return None
 
     async def _process_channel(self, source_id, target_id, rule: dict):
         """Backward-compatible single-target channel processing."""
@@ -261,13 +339,10 @@ class ForwarderEngine:
 
     async def _process_channel_multi(self, source_id, targets: list, rule: dict):
         """Fetch new messages (text and media) from a source channel and forward to multiple targets."""
-        try:
-            source_entity = await self._get_entity_safe(source_id)
-        except (ValueError, errors.RPCError) as e:
-            self._log_event("ERROR", f"Source channel not found ({source_id}): {e}")
-            return
-        except Exception as e:
-            self._log_event("ERROR", f"Error resolving source channel {source_id}: {e}")
+        source_entity = await self._get_entity_safe(source_id)
+        if not source_entity:
+            if not self._is_flood_waited(source_id):
+                self._log_event("WARNING", f"⚠️ Cannot access source channel ({source_id}). Ensure @ayg1133 is a member or use @username.")
             return
 
         # Prepare and validate target entities
@@ -279,13 +354,13 @@ class ForwarderEngine:
                 continue
             if self._is_flood_waited(norm_tgt):
                 continue
-            try:
-                entity = await self._get_entity_safe(norm_tgt)
+
+            entity = await self._get_entity_safe(norm_tgt)
+            if entity:
                 valid_targets.append((norm_tgt, entity))
-            except (ValueError, errors.RPCError) as e:
-                self._log_event("ERROR", f"Target channel not found ({tgt}): {e}")
-            except Exception as e:
-                self._log_event("ERROR", f"Error resolving target channel {tgt}: {e}")
+            else:
+                if not self._is_flood_waited(norm_tgt):
+                    self._log_event("WARNING", f"⚠️ Cannot access target channel ({tgt}). Ensure @ayg1133 is an admin.")
 
         if not valid_targets:
             return

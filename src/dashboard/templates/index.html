@@ -1416,22 +1416,34 @@
             }
 
             if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-slate-500 text-xs">${currentLang === 'ar' ? 'لا توجد سجلات تطابق الفلتر المحدد.' : 'No logs matching current filter.'}</p>`;
+                container.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">${currentLang === 'ar' ? 'لا توجد سجلات تطابق الفلتر المحدد.' : 'No logs matching current filter.'}</div>`;
                 return;
             }
 
             container.innerHTML = filtered.map(l => {
                 let ts = l.timestamp ? l.timestamp.replace('T', ' ').split('.')[0] : '';
                 const lvl = (l.level || 'INFO').toUpperCase();
-                let badge = '<span class="text-cyan-400 font-bold">[INFO]</span>';
-                if (lvl === 'ERROR') badge = '<span class="text-rose-400 font-bold">[ERROR]</span>';
-                else if (lvl === 'WARNING' || lvl === 'WARN') badge = '<span class="text-amber-400 font-bold">[WARN]</span>';
-                else if (lvl === 'INFO') badge = '<span class="text-emerald-400 font-bold">[INFO]</span>';
+                let badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">INFO</span>';
+                let rowBg = 'hover:bg-slate-900/60';
+                
+                if (lvl === 'ERROR') {
+                    badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">ERROR</span>';
+                    rowBg = 'bg-rose-950/10 hover:bg-rose-950/20';
+                } else if (lvl === 'WARNING' || lvl === 'WARN') {
+                    badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">WARN</span>';
+                    rowBg = 'bg-amber-950/10 hover:bg-amber-950/20';
+                }
 
-                return `<div class="py-1 border-b border-slate-900/80 flex items-start space-x-2 rtl:space-x-reverse">
-                    <span class="text-slate-500 font-mono text-[11px] whitespace-nowrap">${ts}</span>
+                // Clean up message text
+                let msg = (l.message || '')
+                    .replace(/\(caused by CheckChatInviteRequest\)/g, '')
+                    .replace(/\(caused by [a-zA-Z0-9_]+\)/g, '')
+                    .trim();
+
+                return `<div class="py-2 px-2.5 rounded-lg mb-1 border-b border-slate-900/80 flex items-start space-x-2.5 rtl:space-x-reverse ${rowBg} transition">
+                    <span class="text-slate-500 font-mono text-[11px] whitespace-nowrap pt-0.5">${ts}</span>
                     <span class="whitespace-nowrap">${badge}</span>
-                    <span class="text-slate-200 break-all leading-relaxed">${l.message || ''}</span>
+                    <span class="text-slate-200 text-xs font-mono break-all leading-relaxed">${msg}</span>
                 </div>`;
             }).join('');
         }
