@@ -198,12 +198,24 @@ class ForwarderEngine:
         self._last_flood_wait[channel_id] = time.time() + seconds + 5  # extra 5s buffer
         await asyncio.sleep(seconds)
 
+    async def _get_entity_safe(self, entity_id):
+        """Get Telegram entity with automatic dialogs cache refresh if missing."""
+        try:
+            return await self.client.get_entity(entity_id)
+        except (ValueError, errors.RPCError):
+            try:
+                # Refresh entity cache by loading recent dialogs
+                await self.client.get_dialogs(limit=100)
+                return await self.client.get_entity(entity_id)
+            except Exception:
+                raise
+
     async def _process_channel(self, source_id, target_id, rule: dict):
         """Fetch new messages (text and media) from a source channel and forward them."""
         try:
-            # Get channel entity
-            source_entity = await self.client.get_entity(source_id)
-            target_entity = await self.client.get_entity(target_id)
+            # Get channel entity (with auto dialog refresh)
+            source_entity = await self._get_entity_safe(source_id)
+            target_entity = await self._get_entity_safe(target_id)
 
             # Fetch recent messages
             async for message in self.client.iter_messages(
@@ -235,8 +247,8 @@ class ForwarderEngine:
                 # Mark as processed
                 self._mark_processed(post_key, message.id, source_id, target_id)
 
-        except ValueError as e:
-            self._log_event("ERROR", f"Entity not found for channel {source_id} → {target_id}: {e}")
+        except (ValueError, errors.RPCError) as e:
+            self._log_event("ERROR", f"Channel not found ({source_id} → {target_id}). Ensure @ayg1133 joined the channel or use @username: {e}")
         except Exception as e:
             self._log_event("ERROR", f"Error processing channel {source_id}: {e}")
 
