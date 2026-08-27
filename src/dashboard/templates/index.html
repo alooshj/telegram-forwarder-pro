@@ -465,134 +465,153 @@
     <!-- ==================== MODALS ==================== -->
 
     <!-- Add/Edit Forwarding Rule Modal -->
-    <div id="rule-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl animate-fade-in my-8">
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+    <div id="rule-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-2xl w-full p-6 sm:p-7 space-y-5 shadow-2xl animate-fade-in my-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3.5">
                 <div>
-                    <h3 id="rule-modal-title" class="font-bold text-white text-base">Add New Forwarding Pipeline</h3>
-                    <p class="text-[11px] text-slate-400">Configure 1-to-many source and target channels & select media types</p>
+                    <h3 id="rule-modal-title" class="font-bold text-white text-lg">Add New Forwarding Pipeline</h3>
+                    <p class="text-xs text-slate-400 mt-0.5">Configure 1-to-many source and target channels & select media types</p>
                 </div>
-                <button onclick="closeRuleModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+                <button onclick="closeRuleModal()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 transition">✕</button>
             </div>
+            
             <form id="rule-form" onsubmit="saveRule(event)" class="space-y-4">
                 <input type="hidden" id="rule-form-id">
+                
                 <div>
-                    <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_rule_name">Rule Name</label>
-                    <input type="text" id="rule-form-name" required placeholder="e.g. Crypto News Multi-Channel Pipeline" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+                    <label class="block text-xs font-semibold text-slate-300 mb-1" data-i18n="form_rule_name">Rule Name</label>
+                    <input type="text" id="rule-form-name" required placeholder="e.g. Crypto News Multi-Channel Pipeline" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30">
                 </div>
                 
                 <!-- Channel Source & Multiple Targets -->
-                <div class="space-y-3">
-                    <div class="p-3 bg-brand-500/10 border border-brand-500/20 rounded-xl text-xs space-y-1">
-                        <div class="flex items-center space-x-1.5 rtl:space-x-reverse font-semibold text-brand-300">
-                            <span>💡</span>
-                            <span>نصيحة لتفادي أي حظر أو تأخير من تليجرام:</span>
+                <div class="space-y-3.5 pt-1">
+                    <div class="p-3.5 bg-brand-500/10 border border-brand-500/25 rounded-xl text-xs space-y-1.5">
+                        <div class="flex items-center space-x-2 rtl:space-x-reverse font-bold text-brand-300">
+                            <span class="text-sm">💡</span>
+                            <span>نصيحة هامة لتفادي فترات الانتظار (FloodWait):</span>
                         </div>
-                        <p class="text-slate-400 text-[11px] leading-relaxed">
-                            استخدم <strong>معرف القناة ID</strong> (مثل <code class="text-brand-300">-1001234567890</code>) أو <strong>اسم المستخدم العام</strong> (مثل <code class="text-brand-300">@my_channel</code>). تجنب روابط الدعوة المؤقتة (<code class="text-amber-400">t.me/+...</code>) لأن تليجرام يفرض عليها فترات انتظار مؤقتة.
+                        <p class="text-slate-300 text-[11px] leading-relaxed">
+                            استخدم <strong>معرف القناة ID</strong> (مثل <code class="text-brand-300 font-mono bg-slate-900 px-1 py-0.5 rounded">-1001234567890</code>) أو <strong>اسم المستخدم العام</strong> (<code class="text-brand-300 font-mono bg-slate-900 px-1 py-0.5 rounded">@my_channel</code>). يمكنك الضغط على الزر أدناه لاختيار قنواتك تلقائياً.
                         </p>
                     </div>
 
-                    <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <label class="block text-xs font-semibold text-slate-400" data-i18n="form_source_channel">Source Channel (ID or @username)</label>
-                            <button type="button" onclick="loadMyChannels()" class="text-[10px] text-brand-400 hover:text-brand-300 font-semibold">📋 قنوات الحساب المتاحة</button>
+                    <!-- Channels Quick Picker Expandable Box -->
+                    <div id="channels-picker-panel" class="hidden p-3.5 bg-slate-950/90 border border-brand-500/40 rounded-xl space-y-2.5 shadow-lg">
+                        <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <div class="flex items-center space-x-2 rtl:space-x-reverse text-xs font-bold text-brand-300">
+                                <span>📋</span>
+                                <span>قنواتك المشترك بها حساب التوجيه:</span>
+                            </div>
+                            <button type="button" onclick="closeChannelsPicker()" class="text-xs text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">إغلاق ✕</button>
                         </div>
-                        <div class="relative">
-                            <input type="text" id="rule-form-source" required placeholder="e.g. @source_news or -1001234567890" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500 pl-8 rtl:pr-8 font-mono">
-                            <span class="absolute left-2.5 rtl:right-2.5 top-2.5 text-xs text-brand-400">📥</span>
-                        </div>
-                        <div id="source-channels-quick-list" class="hidden flex-wrap gap-1.5 pt-1.5"></div>
+                        <div id="channels-picker-list" class="space-y-1.5 max-h-48 overflow-y-auto pr-1"></div>
                     </div>
+
+                    <!-- Source Channel Input -->
                     <div>
-                        <div class="flex items-center justify-between mb-1">
-                            <label class="block text-xs font-semibold text-slate-400" data-i18n="form_target_channels">Target Channels (One or Multiple separated by comma ,)</label>
-                            <span class="text-[10px] text-cyan-400 font-mono">1 ➔ Many Supported</span>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-semibold text-slate-300" data-i18n="form_source_channel">Source Channel (ID or @username)</label>
+                            <button type="button" onclick="toggleChannelsPicker()" class="inline-flex items-center space-x-1 rtl:space-x-reverse text-xs text-brand-400 hover:text-brand-300 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/30 px-2.5 py-1 rounded-lg transition font-medium">
+                                <span>📋</span>
+                                <span>عرض قنوات الحساب المتاحة</span>
+                            </button>
                         </div>
                         <div class="relative">
-                            <input type="text" id="rule-form-target" oninput="updateTargetTagsPreview()" required placeholder="e.g. @my_channel, @backup_channel, -1009876543210" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 pl-8 rtl:pr-8 font-mono">
-                            <span class="absolute left-2.5 rtl:right-2.5 top-2.5 text-xs text-cyan-400">📤</span>
+                            <input type="text" id="rule-form-source" required placeholder="e.g. @source_news or -1001234567890" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 pl-9 rtl:pr-9 font-mono">
+                            <span class="absolute left-3 rtl:right-3 top-3 text-sm text-brand-400">📥</span>
                         </div>
-                        <div id="target-channels-quick-list" class="hidden flex-wrap gap-1.5 pt-1.5"></div>
+                    </div>
+
+                    <!-- Target Channels Input -->
+                    <div>
+                        <div class="flex items-center justify-between mb-1.5">
+                            <label class="block text-xs font-semibold text-slate-300" data-i18n="form_target_channels">Target Channels (One or Multiple separated by comma ,)</label>
+                            <span class="text-[10px] text-cyan-400 font-mono bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full">1 ➔ Many Supported</span>
+                        </div>
+                        <div class="relative">
+                            <input type="text" id="rule-form-target" oninput="updateTargetTagsPreview()" required placeholder="e.g. @channel1, @channel2, -1009876543210" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 pl-9 rtl:pr-9 font-mono">
+                            <span class="absolute left-3 rtl:right-3 top-3 text-sm text-cyan-400">📤</span>
+                        </div>
                         <!-- Live Target Tags Preview -->
                         <div id="target-tags-preview" class="flex flex-wrap gap-1.5 pt-2"></div>
                     </div>
                 </div>
 
                 <!-- Glowing Media Types Tile Selector -->
-                <div class="space-y-2 pt-2 border-t border-slate-800/80">
+                <div class="space-y-2.5 pt-3 border-t border-slate-800">
                     <div class="flex items-center justify-between">
                         <div>
-                            <label class="block text-xs font-bold text-slate-300" data-i18n="sec_media_types">Allowed Media Types to Forward</label>
+                            <label class="block text-xs font-bold text-slate-200" data-i18n="sec_media_types">Allowed Media Types to Forward</label>
                             <span class="text-[11px] text-slate-400" data-i18n="sec_media_types_desc">Click any media chip to toggle enabled (lit) or disabled (dimmed)</span>
                         </div>
-                        <button type="button" onclick="toggleAllMediaChips()" class="text-[11px] font-semibold text-brand-400 hover:text-brand-300">Toggle All</button>
+                        <button type="button" onclick="toggleAllMediaChips()" class="text-xs font-semibold text-brand-400 hover:text-brand-300 bg-slate-800 hover:bg-slate-700 px-2.5 py-1 rounded-lg transition">Toggle All</button>
                     </div>
 
                     <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1" id="media-chips-container">
                         <!-- Photo Chip -->
-                        <div onclick="toggleMediaChip('photo')" id="chip-photo" class="media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
-                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                                <span class="text-base">📷</span>
-                                <span class="text-xs font-semibold" data-i18n="media_photo">Photos / صور</span>
+                        <div onclick="toggleMediaChip('photo')" id="chip-photo" class="media-chip active flex items-center justify-between p-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
+                            <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
+                                <span class="text-lg flex-shrink-0">📷</span>
+                                <span class="text-xs font-bold" data-i18n="media_photo">الصور</span>
                             </div>
-                            <span class="chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                            <span class="chip-status-dot flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
                         </div>
 
                         <!-- Video Chip -->
-                        <div onclick="toggleMediaChip('video')" id="chip-video" class="media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
-                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                                <span class="text-base">🎥</span>
-                                <span class="text-xs font-semibold" data-i18n="media_video">Videos / فيديو</span>
+                        <div onclick="toggleMediaChip('video')" id="chip-video" class="media-chip active flex items-center justify-between p-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
+                            <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
+                                <span class="text-lg flex-shrink-0">🎥</span>
+                                <span class="text-xs font-bold" data-i18n="media_video">الفيديوهات</span>
                             </div>
-                            <span class="chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                            <span class="chip-status-dot flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
                         </div>
 
                         <!-- Document Chip -->
-                        <div onclick="toggleMediaChip('document')" id="chip-document" class="media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
-                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                                <span class="text-base">📄</span>
-                                <span class="text-xs font-semibold" data-i18n="media_doc">Files / ملفات</span>
+                        <div onclick="toggleMediaChip('document')" id="chip-document" class="media-chip active flex items-center justify-between p-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
+                            <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
+                                <span class="text-lg flex-shrink-0">📄</span>
+                                <span class="text-xs font-bold" data-i18n="media_doc">الملفات والمستندات</span>
                             </div>
-                            <span class="chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                            <span class="chip-status-dot flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
                         </div>
 
                         <!-- Audio Chip -->
-                        <div onclick="toggleMediaChip('audio')" id="chip-audio" class="media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
-                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                                <span class="text-base">🎵</span>
-                                <span class="text-xs font-semibold" data-i18n="media_audio">Audio / صوتيات</span>
+                        <div onclick="toggleMediaChip('audio')" id="chip-audio" class="media-chip active flex items-center justify-between p-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
+                            <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
+                                <span class="text-lg flex-shrink-0">🎵</span>
+                                <span class="text-xs font-bold" data-i18n="media_audio">الصوتيات والمقاطع</span>
                             </div>
-                            <span class="chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                            <span class="chip-status-dot flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
                         </div>
 
                         <!-- Text Chip -->
-                        <div onclick="toggleMediaChip('text')" id="chip-text" class="media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
-                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                                <span class="text-base">💬</span>
-                                <span class="text-xs font-semibold" data-i18n="media_text">Text / نصوص</span>
+                        <div onclick="toggleMediaChip('text')" id="chip-text" class="media-chip active flex items-center justify-between p-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
+                            <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
+                                <span class="text-lg flex-shrink-0">💬</span>
+                                <span class="text-xs font-bold" data-i18n="media_text">الرسائل النصية</span>
                             </div>
-                            <span class="chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                            <span class="chip-status-dot flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
                         </div>
 
                         <!-- Sticker Chip -->
-                        <div onclick="toggleMediaChip('sticker')" id="chip-sticker" class="media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
-                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                                <span class="text-base">🎭</span>
-                                <span class="text-xs font-semibold" data-i18n="media_sticker">Stickers / ملصقات</span>
+                        <div onclick="toggleMediaChip('sticker')" id="chip-sticker" class="media-chip active flex items-center justify-between p-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
+                            <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
+                                <span class="text-lg flex-shrink-0">🎭</span>
+                                <span class="text-xs font-bold" data-i18n="media_sticker">الملصقات والمتحركات</span>
                             </div>
-                            <span class="chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                            <span class="chip-status-dot flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
                         </div>
                     </div>
                 </div>
 
-                <div class="flex items-center space-x-2 rtl:space-x-reverse pt-2">
-                    <input type="checkbox" id="rule-form-active" checked class="w-4 h-4 rounded bg-slate-950 border-slate-800 text-brand-600 focus:ring-brand-500">
+                <div class="flex items-center space-x-2.5 rtl:space-x-reverse pt-2">
+                    <input type="checkbox" id="rule-form-active" checked class="w-4 h-4 rounded bg-slate-950 border-slate-700 text-brand-600 focus:ring-brand-500">
                     <label for="rule-form-active" class="text-xs font-medium text-slate-300" data-i18n="form_rule_active">Active & Forwarding immediately</label>
                 </div>
-                <div class="flex justify-end space-x-2 rtl:space-x-reverse pt-4 border-t border-slate-800">
-                    <button type="button" onclick="closeRuleModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold" data-i18n="btn_cancel">Cancel</button>
-                    <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-brand-600/20" data-i18n="btn_save">Save Pipeline</button>
+                
+                <div class="flex justify-end space-x-2.5 rtl:space-x-reverse pt-4 border-t border-slate-800">
+                    <button type="button" onclick="closeRuleModal()" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold transition" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="px-5 py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-lg shadow-brand-600/30 transition" data-i18n="btn_save">Save Pipeline</button>
                 </div>
             </form>
         </div>
@@ -743,18 +762,18 @@
                 form_target_channel: "القنوات الهدف (واحدة أو أكثر مفصولة بفاصلة ,)",
                 form_target_channels: "القنوات الهدف (واحدة أو أكثر مفصولة بفاصلة ,)",
                 sec_media_types: "أنواع الوسائط المسموح بتوجيهها",
-                sec_media_types_desc: "اضغط على أي نوع لتفعيله (مضيء) أو تعطيله (مطفأ)",
-                media_photo: "الصور (Photos)",
-                media_video: "الفيديوهات (Videos)",
-                media_doc: "الملفات والمستندات (Files)",
-                media_audio: "الصوتيات والمقاطع (Audio)",
-                media_text: "الرسائل النصية (Text)",
-                media_sticker: "الملصقات وGIF (Stickers)",
+                sec_media_types_desc: "اضغط على أي نوع لتفعيله أو تعطيله",
+                media_photo: "الصور",
+                media_video: "الفيديوهات",
+                media_doc: "الملفات والمستندات",
+                media_audio: "الصوتيات والمقاطع",
+                media_text: "الرسائل النصية",
+                media_sticker: "الملصقات والمتحركات",
                 form_rule_active: "تفعيل التوجيه فوراً",
                 form_transform_type: "نوع التحويل",
                 form_priority: "الأولوية (1 = الأعلى)",
                 btn_cancel: "إلغاء",
-                btn_save: "حفظ",
+                btn_save: "حفظ المسار",
                 modal_add_blacklist: "إضافة قناة إلى القائمة السوداء",
                 form_channel_identifier: "معرف القناة (ID أو @يوزر)",
                 form_reason: "السبب",
@@ -828,13 +847,13 @@
                 form_target_channel: "Target Channels (one or multiple separated by comma ,)",
                 form_target_channels: "Target Channels (one or multiple separated by comma ,)",
                 sec_media_types: "Allowed Media Types to Forward",
-                sec_media_types_desc: "Click any media chip to toggle enabled (lit) or disabled (dimmed)",
-                media_photo: "Photos / صور",
-                media_video: "Videos / فيديو",
-                media_doc: "Documents / ملفات",
-                media_audio: "Audio / صوتيات",
-                media_text: "Text Only / نصوص",
-                media_sticker: "Stickers & GIFs / ملصقات",
+                sec_media_types_desc: "Click any media chip to toggle enabled or disabled",
+                media_photo: "Photos",
+                media_video: "Videos",
+                media_doc: "Files & Documents",
+                media_audio: "Audio & Voice",
+                media_text: "Text Messages",
+                media_sticker: "Stickers & GIFs",
                 form_rule_active: "Active & Forwarding immediately",
                 form_transform_type: "Transformation Type",
                 form_priority: "Priority (1 = highest)",
@@ -1194,35 +1213,58 @@
             }
         }
 
+        async function toggleChannelsPicker() {
+            const panel = document.getElementById('channels-picker-panel');
+            if (!panel) return;
+            if (!panel.classList.contains('hidden')) {
+                panel.classList.add('hidden');
+                return;
+            }
+            await loadMyChannels();
+        }
+
+        function closeChannelsPicker() {
+            const panel = document.getElementById('channels-picker-panel');
+            if (panel) panel.classList.add('hidden');
+        }
+
         async function loadMyChannels() {
+            const panel = document.getElementById('channels-picker-panel');
+            const list = document.getElementById('channels-picker-list');
+            if (!panel || !list) return;
+
+            panel.classList.remove('hidden');
+            list.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center animate-pulse">${currentLang === 'ar' ? 'جاري فحص وتحديث قنوات الحساب من تليجرام...' : 'Fetching your joined Telegram channels...'}</p>`;
+
             const res = await api('/api/channels');
             const channels = res.channels || [];
-            const srcList = document.getElementById('source-channels-quick-list');
-            const tgtList = document.getElementById('target-channels-quick-list');
 
             if (channels.length === 0) {
-                showToast(currentLang === 'ar' ? 'لم يتم العثور على قنوات أو المحرك غير متصل' : 'No joined channels found or engine connecting', 'warning');
+                list.innerHTML = `<div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-300 text-center">
+                    ${currentLang === 'ar' ? 'لم يتم العثور على قنوات منضم إليها الحساب حالياً، أو المحرك قيد الاتصال.' : 'No joined channels found or engine still connecting.'}
+                </div>`;
                 return;
             }
 
-            const renderPills = (targetInputId) => channels.map(c => `
-                <button type="button" onclick="selectQuickChannel('${targetInputId}', '${c.id}')" class="inline-flex items-center space-x-1 rtl:space-x-reverse px-2.5 py-1 rounded-lg text-xs bg-slate-900 hover:bg-slate-800 border border-slate-700 text-slate-300 transition">
-                    <span>${c.is_channel ? '📢' : '👥'}</span>
-                    <span class="font-semibold truncate max-w-[120px]">${c.title}</span>
-                    <span class="text-[10px] text-slate-500 font-mono">${c.id}</span>
-                </button>
+            list.innerHTML = channels.map(c => `
+                <div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-850 border border-slate-800 hover:border-slate-700 transition">
+                    <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
+                        <span class="text-lg">${c.is_channel ? '📢' : '👥'}</span>
+                        <div class="truncate">
+                            <p class="text-xs font-bold text-white truncate max-w-[200px]">${c.title}</p>
+                            <p class="text-[11px] text-slate-400 font-mono">${c.id} ${c.username ? `(${c.username})` : ''}</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-1.5 rtl:space-x-reverse flex-shrink-0">
+                        <button type="button" onclick="selectQuickChannel('rule-form-source', '${c.id}')" class="px-2.5 py-1.5 text-xs font-semibold bg-brand-600/25 hover:bg-brand-600/45 text-brand-300 border border-brand-500/30 rounded-lg transition">
+                            📥 كمصدر
+                        </button>
+                        <button type="button" onclick="selectQuickChannel('rule-form-target', '${c.id}')" class="px-2.5 py-1.5 text-xs font-semibold bg-cyan-600/25 hover:bg-cyan-600/45 text-cyan-300 border border-cyan-500/30 rounded-lg transition">
+                            📤 كهدف
+                        </button>
+                    </div>
+                </div>
             `).join('');
-
-            if (srcList) {
-                srcList.innerHTML = `<span class="text-[10px] text-slate-400 w-full mb-1">اضغط لاختيار المصدر:</span>` + renderPills('rule-form-source');
-                srcList.classList.remove('hidden');
-                srcList.classList.add('flex');
-            }
-            if (tgtList) {
-                tgtList.innerHTML = `<span class="text-[10px] text-slate-400 w-full mb-1">اضغط لاختيار الهدف:</span>` + renderPills('rule-form-target');
-                tgtList.classList.remove('hidden');
-                tgtList.classList.add('flex');
-            }
         }
 
         function selectQuickChannel(inputId, channelId) {
@@ -1239,16 +1281,14 @@
             } else {
                 el.value = channelId;
             }
+            showToast(currentLang === 'ar' ? `تم تحديد القناة ${channelId}` : `Selected channel ${channelId}`, 'info');
         }
 
         function openRuleModal() {
             document.getElementById('rule-form').reset();
             document.getElementById('rule-form-id').value = '';
             document.getElementById('target-tags-preview').innerHTML = '';
-            const srcList = document.getElementById('source-channels-quick-list');
-            const tgtList = document.getElementById('target-channels-quick-list');
-            if (srcList) srcList.classList.add('hidden');
-            if (tgtList) tgtList.classList.add('hidden');
+            closeChannelsPicker();
             selectedMediaTypes = new Set(ALL_MEDIA_TYPES);
             renderMediaChipsState();
             document.getElementById('rule-modal-title').textContent = currentLang === 'ar' ? 'إضافة مسار توجيه جديد' : 'Add New Forwarding Pipeline';
@@ -1256,6 +1296,7 @@
         }
 
         function closeRuleModal() {
+            closeChannelsPicker();
             document.getElementById('rule-modal').classList.add('hidden');
         }
 
