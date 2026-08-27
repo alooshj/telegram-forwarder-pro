@@ -326,7 +326,7 @@
         // Safe accessor — reads nested property with optional chaining fallback
         function safeId(item) {
             if (!item) return '—';
-            const id = item._id ?? item.id ?? item.M_ID ?? item.m_id ?? '';
+            const id = item._id ?? item.id ?? item.M_ID ?? item.m_id ?? item.rule_id ?? item.ruleId ?? '';
             if (!id) return '—';
             const str = String(id);
             return str.length > 8 ? str.substring(0, 8) : str;
