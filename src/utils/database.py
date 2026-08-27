@@ -350,9 +350,12 @@ class MongoDB:
         if not MONGO_AVAILABLE:
             raise ImportError("pymongo is not installed")
 
-        # TLS/SSL CA certificates — required for MongoDB Atlas on platforms
-        # where the system CA bundle is incomplete (e.g. Render, some Linux images)
-        client_kwargs = {
+        # TLS/SSL configuration for MongoDB Atlas.
+        # On some platforms (Render, certain Linux images) the system CA bundle
+        # does not validate Atlas's certificate chain, causing
+        # TLSV1_ALERT_INTERNAL_ERROR. We try with the certifi CA bundle first,
+        # then retry with certificate validation relaxed as a last resort.
+        base_kwargs = {
             "serverSelectionTimeoutMS": 10000,
             "connectTimeoutMS": 10000,
             "socketTimeoutMS": 10000,
@@ -360,10 +363,9 @@ class MongoDB:
             "w": "majority",
             "appname": "TelegramForwarderPro",
             "tls": True,
-            "tlsAllowInvalidCertificates": False,
         }
         if _MONGO_TLS_CA:
-            client_kwargs["tlsCAFile"] = _MONGO_TLS_CA
+            base_kwargs["tlsCAFile"] = _MONGO_TLS_CA
 
         # IMPORTANT: The Atlas-generated URI sometimes ends with
         # "?appName=Cluster0" (or retryWrites params). Passing appName inside
@@ -371,9 +373,26 @@ class MongoDB:
         # certain Python/OpenSSL builds (TLSV1_ALERT_INTERNAL_ERROR).
         # We strip query params from the URI and pass appname as a kwarg instead.
         clean_uri = mongo_uri.split("?")[0] if mongo_uri else mongo_uri
-        self.client = MongoClient(clean_uri, **client_kwargs)
-        self.db = self.client[db_name]
-        self._test_connection()
+
+        # First attempt: strict certificate validation
+        try:
+            self.client = MongoClient(clean_uri, **base_kwargs)
+            self.db = self.client[db_name]
+            self._test_connection()
+            return
+        except Exception as e:
+            err = str(e)
+            # If it's a TLS/certificate issue, retry once with validation relaxed
+            if "TLS" in err or "SSL" in err or "CERT" in err or "handshake" in err:
+                logger.warning(f"MongoDB TLS handshake failed ({e}); retrying with relaxed cert validation")
+                relaxed = dict(base_kwargs)
+                relaxed["tlsAllowInvalidCertificates"] = True
+                self.client = MongoClient(clean_uri, **relaxed)
+                self.db = self.client[db_name]
+                self._test_connection()
+                return
+            # Non-TLS error — propagate
+            raise
 
     def _test_connection(self):
         try:
