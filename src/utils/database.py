@@ -179,10 +179,15 @@ class _SQLiteCollection:
 
     def insert_one(self, document):
         """Insert a new document."""
-        keys = list(document.keys())
+        # Auto-generate _id if not present
+        doc = dict(document)
+        if "_id" not in doc or not doc["_id"]:
+            doc["_id"] = str(ObjectId())
+
+        keys = list(doc.keys())
         placeholders = ",".join(["?" for _ in keys])
-        columns = ",".join(keys)
-        values = tuple(str(v) if isinstance(v, datetime) else v for v in document.values())
+        columns =",".join(keys)
+        values = tuple(str(v) if isinstance(v, datetime) else v for v in doc.values())
 
         with self.db._lock:
             conn = self.db._get_conn()
@@ -279,15 +284,38 @@ class _SQLiteCollection:
         """Insert multiple documents."""
         if not documents:
             return
-        first = documents[0]
-        keys = list(first.keys())
-        placeholders = ",".join(["?" for _ in keys])
-        columns = ",".join(keys)
+        # Auto-generate _id and ensure consistent column ordering
+        docs = []
+        all_keys = set()
+
+        for doc in documents:
+            d = dict(doc)
+            if "_id" not in d or not d["_id"]:
+                d["_id"] = str(ObjectId())
+            # Reorder: _id first, then all other keys
+            ordered = {"_id": d["_id"]}
+            for k in d:
+                if k != "_id":
+                    ordered[k] = d[k]
+            docs.append(ordered)
+            all_keys.update(ordered.keys())
+
+        # Use a consistent column order across all documents
+        # Sort: _id first, then alphabetical for stability
+        sorted_keys = sorted(all_keys, key=lambda x: (x != "_id", x))
+        columns = ",".join(sorted_keys)
+        placeholders = ",".join(["?" for _ in sorted_keys])
 
         rows = []
-        for doc in documents:
-            vals = tuple(str(v) if isinstance(v, datetime) else v for v in doc.values())
-            rows.append(vals)
+        for doc in docs:
+            # Build row in the same column order
+            vals = []
+            for col in sorted_keys:
+                v = doc.get(col)
+                if isinstance(v, datetime):
+                    v = str(v)
+                vals.append(v)
+            rows.append(tuple(vals))
 
         with self.db._lock:
             conn = self.db._get_conn()

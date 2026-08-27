@@ -12,6 +12,7 @@ Provides endpoints for:
 
 import os
 import logging
+from datetime import datetime
 from flask import Flask, request, jsonify, render_template, send_from_directory
 from flask_cors import CORS
 from dotenv import load_dotenv
@@ -32,81 +33,65 @@ CORS(app, supports_credentials=True)
 
 # Global state
 forwarder_status = {"running": False, "connected": False, "last_update": None}
+_db_cache = None
+_db_initialized = False
 
 
 def get_db():
-    """Get the database connection, initializing if needed."""
-    if not hasattr(app, "_db_initialized"):
-        try:
-            config = load_config()
-            from src.utils.database import get_db_connection
-            db = get_db_connection(config.get("MONGODB_URI", ""), config.get("MONGO_DB", "telegram_forwarder"))
+    """Get the database connection, initializing if needed.
 
-            # Create default rules if none exist
-            if db.rules.count_documents({}) == 0:
-                db.rules.insert_many([
-                    {"name": "Strip @usernames", "type": "regex", "pattern": r"@\w+", "replacement": "[username]", "priority": 1, "active": True},
-                    {"name": "Branding Footer", "type": "footer", "replacement": "Forwarded by Telegram Forwarder Pro", "priority": 99, "active": True},
-                ])
-                logger.info("Created default transformation rules")
-
-            app.db = db
-            app._db_initialized = True
-            logger.info(f"Database initialized: {type(db).__name__}")
-
-            # Try starting the forwarder engine if credentials are available
-            if config.get("SESSION_STRING") and config.get("API_ID"):
-                import threading
-                import asyncio
-                from src.forwarder.engine import ForwarderEngine
-                from unittest.mock import MagicMock
-
-                def run_forwarder():
-                    try:
-                        engine = ForwarderEngine(config, db)
-                        asyncio.run(engine.start())
-                    except Exception as e:
-                        logger.error(f"Forwarder engine failed: {e}", exc_info=True)
-
-                thread = threading.Thread(target=run_forwarder, daemon=True)
-                thread.start()
-                logger.info("Forwarder engine started in background thread")
-
-        except Exception as e:
-            logger.error(f"Database initialization failed: {e}")
-            app._db_initialized = False
-            return None
-    return getattr(app, "db", None)
-
-
-def load_config():
-    """Load configuration from environment variables.
-    
-    Supports both MONGODB_URI and MONGO_URI env vars.
-    MONGODB_URI takes precedence (MongoDB Atlas standard naming).
+    Uses a module-level cache to avoid repeated initialization.
+    Returns None if initialization fails.
     """
-    # Support both MONGODB_URI and MONGO_URI (MONGODB_URI takes precedence)
-    mongo_uri = os.getenv("MONGODB_URI") or os.getenv("MONGO_URI") or ""
-    
-    return {
-        "API_ID": int(os.getenv("API_ID", 0)),
-        "API_HASH": os.getenv("API_HASH", ""),
-        "SESSION_STRING": os.getenv("SESSION_STRING", ""),
-        "MONGODB_URI": mongo_uri,
-        "MONGO_URI": mongo_uri,  # Backward compatibility
-        "MONGO_DB": os.getenv("MONGO_DB", "telegram_forwarder"),
-        "WEB_HOST": os.getenv("WEB_HOST", "0.0.0.0"),
-        "WEB_PORT": int(os.getenv("WEB_PORT", 5000)),
-        "CHECK_INTERVAL": int(os.getenv("CHECK_INTERVAL", 30)),
-        "MAX_RETRIES": int(os.getenv("MAX_RETRIES", 3)),
-        "RETRY_DELAY": int(os.getenv("RETRY_DELAY", 10)),
-    }
+    global _db_cache, _db_initialized
+    if _db_initialized:
+        return _db_cache
+
+    try:
+        config = load_config()
+        from src.utils.database import get_db_connection
+        db = get_db_connection(config.get("MONGODB_URI", ""), config.get("MONGO_DB", "telegram_forwarder"))
+
+        # Create default rules if none exist
+        if db.rules.count_documents({}) == 0:
+            db.rules.insert_many([
+                {"name": "Strip @usernames", "type": "regex", "pattern": r"@\w+", "replacement": "[username]", "priority": 1, "active": True},
+                {"name": "Branding Footer", "type": "footer", "replacement": "Forwarded by Telegram Forwarder Pro", "priority": 99, "active": True},
+            ])
+            logger.info("Created default transformation rules")
+
+        _db_cache = db
+        _db_initialized = True
+        logger.info(f"Database initialized: {type(db).__name__}")
+
+        # Try starting the forwarder engine if credentials are available
+        if config.get("SESSION_STRING") and config.get("API_ID"):
+            import threading
+            import asyncio
+            from src.forwarder.engine import ForwarderEngine
+
+            def run_forwarder():
+                try:
+                    engine = ForwarderEngine(config, db)
+                    asyncio.run(engine.start())
+                except Exception as e:
+                    logger.error(f"Forwarder engine failed: {e}", exc_info=True)
+
+            thread = threading.Thread(target=run_forwarder, daemon=True)
+            thread.start()
+            logger.info("Forwarder engine started in background thread")
+
+    except Exception as e:
+        logger.error(f"Database initialization failed: {e}")
+        _db_initialized = False
+        _db_cache = None
+        return None
+    return _db_cache
 
 
-# --- Initialize database at module load time (for gunicorn compatibility) ---
-# This ensures the DB is initialized even when startCommand uses gunicorn directly
+# Initialize database at module load time (for gunicorn compatibility)
 try:
-    get_db()  # Calls the DB initialization logic
+    get_db()
 except Exception as e:
     logger.error(f"Background DB initialization failed: {e}")
 
@@ -131,7 +116,7 @@ def api_status():
 
 @app.route("/api/debug")
 def api_debug():
-    """Debug endpoint — shows config and DB connection status."""
+    """Debug endpoint — shows config and DB connection status (development only)."""
     db = get_db()
     db_type = "none"
     if db:
@@ -150,48 +135,20 @@ def api_debug():
     return jsonify(config_info)
 
 
-@app.route("/api/test-mongo")
-def api_test_mongo():
-    """Actually try connecting to MongoDB and return detailed error."""
-    config = load_config()
-    mongo_uri = config.get("MONGODB_URI", "")
-    db_name = config.get("MONGO_DB", "telegram_forwarder")
-    result = {
-        "uri_preview": mongo_uri[:60] + "..." if len(mongo_uri) > 60 else mongo_uri,
-        "db_name": db_name,
-        "attempts": [],
-    }
-
-    try:
-        from pymongo import MongoClient
-        result["pymongo_version"] = "OK"
-    except ImportError as e:
-        result["pymongo_version"] = f"FAILED: {e}"
-        return jsonify(result)
-
-    # Attempt 1: Full URI with short timeout
-    try:
-        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=3000, connectTimeoutMS=3000, socketTimeoutMS=3000)
-        client.admin.command("ping")
-        result["attempts"].append({"step": "full_uri", "status": "success"})
-        client.close()
-    except Exception as e:
-        result["attempts"].append({"step": "full_uri", "status": "failed", "error": str(e)[:300]})
-
-    return jsonify(result)
-
-
 @app.route("/api/rules")
 def api_get_rules():
     """Get all forwarding rules."""
     db = get_db()
     if not db:
         return jsonify({"rules": [], "warning": "Database not connected"}), 200
-
-    rules = list(db.rules.find({}))
-    for rule in rules:
-        rule["_id"] = str(rule["_id"])
-    return jsonify({"rules": rules})
+    try:
+        rules = list(db.rules.find({}))
+        for rule in rules:
+            rule["_id"] = str(rule["_id"])
+        return jsonify({"rules": rules})
+    except Exception as e:
+        logger.error(f"Failed to fetch rules: {e}")
+        return jsonify({"rules": [], "error": str(e)}), 200
 
 
 @app.route("/api/rules", methods=["POST"])
@@ -226,7 +183,6 @@ def api_delete_rule(rule_id):
     db = get_db()
     if not db:
         return jsonify({"error": "Database not connected"}), 500
-
     try:
         from bson import ObjectId
         object_id = ObjectId(rule_id)
@@ -287,7 +243,7 @@ def api_add_blacklist():
     entry = {
         "channel_id": data.get("channel_id"),
         "reason": data.get("reason", "Blacklisted"),
-        "added_at": __import__("datetime").datetime.utcnow(),
+        "added_at": datetime.utcnow(),
     }
     result = db.blacklist.insert_one(entry)
     entry["_id"] = str(result.inserted_id)
@@ -322,33 +278,102 @@ def api_get_logs():
         return jsonify({"logs": [], "error": "Database query failed"}), 200
 
 
+@app.route("/api/test-mongo")
+def api_test_mongo():
+    """Test MongoDB connection and return detailed results."""
+    config = load_config()
+    mongo_uri = config.get("MONGODB_URI", "")
+    db_name = config.get("MONGO_DB", "telegram_forwarder")
+    result = {
+        "uri_preview": mongo_uri[:60] + "..." if len(mongo_uri) > 60 else mongo_uri,
+        "db_name": db_name,
+        "attempts": [],
+    }
+
+    try:
+        from pymongo import MongoClient
+        result["pymongo_version"] = "OK"
+    except ImportError as e:
+        result["pymongo_version"] = f"FAILED: {e}"
+        return jsonify(result)
+
+    try:
+        client = MongoClient(mongo_uri, serverSelectionTimeoutMS=3000, connectTimeoutMS=3000, socketTimeoutMS=3000)
+        client.admin.command("ping")
+        result["attempts"].append({"step": "full_uri", "status": "success"})
+        client.close()
+    except Exception as e:
+        result["attempts"].append({"step": "full_uri", "status": "failed", "error": str(e)[:300]})
+
+    return jsonify(result)
+
+
 @app.route("/api/forward/start", methods=["POST"])
 def api_start_forwarder():
-    """Start the forwarder."""
-    forwarder_status["running"] = True
-    forwarder_status["connected"] = True
-    forwarder_status["last_update"] = __import__("datetime").datetime.utcnow().isoformat()
-    return jsonify({"success": True, "status": forwarder_status})
+    """Start the forwarder engine."""
+    from src.forwarder.engine import ForwarderEngine
+    from src.utils.config import load_config as lc
+    config = lc()
+    db = get_db()
+    if not db:
+        return jsonify({"error": "Database not connected"}), 500
+
+    if forwarder_status["running"]:
+        return jsonify({"success": True, "message": "Forwarder already running"})
+
+    import threading
+    import asyncio
+
+    def run_forwarder():
+        try:
+            engine = ForwarderEngine(config, db)
+            asyncio.run(engine.start())
+            forwarder_status["running"] = True
+            forwarder_status["connected"] = True
+        except Exception as e:
+            logger.error(f"Forwarder start failed: {e}", exc_info=True)
+            forwarder_status["running"] = False
+            forwarder_status["connected"] = False
+
+    thread = threading.Thread(target=run_forwarder, daemon=True)
+    thread.start()
+    return jsonify({"success": True, "message": "Forwarder started"})
 
 
 @app.route("/api/forward/stop", methods=["POST"])
 def api_stop_forwarder():
-    """Stop the forwarder."""
+    """Stop the forwarder engine."""
     forwarder_status["running"] = False
     forwarder_status["connected"] = False
-    forwarder_status["last_update"] = __import__("datetime").datetime.utcnow().isoformat()
-    return jsonify({"success": True, "status": forwarder_status})
+    return jsonify({"success": True, "message": "Forwarder stopped"})
 
 
 @app.errorhandler(404)
-def not_found(e):
+def not_found(error):
+    """Handle 404 errors with JSON response."""
     return jsonify({"error": "Not found"}), 404
 
 
+@app.errorhandler(500)
+def internal_error(error):
+    """Handle 500 errors with JSON response."""
+    return jsonify({"error": "Internal server error"}), 500
+
+
+@app.route("/<path:catch_all>", methods=["GET", "POST"])
+def catch_all(catch_all):
+    """SPA fallback — serve index.html for any unmatched route."""
+    if catch_all.startswith("api/"):
+        return jsonify({"error": "Not found"}), 404
+    return render_template("index.html")
+
+
 if __name__ == "__main__":
-    config = load_config()
+    from src.utils.config import load_config as lc
+    config = lc()
     app.run(
-        host=config["WEB_HOST"],
-        port=config["WEB_PORT"],
-        debug=True,
+        host=config.get("WEB_HOST", "0.0.0.0"),
+        port=int(os.environ.get("PORT", config.get("WEB_PORT", 5000))),
+        debug=False,
+        use_reloader=False,
     )
