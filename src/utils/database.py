@@ -406,6 +406,9 @@ def get_db_connection(mongo_uri: str, db_name: str):
     If MONGODB_FORCE_FALLBACK=true is set in env, always use SQLite.
     Otherwise, attempt MongoDB and fall back automatically on any failure.
     """
+    global _last_mongo_error
+    _last_mongo_error = None
+
     # Allow forcing SQLite via env var (useful when Atlas rejects SSL/IP)
     force_fallback = os.environ.get("MONGODB_FORCE_FALLBACK", "").lower() in ("true", "1", "yes")
 
@@ -416,7 +419,11 @@ def get_db_connection(mongo_uri: str, db_name: str):
             logger.info("Using MongoDB backend")
             return db
         except Exception as e:
-            logger.error(f"MongoDB connection failed: {e}")
+            _last_mongo_error = f"{type(e).__name__}: {str(e)[:400]}"
+            logger.error(f"MongoDB connection failed: {_last_mongo_error}")
+            # Check if it's an SRV resolution issue (missing dnspython) — give a clear hint
+            if "localhost" in str(e) and "srv" in mongo_uri.lower():
+                logger.error("SRV URI failed to resolve — ensure 'dnspython' is installed.")
             logger.warning("Falling back to SQLite...")
 
     # Fallback to SQLite
@@ -428,3 +435,6 @@ def get_db_connection(mongo_uri: str, db_name: str):
     db = SQLiteDB(sqlite_path)
     logger.info(f"Using SQLite fallback backend at {sqlite_path}")
     return db
+
+
+_last_mongo_error = None

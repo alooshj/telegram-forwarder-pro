@@ -52,13 +52,17 @@ def get_db():
         from src.utils.database import get_db_connection
         db = get_db_connection(config.get("MONGODB_URI", ""), config.get("MONGO_DB", "telegram_forwarder"))
 
-        # Create default rules if none exist
-        if db.rules.count_documents({}) == 0:
-            db.rules.insert_many([
-                {"name": "Strip @usernames", "type": "regex", "pattern": r"@\w+", "replacement": "[username]", "priority": 1, "active": True},
-                {"name": "Branding Footer", "type": "footer", "replacement": "Forwarded by Telegram Forwarder Pro", "priority": 99, "active": True},
-            ])
-            logger.info("Created default transformation rules")
+        # Create default rules if none exist — wrapped so a failure here
+        # never disables the entire database (e.g. MongoDB unreachable).
+        try:
+            if db.rules.count_documents({}) == 0:
+                db.rules.insert_many([
+                    {"name": "Strip @usernames", "type": "regex", "pattern": r"@\w+", "replacement": "[username]", "priority": 1, "active": True},
+                    {"name": "Branding Footer", "type": "footer", "replacement": "Forwarded by Telegram Forwarder Pro", "priority": 99, "active": True},
+                ])
+                logger.info("Created default transformation rules")
+        except Exception as e:
+            logger.warning(f"Could not seed default rules (non-fatal): {e}")
 
         _db_cache = db
         _db_initialized = True
@@ -119,18 +123,26 @@ def api_debug():
     """Debug endpoint — shows config and DB connection status (development only)."""
     db = get_db()
     db_type = "none"
+    db_error = None
     if db:
         db_type = type(db).__name__
+    # Capture the last MongoDB connection error if any (from database module)
+    try:
+        from src.utils import database as _dbmod
+        db_error = getattr(_dbmod, "_last_mongo_error", None)
+    except Exception:
+        db_error = None
     config = load_config()
     config_info = {
         "db_connected": db is not None,
         "db_type": db_type,
+        "mongo_error": db_error,
         "mongo_uri_set": bool(os.environ.get("MONGODB_URI") or os.environ.get("MONGO_URI")),
         "api_id_set": bool(os.environ.get("API_ID")),
         "api_hash_set": bool(os.environ.get("API_HASH")),
         "session_string_set": bool(os.environ.get("SESSION_STRING")),
         "config_mongodb_uri_set": bool(config.get("MONGODB_URI", "")),
-        "config_mongodb_uri_preview": config.get("MONGODB_URI", "")[:50] + "..." if len(config.get("MONGODB_URI", "")) > 50 else config.get("MONGODB_URI", ""),
+        "config_mongodb_uri_preview": (config.get("MONGODB_URI", "")[:50] + "...") if len(config.get("MONGODB_URI", "")) > 50 else config.get("MONGODB_URI", ""),
     }
     return jsonify(config_info)
 

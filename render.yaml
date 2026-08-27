@@ -1,6 +1,10 @@
 # Telegram Forwarder Pro — Render Blueprint
 # Zero-cost deployment: Free web service + MongoDB Atlas M0
 # No credit card required.
+#
+# IMPORTANT: Render Blueprint spec uses `envVars` (not `env`) for environment variables.
+# Secrets (MONGODB_URI, API_HASH, SESSION_STRING) use `sync: false` so their
+# values are pulled from the existing Render Dashboard settings and never committed.
 
 services:
   - type: web
@@ -8,13 +12,15 @@ services:
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: gunicorn --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 120 src.web.api:app
-    env:
+    envVars:
+      # MongoDB Atlas connection string — set in Render Dashboard (value hidden here)
       - key: MONGODB_URI
-        fromSecret: mongodb-uri
+        sync: false
       - key: MONGO_DB
         value: telegram_forwarder
+      # Force-fallback is OFF so the app uses MongoDB Atlas (dnspython handles SRV)
       - key: MONGODB_FORCE_FALLBACK
-        value: "true"
+        value: "false"
       - key: API_ID
         value: "39284987"
       - key: API_HASH
