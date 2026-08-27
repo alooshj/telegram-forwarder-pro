@@ -13,11 +13,14 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from telethon.sync import TelegramClient
+from telethon.sessions import StringSession
 
 
-def generate_session_string(api_id: int, api_hash: str, phone_number: str) -> str:
+def generate_session_string(api_id: int, api_hash: str, phone_number: str = None) -> str:
     """Generate a Telethon session string for a user account."""
-    with TelegramClient("anon", api_id, api_hash) as client:
+    with TelegramClient(StringSession(), api_id, api_hash) as client:
+        if phone_number and not client.is_user_authorized():
+            client.start(phone=phone_number)
         session_string = client.session.save()
     return session_string
 

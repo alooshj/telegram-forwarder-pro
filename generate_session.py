@@ -1,7 +1,7 @@
 """
 Quick Session String Generator
 -------------------------------
-One-shot script to generate a Telethon session string for a given phone number.
+Script to generate a Telethon StringSession for deployment.
 Usage: python generate_session.py
 """
 
@@ -9,22 +9,40 @@ import os
 import sys
 from telethon.sync import TelegramClient
 from telethon.sessions import StringSession
+from dotenv import load_dotenv
 
-# --- Your credentials ---
-API_ID = 39284987
-API_HASH = "db5acc5317a2c17cbbff862e29d04e9b"
-PHONE_NUMBER = "+972568185376"
+# Load credentials from .env if available
+load_dotenv(os.path.join(os.path.dirname(__file__), "config", ".env"))
 
-print(f"[INFO] Starting session generation for {PHONE_NUMBER}")
+API_ID = os.environ.get("API_ID")
+API_HASH = os.environ.get("API_HASH")
 
-with TelegramClient("anon", API_ID, API_HASH) as client:
-    session_str = client.session.save()
+if not API_ID or not API_HASH:
+    print("=" * 60)
+    print("  Telegram Forwarder Pro - Session String Generator")
+    print("=" * 60)
+    try:
+        api_id_input = input("Enter API_ID: ").strip()
+        API_ID = int(api_id_input)
+        API_HASH = input("Enter API_HASH: ").strip()
+    except (ValueError, EOFError):
+        print("ERROR: Invalid API_ID entered.")
+        sys.exit(1)
+else:
+    API_ID = int(API_ID)
 
-print("\n✅ [SUCCESS] Session string generated:")
-print(f"SESSION_STRING={session_str}")
+print("\n[INFO] Initializing Telethon StringSession...")
+try:
+    with TelegramClient(StringSession(), API_ID, API_HASH) as client:
+        session_str = client.session.save()
 
-# Optionally save to file
-with open(".session_string", "w") as f:
-    f.write(session_str)
+    print("\n✅ [SUCCESS] Session string generated:")
+    print(f"SESSION_STRING={session_str}")
 
-print("\n[INFO] Saved to .session_string file")
+    with open(".session_string", "w") as f:
+        f.write(session_str)
+
+    print("\n[INFO] Saved to .session_string file")
+except Exception as e:
+    print(f"\n❌ [ERROR] Failed to generate session string: {e}")
+    sys.exit(1)

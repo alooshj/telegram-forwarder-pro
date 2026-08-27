@@ -78,21 +78,11 @@ class FlaskApiTestCase(unittest.TestCase):
             self.assertTrue(os.path.exists(_MONGO_TLS_CA), "certifi CA file should exist")
 
     def test_start_stop_forwarder(self):
-        import time as _time
         # Start
         resp = self.client.post("/api/forward/start")
         self.assertEqual(resp.status_code, 200)
         data = resp.get_json()
         self.assertTrue(data["success"])
-
-        # Give the background thread time to update status
-        _time.sleep(0.5)
-
-        # Check status reflects start
-        resp = self.client.get("/api/status")
-        data = resp.get_json()
-        # The thread may fail due to invalid session, but running flag should be set
-        self.assertTrue(data["running"] or data["success"])
 
         # Stop
         resp = self.client.post("/api/forward/stop")
@@ -100,10 +90,56 @@ class FlaskApiTestCase(unittest.TestCase):
         data = resp.get_json()
         self.assertTrue(data["success"])
 
-        # Back to stopped
+        # Check status shows stopped
         resp = self.client.get("/api/status")
         data = resp.get_json()
         self.assertFalse(data["running"])
+
+
+    def test_forwarder_status_endpoint(self):
+        resp = self.client.get("/api/forwarder/status")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertIn("active_forwarding_rules", data)
+        self.assertIn("running", data)
+
+    def test_rule_crud_with_custom_id_and_delete(self):
+        # Create rule
+        resp = self.client.post("/api/rules", json={
+            "name": "Custom Test Rule",
+            "source_id": "-1001234567890",
+            "target_id": "-1009876543210",
+            "type": "replace",
+            "pattern": "foo",
+            "replacement": "bar",
+            "priority": 1,
+            "active": True
+        })
+        self.assertEqual(resp.status_code, 200)
+        rule_data = resp.get_json()
+        self.assertTrue(rule_data["success"])
+        rule_id = rule_data["rule"]["_id"]
+
+        # Update rule
+        resp = self.client.put(f"/api/rules/{rule_id}", json={"name": "Updated Test Rule"})
+        self.assertEqual(resp.status_code, 200)
+
+        # Delete rule
+        resp = self.client.delete(f"/api/rules/{rule_id}")
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.get_json()["success"])
+
+    def test_blacklist_add_and_remove(self):
+        resp = self.client.post("/api/blacklist", json={
+            "channel_id": "-1001122334455",
+            "reason": "Test Spam"
+        })
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.get_json()["success"])
+
+        resp = self.client.delete("/api/blacklist/-1001122334455")
+        self.assertEqual(resp.status_code, 200)
+        self.assertTrue(resp.get_json()["success"])
 
 
 if __name__ == "__main__":

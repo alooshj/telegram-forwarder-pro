@@ -1,17 +1,15 @@
-"""
-Deployment Verification Script
--------------------------------
-Checks that all required environment variables and files are present
-before deploying to Render/Koyeb/etc.
-
-Usage:
-    chmod +x scripts/deploy-check.sh
-    ./scripts/deploy-check.sh
-
-Exits with 0 if all checks pass, 1 otherwise.
-"""
-
 #!/bin/bash
+# Deployment Verification Script
+# -------------------------------
+# Checks that all required environment variables and files are present
+# before deploying to Render/Koyeb/etc.
+#
+# Usage:
+#     chmod +x scripts/deploy-check.sh
+#     ./scripts/deploy-check.sh
+#
+# Exits with 0 if all checks pass, 1 otherwise.
+
 set -e
 
 echo "🔍 Telegram Forwarder Pro — Pre-Deploy Checklist"
@@ -60,8 +58,14 @@ check_var "$MONGODB_URI" "MONGODB_URI" ${#MONGODB_URI}
 echo ""
 echo "📦 Checking Python dependencies..."
 
-if [ -f "venv/bin/python" ]; then
+if [ -n "$VIRTUAL_ENV" ] && [ -f "$VIRTUAL_ENV/bin/python" ]; then
+    PYTHON="$VIRTUAL_ENV/bin/python"
+elif [ -f "/home/ali/telegram_forwarder_venv/bin/python" ]; then
+    PYTHON="/home/ali/telegram_forwarder_venv/bin/python"
+elif [ -f "venv/bin/python" ]; then
     PYTHON="venv/bin/python"
+elif [ -f ".venv/bin/python" ]; then
+    PYTHON=".venv/bin/python"
 else
     PYTHON="python3"
 fi

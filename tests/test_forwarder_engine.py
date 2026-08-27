@@ -83,7 +83,7 @@ class FloodWaitTest(unittest.TestCase):
         async def run():
             await engine._handle_flood_wait(12345, 30)
 
-        asyncio.get_event_loop().run_until_complete(run())
+        asyncio.run(run())
         # Should now be in flood wait (timestamp set to future)
         self.assertTrue(engine._is_flood_waited(12345))
         # Verify the timestamp is set and in the future
@@ -100,7 +100,7 @@ class FloodWaitTest(unittest.TestCase):
         async def run():
             await engine._handle_flood_wait(999, 60)
 
-        asyncio.get_event_loop().run_until_complete(run())
+        asyncio.run(run())
         wait_until = engine._last_flood_wait[999]
         # Buffer of +5 seconds is added
         expected_min = time.time() + 60 + 5 - 1  # allow 1s slack
@@ -124,6 +124,55 @@ class FloodWaitTest(unittest.TestCase):
         engine = make_engine()
         self.assertEqual(engine._pending_flood, [])
         self.assertEqual(engine._last_flood_wait, {})
+
+    def test_normalize_entity_id(self):
+        engine = make_engine()
+        self.assertEqual(engine._normalize_entity_id("-1001234567890"), -1001234567890)
+        self.assertEqual(engine._normalize_entity_id(12345), 12345)
+        self.assertEqual(engine._normalize_entity_id("@my_channel"), "@my_channel")
+        self.assertIsNone(engine._normalize_entity_id(None))
+
+
+class MediaForwardingTest(unittest.TestCase):
+    """Test media forwarding support in ForwarderEngine."""
+
+    def test_forward_message_sends_file_when_media_present(self):
+        engine = make_engine()
+        engine.client.send_file = AsyncMock()
+        engine.client.send_message = AsyncMock()
+
+        original_msg = MagicMock()
+        original_msg.media = MagicMock()
+        original_msg.chat_id = 12345
+        target = MagicMock()
+        target.id = 67890
+
+        async def run():
+            await engine._forward_message(original_msg, target, "Transformed Caption")
+
+        asyncio.run(run())
+        engine.client.send_file.assert_awaited_once_with(
+            target, original_msg.media, caption="Transformed Caption"
+        )
+        engine.client.send_message.assert_not_awaited()
+
+    def test_forward_message_sends_text_when_no_media(self):
+        engine = make_engine()
+        engine.client.send_file = AsyncMock()
+        engine.client.send_message = AsyncMock()
+
+        original_msg = MagicMock()
+        original_msg.media = None
+        original_msg.chat_id = 12345
+        target = MagicMock()
+        target.id = 67890
+
+        async def run():
+            await engine._forward_message(original_msg, target, "Plain Text")
+
+        asyncio.run(run())
+        engine.client.send_message.assert_awaited_once_with(target, "Plain Text")
+        engine.client.send_file.assert_not_awaited()
 
 
 class ForwardingLoopFloodWaitTest(unittest.TestCase):
@@ -156,7 +205,7 @@ class ForwardingLoopFloodWaitTest(unittest.TestCase):
         engine._is_flood_waited = lambda channel_id: False
 
         # Should complete without raising UnboundLocalError
-        asyncio.get_event_loop().run_until_complete(engine._run_forwarding_loop())
+        asyncio.run(engine._run_forwarding_loop())
         self.assertEqual(len(handle_calls), 1)
         self.assertEqual(handle_calls[0][1], 10)  # seconds passed through
 

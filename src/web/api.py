@@ -12,9 +12,17 @@ Provides endpoints for:
 
 import os
 import logging
-from datetime import datetime
+import threading
+import asyncio
+from datetime import datetime, timezone
 from flask import Flask, request, jsonify, render_template, send_from_directory
-from flask_cors import CORS
+try:
+    from flask_cors import CORS
+except ImportError:
+    # Minimal fallback CORS wrapper if flask_cors is not installed
+    def CORS(app, **kwargs):
+        pass
+
 from dotenv import load_dotenv
 
 from src.utils.config import load_config, get_config
@@ -35,6 +43,68 @@ CORS(app, supports_credentials=True)
 forwarder_status = {"running": False, "connected": False, "last_update": None}
 _db_cache = None
 _db_initialized = False
+_engine_instance = None
+_engine_thread = None
+_engine_lock = threading.Lock()
+
+
+def _to_db_id(raw_id):
+    """Safely convert an ID to ObjectId if it's a valid 24-hex MongoDB ObjectId, else string."""
+    if not raw_id:
+        return raw_id
+    try:
+        import bson
+        str_id = str(raw_id)
+        if len(str_id) == 24 and bson.ObjectId.is_valid(str_id):
+            return bson.ObjectId(str_id)
+    except Exception:
+        pass
+    return str(raw_id)
+
+
+def _start_forwarder_engine(config, db):
+    """Start the forwarder engine in a background thread if not already running."""
+    global _engine_instance, _engine_thread
+    with _engine_lock:
+        if _engine_instance and getattr(_engine_instance, "_running", False):
+            return True
+
+        from src.forwarder.engine import ForwarderEngine
+
+        def run_forwarder():
+            global _engine_instance
+            loop = asyncio.new_event_loop()
+            asyncio.set_event_loop(loop)
+            try:
+                engine = ForwarderEngine(config, db)
+                _engine_instance = engine
+                loop.run_until_complete(engine.start())
+            except Exception as e:
+                logger.error(f"Forwarder engine worker failed: {e}", exc_info=True)
+                forwarder_status["running"] = False
+                forwarder_status["connected"] = False
+            finally:
+                loop.close()
+
+        thread = threading.Thread(target=run_forwarder, daemon=True)
+        _engine_thread = thread
+        thread.start()
+        logger.info("Forwarder engine started in background thread")
+        return True
+
+
+def _stop_forwarder_engine():
+    """Stop the forwarder engine gracefully."""
+    global _engine_instance
+    with _engine_lock:
+        if _engine_instance:
+            try:
+                _engine_instance._running = False
+            except Exception as e:
+                logger.warning(f"Error stopping forwarder engine: {e}")
+        forwarder_status["running"] = False
+        forwarder_status["connected"] = False
+        forwarder_status["last_update"] = datetime.now(timezone.utc).isoformat()
 
 
 def get_db():
@@ -70,20 +140,7 @@ def get_db():
 
         # Try starting the forwarder engine if credentials are available
         if config.get("SESSION_STRING") and config.get("API_ID"):
-            import threading
-            import asyncio
-            from src.forwarder.engine import ForwarderEngine
-
-            def run_forwarder():
-                try:
-                    engine = ForwarderEngine(config, db)
-                    asyncio.run(engine.start())
-                except Exception as e:
-                    logger.error(f"Forwarder engine failed: {e}", exc_info=True)
-
-            thread = threading.Thread(target=run_forwarder, daemon=True)
-            thread.start()
-            logger.info("Forwarder engine started in background thread")
+            _start_forwarder_engine(config, db)
 
     except Exception as e:
         logger.error(f"Database initialization failed: {e}")
@@ -219,12 +276,7 @@ def api_delete_rule(rule_id):
     db = get_db()
     if not db:
         return jsonify({"error": "Database not connected"}), 500
-    try:
-        from bson import ObjectId
-        object_id = ObjectId(rule_id)
-    except ImportError:
-        object_id = rule_id  # Fallback to string ID for SQLite
-
+    object_id = _to_db_id(rule_id)
     db.rules.delete_one({"_id": object_id})
     return jsonify({"success": True})
 
@@ -237,11 +289,7 @@ def api_update_rule(rule_id):
         return jsonify({"error": "Database not connected"}), 500
 
     data = request.get_json()
-    try:
-        from bson import ObjectId
-        object_id = ObjectId(rule_id)
-    except ImportError:
-        object_id = rule_id
+    object_id = _to_db_id(rule_id)
 
     update_data = {}
     for key in ["name", "type", "pattern", "replacement", "priority", "active", "source_id", "target_id"]:
@@ -276,10 +324,13 @@ def api_add_blacklist():
         return jsonify({"error": "Database not connected"}), 500
 
     data = request.get_json()
+    raw_channel_id = data.get("channel_id")
+    channel_id = int(raw_channel_id) if str(raw_channel_id).lstrip("-").isdigit() else raw_channel_id
+
     entry = {
-        "channel_id": data.get("channel_id"),
+        "channel_id": channel_id,
         "reason": data.get("reason", "Blacklisted"),
-        "added_at": datetime.utcnow(),
+        "added_at": datetime.now(timezone.utc),
     }
     result = db.blacklist.insert_one(entry)
     entry["_id"] = str(result.inserted_id)
@@ -293,7 +344,8 @@ def api_remove_blacklist(channel_id):
     if not db:
         return jsonify({"error": "Database not connected"}), 500
 
-    db.blacklist.delete_one({"channel_id": int(channel_id)})
+    cid = int(channel_id) if str(channel_id).lstrip("-").isdigit() else channel_id
+    db.blacklist.delete_one({"channel_id": cid})
     return jsonify({"success": True})
 
 
@@ -368,40 +420,25 @@ def api_test_mongo():
 @app.route("/api/forward/start", methods=["POST"])
 def api_start_forwarder():
     """Start the forwarder engine."""
-    from src.forwarder.engine import ForwarderEngine
     from src.utils.config import load_config as lc
     config = lc()
     db = get_db()
     if not db:
         return jsonify({"error": "Database not connected"}), 500
 
-    if forwarder_status["running"]:
+    if forwarder_status["running"] and _engine_instance and getattr(_engine_instance, "_running", False):
         return jsonify({"success": True, "message": "Forwarder already running"})
 
-    import threading
-    import asyncio
-
-    def run_forwarder():
-        try:
-            engine = ForwarderEngine(config, db)
-            asyncio.run(engine.start())
-            forwarder_status["running"] = True
-            forwarder_status["connected"] = True
-        except Exception as e:
-            logger.error(f"Forwarder start failed: {e}", exc_info=True)
-            forwarder_status["running"] = False
-            forwarder_status["connected"] = False
-
-    thread = threading.Thread(target=run_forwarder, daemon=True)
-    thread.start()
-    return jsonify({"success": True, "message": "Forwarder started"})
+    started = _start_forwarder_engine(config, db)
+    if started:
+        return jsonify({"success": True, "message": "Forwarder started"})
+    return jsonify({"error": "Could not start forwarder"}), 500
 
 
 @app.route("/api/forward/stop", methods=["POST"])
 def api_stop_forwarder():
     """Stop the forwarder engine."""
-    forwarder_status["running"] = False
-    forwarder_status["connected"] = False
+    _stop_forwarder_engine()
     return jsonify({"success": True, "message": "Forwarder stopped"})
 
 

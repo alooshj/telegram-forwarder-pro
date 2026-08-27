@@ -14,7 +14,15 @@ import os
 import sqlite3
 import threading
 import ssl
-from datetime import datetime
+from datetime import datetime, timezone
+
+# Re-export bson.ObjectId for external use, with fallback
+# certifi provides CA certificates needed for MongoDB Atlas TLS on some platforms (Render, etc.)
+try:
+    import certifi
+    _MONGO_TLS_CA = certifi.where()
+except ImportError:
+    _MONGO_TLS_CA = None
 
 # Re-export bson.ObjectId for external use, with fallback
 try:
@@ -23,22 +31,18 @@ try:
     ObjectId = bson.ObjectId
     BsonObjectId = bson.ObjectId
     MONGO_AVAILABLE = True
-    # certifi provides CA certificates needed for MongoDB Atlas TLS on some platforms (Render, etc.)
-    try:
-        import certifi
-        _MONGO_TLS_CA = certifi.where()
-    except ImportError:
-        _MONGO_TLS_CA = None
 except ImportError:
     MONGO_AVAILABLE = False
     BsonObjectId = None
     MongoClient = None
-    _MONGO_TLS_CA = None
+    import uuid
     class ObjectId:
-        """Fallback ObjectId — returns the string as-is."""
+        """Fallback ObjectId — returns generated hex id if None, else string representation."""
         def __init__(self, str_rep=None):
-            self._str = str(str_rep) if str_rep else ""
+            self._str = str(str_rep) if str_rep is not None and str_rep != "" else uuid.uuid4().hex[:24]
         def __str__(self):
+            return self._str
+        def __repr__(self):
             return self._str
 
 import logging
@@ -127,6 +131,46 @@ class SQLiteDB:
         pass
 
 
+class _SQLiteCursor:
+    """Cursor wrapper for SQLite query results that supports chaining (.sort, .limit) and iteration."""
+
+    def __init__(self, collection, filter_query=None, sort_tuple=None, limit_val=None):
+        self.collection = collection
+        self.filter_query = filter_query
+        self.sort_tuple = sort_tuple
+        self.limit_val = limit_val
+        self._cached_results = None
+
+    def sort(self, key_or_list, direction=1):
+        if isinstance(key_or_list, list):
+            self.sort_tuple = key_or_list[0] if key_or_list else None
+        elif isinstance(key_or_list, str):
+            self.sort_tuple = (key_or_list, direction)
+        self._cached_results = None
+        return self
+
+    def limit(self, limit_val):
+        self.limit_val = int(limit_val) if limit_val is not None else None
+        self._cached_results = None
+        return self
+
+    def _execute(self):
+        if self._cached_results is None:
+            self._cached_results = self.collection._execute_find(
+                self.filter_query, sort=self.sort_tuple, limit=self.limit_val
+            )
+        return self._cached_results
+
+    def __iter__(self):
+        return iter(self._execute())
+
+    def __len__(self):
+        return len(self._execute())
+
+    def __getitem__(self, index):
+        return self._execute()[index]
+
+
 class _SQLiteCollection:
     """Wrapper that mimics MongoDB collection interface for SQLite."""
 
@@ -135,7 +179,13 @@ class _SQLiteCollection:
         self.table = table_name
 
     def find(self, filter=None, **kwargs):
-        """Find documents matching filter."""
+        """Find documents matching filter, returns a cursor supporting .sort() and .limit()."""
+        sort_val = kwargs.get("sort")
+        limit_val = kwargs.get("limit")
+        return _SQLiteCursor(self, filter_query=filter, sort_tuple=sort_val, limit_val=limit_val)
+
+    def _execute_find(self, filter=None, sort=None, limit=None):
+        """Execute the SQL find query."""
         query = f"SELECT * FROM {self.table}"
         params = []
 
@@ -144,16 +194,33 @@ class _SQLiteCollection:
             for key, value in filter.items():
                 if key == "_id":
                     conditions.append("_id = ?")
-                    params.append(value)
+                    params.append(str(value))
+                elif value is None:
+                    conditions.append(f"{key} IS NULL")
+                elif isinstance(value, bool):
+                    conditions.append(f"{key} = ?")
+                    params.append(1 if value else 0)
                 elif isinstance(value, dict):
-                    # Handle MongoDB-style operators ($eq, $ne, etc.) — basic support
+                    # Handle MongoDB-style operators ($eq, $ne, $in, etc.)
                     for op, val in value.items():
                         if op == "$eq":
-                            conditions.append(f"{key} = ?")
-                            params.append(val)
+                            if val is None:
+                                conditions.append(f"{key} IS NULL")
+                            elif isinstance(val, bool):
+                                conditions.append(f"{key} = ?")
+                                params.append(1 if val else 0)
+                            else:
+                                conditions.append(f"{key} = ?")
+                                params.append(val)
                         elif op == "$ne":
-                            conditions.append(f"{key} != ?")
-                            params.append(val)
+                            if val is None:
+                                conditions.append(f"{key} IS NOT NULL")
+                            elif isinstance(val, bool):
+                                conditions.append(f"{key} != ?")
+                                params.append(1 if val else 0)
+                            else:
+                                conditions.append(f"{key} != ?")
+                                params.append(val)
                         elif op == "$in":
                             placeholders = ",".join(["?" for _ in val])
                             conditions.append(f"{key} IN ({placeholders})")
@@ -164,12 +231,13 @@ class _SQLiteCollection:
             if conditions:
                 query += " WHERE " + " AND ".join(conditions)
 
-        if kwargs.get("sort"):
-            sort_key, sort_dir = kwargs["sort"]
-            query += f" ORDER BY {sort_key} {'DESC' if sort_dir else 'ASC'}"
+        if sort:
+            sort_key, sort_dir = sort
+            dir_str = "DESC" if (sort_dir == -1 or sort_dir is False or str(sort_dir).upper() == "DESC") else "ASC"
+            query += f" ORDER BY {sort_key} {dir_str}"
 
-        if kwargs.get("limit"):
-            query += f" LIMIT {kwargs['limit']}"
+        if limit is not None:
+            query += f" LIMIT {int(limit)}"
 
         with self.db._lock:
             conn = self.db._get_conn()
@@ -182,7 +250,7 @@ class _SQLiteCollection:
 
     def find_one(self, filter=None, **kwargs):
         """Find a single document."""
-        results = self.find(filter, **kwargs)
+        results = self._execute_find(filter, sort=kwargs.get("sort"), limit=1)
         return results[0] if results else None
 
     def insert_one(self, document):
@@ -190,11 +258,16 @@ class _SQLiteCollection:
         # Auto-generate _id if not present
         doc = dict(document)
         if "_id" not in doc or not doc["_id"]:
-            doc["_id"] = str(ObjectId())
+            generated_id = str(ObjectId())
+            doc["_id"] = generated_id
+            if isinstance(document, dict):
+                document["_id"] = generated_id
+        else:
+            generated_id = str(doc["_id"])
 
         keys = list(doc.keys())
         placeholders = ",".join(["?" for _ in keys])
-        columns =",".join(keys)
+        columns = ",".join(keys)
         values = tuple(str(v) if isinstance(v, datetime) else v for v in doc.values())
 
         with self.db._lock:
@@ -211,11 +284,15 @@ class _SQLiteCollection:
             finally:
                 conn.close()
 
-        # Return mock ObjectId
+        # Return mock InsertResult
         class _InsertedId:
+            def __init__(self, val):
+                self._val = val
             def __str__(self):
-                return str(document.get("_id", ""))
-        return type("InsertResult", (), {"inserted_id": _InsertedId()})
+                return str(self._val)
+            def __repr__(self):
+                return str(self._val)
+        return type("InsertResult", (), {"inserted_id": _InsertedId(generated_id)})()
 
     def delete_one(self, filter):
         """Delete a document matching filter."""
@@ -351,11 +428,8 @@ class MongoDB:
             raise ImportError("pymongo is not installed")
 
         # TLS/SSL configuration for MongoDB Atlas.
-        # On some platforms (Render, certain Linux images) the system CA bundle
-        # does not validate Atlas's certificate chain, causing
-        # TLSV1_ALERT_INTERNAL_ERROR. We set tlsAllowInvalidCertificates=True as a
-        # pragmatic workaround so the connection succeeds; the URI itself (with
-        # credentials) still provides authentication to Atlas.
+        # Can be controlled via MONGODB_TLS_ALLOW_INVALID_CERTS env var (defaults to true on Render).
+        allow_insecure_tls = os.environ.get("MONGODB_TLS_ALLOW_INVALID_CERTS", "true").lower() in ("true", "1", "yes")
         base_kwargs = {
             "serverSelectionTimeoutMS": 10000,
             "connectTimeoutMS": 10000,
@@ -364,7 +438,7 @@ class MongoDB:
             "w": "majority",
             "appname": "TelegramForwarderPro",
             "tls": True,
-            "tlsAllowInvalidCertificates": True,
+            "tlsAllowInvalidCertificates": allow_insecure_tls,
         }
         if _MONGO_TLS_CA:
             base_kwargs["tlsCAFile"] = _MONGO_TLS_CA
