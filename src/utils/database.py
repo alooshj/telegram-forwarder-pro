@@ -22,10 +22,17 @@ try:
     ObjectId = bson.ObjectId
     BsonObjectId = bson.ObjectId
     MONGO_AVAILABLE = True
+    # certifi provides CA certificates needed for MongoDB Atlas TLS on some platforms (Render, etc.)
+    try:
+        import certifi
+        _MONGO_TLS_CA = certifi.where()
+    except ImportError:
+        _MONGO_TLS_CA = None
 except ImportError:
     MONGO_AVAILABLE = False
     BsonObjectId = None
     MongoClient = None
+    _MONGO_TLS_CA = None
     class ObjectId:
         """Fallback ObjectId — returns the string as-is."""
         def __init__(self, str_rep=None):
@@ -342,7 +349,21 @@ class MongoDB:
         if not MONGO_AVAILABLE:
             raise ImportError("pymongo is not installed")
 
-        self.client = MongoClient(mongo_uri, serverSelectionTimeoutMS=5000)
+        # TLS/SSL CA certificates — required for MongoDB Atlas on platforms
+        # where the system CA bundle is incomplete (e.g. Render, some Linux images)
+        client_kwargs = {
+            "serverSelectionTimeoutMS": 10000,
+            "connectTimeoutMS": 10000,
+            "socketTimeoutMS": 10000,
+            "retryWrites": True,
+            "w": "majority",
+            "appname": "TelegramForwarderPro",
+        }
+        if _MONGO_TLS_CA:
+            client_kwargs["tlsCAFile"] = _MONGO_TLS_CA
+            client_kwargs["tlsAllowInvalidCertificates"] = False
+
+        self.client = MongoClient(mongo_uri, **client_kwargs)
         self.db = self.client[db_name]
         self._test_connection()
 

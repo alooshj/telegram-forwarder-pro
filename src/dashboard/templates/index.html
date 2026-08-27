@@ -300,7 +300,7 @@
             });
         });
 
-        // API helper
+        // API helper — returns null on error, never throws
         async function apiFetch(url, options = {}) {
             try {
                 const response = await fetch(url, {
@@ -310,7 +310,9 @@
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
                 }
-                return await response.json();
+                const json = await response.json();
+                // Normalize: if the response is not an object, return empty object
+                return (json && typeof json === 'object') ? json : {};
             } catch (error) {
                 console.error('API Error:', error);
                 if (url.includes('status') || url.includes('start') || url.includes('stop')) {
@@ -319,6 +321,20 @@
                 showNotification('Connection error — check if the server is running', 'error');
                 return null;
             }
+        }
+
+        // Safe accessor — reads nested property with optional chaining fallback
+        function safeId(item) {
+            if (!item) return '—';
+            const id = item._id ?? item.id ?? item.M_ID ?? item.m_id ?? '';
+            if (!id) return '—';
+            const str = String(id);
+            return str.length > 8 ? str.substring(0, 8) : str;
+        }
+
+        function safeStr(value, fallback = '—') {
+            if (value === null || value === undefined) return fallback;
+            return String(value);
         }
 
         // Notification helper (replaces alert() calls)
@@ -437,7 +453,8 @@
                         '<p class="text-gray-400">No transformation rules (DB not connected)</p>';
                     return;
                 }
-                const rules = data.rules || [];
+                // Ensure rules is always a safe array (handles empty list, null, or missing field)
+                const rules = Array.isArray(data.rules) ? data.rules : [];
                 if (rules.length === 0) {
                     document.getElementById('rules-table-body').innerHTML =
                         '<tr><td colspan="5" class="py-8 text-center text-gray-500">No rules configured</td></tr>';
@@ -448,11 +465,11 @@
                 const tbody = document.getElementById('rules-table-body');
                 tbody.innerHTML = rules.map(rule => `
                     <tr class="border-b border-gray-700">
-                        <td class="py-2">${rule._id?.substring(0, 8) || '—'}</td>
-                        <td class="py-2">${rule.source_id ?? '—'} → ${rule.target_id ?? '—'}</td>
-                        <td class="py-2">${rule.type}</td>
-                        <td class="py-2">${rule.pattern ?? '—'}</td>
-                        <td class="py-2">${rule.active ? '✅' : '❌'}</td>
+                        <td class="py-2">${safeId(rule)}</td>
+                        <td class="py-2">${safeStr(rule.source_id)} → ${safeStr(rule.target_id)}</td>
+                        <td class="py-2">${safeStr(rule.type)}</td>
+                        <td class="py-2">${safeStr(rule.pattern)}</td>
+                        <td class="py-2">${rule && rule.active ? '✅' : '❌'}</td>
                     </tr>
                 `).join('');
 
@@ -460,11 +477,11 @@
                 list.innerHTML = rules.map(rule => `
                     <div class="bg-gray-700 rounded p-3 border border-gray-600 flex justify-between items-center">
                         <div>
-                            <span class="font-medium">${rule.name}</span>
-                            <span class="text-xs text-gray-400">(${rule.type})" + " &middot; priority: ${rule.priority}</span>
+                            <span class="font-medium">${safeStr(rule.name)}</span>
+                            <span class="text-xs text-gray-400">(${safeStr(rule.type)}) &middot; priority: ${safeStr(rule.priority)}</span>
                         </div>
-                        <span class="${rule.active ? 'text-green-400' : 'text-red-400'}">
-                            ${rule.active ? 'Active' : 'Inactive'}
+                        <span class="${rule && rule.active ? 'text-green-400' : 'text-red-400'}">
+                            ${rule && rule.active ? 'Active' : 'Inactive'}
                         </span>
                     </div>
                 `).join('');
@@ -483,7 +500,8 @@
                         '<tr><td colspan="4" class="py-8 text-center text-gray-400">Blacklist not available (DB not connected)</td></tr>';
                     return;
                 }
-                const entries = data.blacklist || [];
+                // Ensure entries is always a safe array
+                const entries = Array.isArray(data.blacklist) ? data.blacklist : [];
                 if (entries.length === 0) {
                     document.getElementById('blacklist-table-body').innerHTML =
                         '<tr><td colspan="4" class="py-8 text-center text-gray-500">No blacklisted channels</td></tr>';
@@ -492,11 +510,11 @@
                 const tbody = document.getElementById('blacklist-table-body');
                 tbody.innerHTML = entries.map(entry => `
                     <tr class="border-b border-gray-700">
-                        <td class="py-2">${entry._id?.substring(0, 8) || '—'}</td>
-                        <td class="py-2">${entry.channel_id}</td>
-                        <td class="py-2">${entry.reason ?? '—'}</td>
+                        <td class="py-2">${safeId(entry)}</td>
+                        <td class="py-2">${safeStr(entry.channel_id)}</td>
+                        <td class="py-2">${safeStr(entry.reason)}</td>
                         <td class="py-2">
-                            <button onclick="removeBlacklist(${entry.channel_id})"
+                            <button onclick="removeBlacklist(${entry && entry.channel_id ? entry.channel_id : ''})"
                                     class="text-red-400 hover:text-red-300">Remove</button>
                         </td>
                     </tr>
@@ -522,14 +540,18 @@
                     container.innerHTML = '<p class="text-gray-400">Logs not available (DB not connected)</p>';
                     return;
                 }
-                const logs = data.logs || [];
+                const logs = Array.isArray(data.logs) ? data.logs : [];
                 if (logs.length === 0) {
                     container.innerHTML = '<p class="text-gray-500">No logs yet.</p>';
                     return;
                 }
-                container.innerHTML = logs.map(log =>
-                    `[${log.timestamp} | ${log.level || 'INFO'}] ${log.message}`
-                ).join('<br>');
+                container.innerHTML = logs.map(log => {
+                    if (!log || typeof log !== 'object') return '';
+                    const ts = safeStr(log.timestamp);
+                    const lvl = safeStr(log.level, 'INFO');
+                    const msg = safeStr(log.message);
+                    return `[${ts} | ${lvl}] ${msg}`;
+                }).join('<br>');
             } catch (e) {
                 container.innerHTML = '<p class="text-yellow-400">Could not load logs</p>';
             }

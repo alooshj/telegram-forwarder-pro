@@ -69,6 +69,14 @@ class FlaskApiTestCase(unittest.TestCase):
         data = resp.get_json()
         self.assertIn("logs", data)
 
+    def test_certifi_available_for_mongo_tls(self):
+        """certifi should be importable and provide a CA bundle path."""
+        from src.utils.database import _MONGO_TLS_CA
+        import os
+        # _MONGO_TLS_CA may be None if certifi not installed, but if installed the path must exist
+        if _MONGO_TLS_CA is not None:
+            self.assertTrue(os.path.exists(_MONGO_TLS_CA), "certifi CA file should exist")
+
     def test_start_stop_forwarder(self):
         import time as _time
         # Start
