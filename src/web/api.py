@@ -141,6 +141,18 @@ def api_debug():
         _commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
     except Exception:
         _commit = "unknown"
+    # Safe diagnostics without leaking credentials
+    mongo_host = ""
+    mongo_user = ""
+    if mongo_clean:
+        try:
+            # mongodb+srv://user:pass@host/db
+            rest = mongo_clean.split("://", 1)[1]
+            user_part, host_part = rest.split("@", 1)
+            mongo_user = user_part.split(":")[0] if ":" in user_part else user_part
+            mongo_host = host_part.split("/")[0]
+        except Exception:
+            mongo_host = "(unparseable)"
     config_info = {
         "db_connected": db is not None,
         "db_type": db_type,
@@ -148,8 +160,9 @@ def api_debug():
         "mongo_error": db_error,
         "mongo_uri_set": bool(os.environ.get("MONGODB_URI") or os.environ.get("MONGO_URI")),
         "mongo_force_fallback": os.environ.get("MONGODB_FORCE_FALLBACK", "false"),
-        "mongo_raw_preview": (mongo_raw[:60] + "...") if len(mongo_raw) > 60 else mongo_raw,
-        "mongo_clean_preview": (mongo_clean[:60] + "...") if len(mongo_clean) > 60 else mongo_clean,
+        "mongo_user": mongo_user,
+        "mongo_host": mongo_host,
+        "mongo_uri_len": len(mongo_raw),
         "api_id_set": bool(os.environ.get("API_ID")),
         "api_hash_set": bool(os.environ.get("API_HASH")),
         "session_string_set": bool(os.environ.get("SESSION_STRING")),
