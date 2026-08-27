@@ -151,25 +151,23 @@ class ForwarderEngine:
                         break
 
                     source_id = rule.get("source_id")
-                    target_id = rule.get("target_id")
+                    targets = self._get_rule_targets(rule)
 
-                    if not source_id or not target_id:
+                    if not source_id or not targets:
                         continue
 
                     norm_source = self._normalize_entity_id(source_id)
-                    norm_target = self._normalize_entity_id(target_id)
 
-                    # Check blacklist
-                    if self.rules_engine.is_blacklisted(norm_source) or \
-                       self.rules_engine.is_blacklisted(norm_target):
-                        logger.info(f"Skipping blacklisted channel: {norm_source} or {norm_target}")
+                    # Check blacklist on source
+                    if self.rules_engine.is_blacklisted(norm_source):
+                        logger.info(f"Skipping blacklisted source channel: {norm_source}")
                         continue
 
-                    # Check flood wait
+                    # Check flood wait on source
                     if self._is_flood_waited(norm_source):
                         continue
 
-                    await self._process_channel(norm_source, norm_target, rule)
+                    await self._process_channel_multi(norm_source, targets, rule)
 
                 check_interval = int(self.config.get("CHECK_INTERVAL", 30))
                 for _ in range(check_interval):
@@ -186,6 +184,53 @@ class ForwarderEngine:
             except Exception as e:
                 logger.error(f"Unexpected error in forwarding loop: {e}", exc_info=True)
                 await asyncio.sleep(self.config.get("RETRY_DELAY", 10))
+
+    def _get_rule_targets(self, rule: dict) -> list:
+        """Extract all target channel IDs (supports list, comma/newline-separated strings)."""
+        targets = []
+        if rule.get("target_ids") and isinstance(rule["target_ids"], list):
+            targets.extend([t for t in rule["target_ids"] if t])
+        elif rule.get("target_id"):
+            raw = str(rule["target_id"])
+            if "," in raw or "\n" in raw:
+                parts = [p.strip() for p in raw.replace("\n", ",").split(",") if p.strip()]
+                targets.extend(parts)
+            else:
+                targets.append(raw.strip())
+        return targets
+
+    def _detect_media_type(self, message) -> str:
+        """Detect the media category of a Telethon message."""
+        if not message:
+            return "text"
+        if getattr(message, "photo", None):
+            return "photo"
+        if getattr(message, "video", None) or getattr(message, "video_note", None):
+            return "video"
+        if getattr(message, "voice", None) or getattr(message, "audio", None):
+            return "audio"
+        if getattr(message, "sticker", None) or getattr(message, "gif", None):
+            return "sticker"
+        if getattr(message, "document", None):
+            doc = message.document
+            mime = getattr(doc, "mime_type", "") or ""
+            if mime.startswith("audio/"):
+                return "audio"
+            elif mime.startswith("video/"):
+                return "video"
+            elif mime.startswith("image/"):
+                return "photo"
+            return "document"
+        if getattr(message, "media", None):
+            return "document"
+        return "text"
+
+    def _is_media_allowed(self, rule: dict, media_type: str) -> bool:
+        """Check if media type is permitted by rule."""
+        allowed = rule.get("media_types")
+        if not allowed or not isinstance(allowed, list) or len(allowed) == 0:
+            return True
+        return media_type in allowed
 
     def _is_flood_waited(self, channel_id) -> bool:
         """Check if channel is still in flood wait."""
@@ -211,13 +256,42 @@ class ForwarderEngine:
                 raise
 
     async def _process_channel(self, source_id, target_id, rule: dict):
-        """Fetch new messages (text and media) from a source channel and forward them."""
-        try:
-            # Get channel entity (with auto dialog refresh)
-            source_entity = await self._get_entity_safe(source_id)
-            target_entity = await self._get_entity_safe(target_id)
+        """Backward-compatible single-target channel processing."""
+        await self._process_channel_multi(source_id, [target_id], rule)
 
-            # Fetch recent messages
+    async def _process_channel_multi(self, source_id, targets: list, rule: dict):
+        """Fetch new messages (text and media) from a source channel and forward to multiple targets."""
+        try:
+            source_entity = await self._get_entity_safe(source_id)
+        except (ValueError, errors.RPCError) as e:
+            self._log_event("ERROR", f"Source channel not found ({source_id}): {e}")
+            return
+        except Exception as e:
+            self._log_event("ERROR", f"Error resolving source channel {source_id}: {e}")
+            return
+
+        # Prepare and validate target entities
+        valid_targets = []
+        for tgt in targets:
+            norm_tgt = self._normalize_entity_id(tgt)
+            if self.rules_engine.is_blacklisted(norm_tgt):
+                logger.info(f"Skipping blacklisted target channel: {norm_tgt}")
+                continue
+            if self._is_flood_waited(norm_tgt):
+                continue
+            try:
+                entity = await self._get_entity_safe(norm_tgt)
+                valid_targets.append((norm_tgt, entity))
+            except (ValueError, errors.RPCError) as e:
+                self._log_event("ERROR", f"Target channel not found ({tgt}): {e}")
+            except Exception as e:
+                self._log_event("ERROR", f"Error resolving target channel {tgt}: {e}")
+
+        if not valid_targets:
+            return
+
+        # Fetch recent messages from source
+        try:
             async for message in self.client.iter_messages(
                 source_entity, limit=50, reverse=True
             ):
@@ -230,32 +304,40 @@ class ForwarderEngine:
                 if not has_text and not has_media:
                     continue
 
-                # Check if already processed (duplicate prevention)
-                post_key = f"{source_id}:{message.id}"
-                if self._is_duplicate(post_key):
+                # Filter by media type
+                media_type = self._detect_media_type(message)
+                if not self._is_media_allowed(rule, media_type):
                     continue
 
-                # Apply rules transformation to text if present
                 raw_text = message.message or ""
-                transformed_text = self.rules_engine.apply_rules(
-                    raw_text, source_id, target_id
-                ) if raw_text else ""
 
-                # Forward the post (with media if present)
-                await self._forward_message(message, target_entity, transformed_text)
+                # Forward to each target channel independently
+                for norm_tgt, target_entity in valid_targets:
+                    post_key = f"{source_id}:{message.id}:{norm_tgt}"
+                    if self._is_duplicate(post_key, source_id, message.id):
+                        continue
 
-                # Mark as processed
-                self._mark_processed(post_key, message.id, source_id, target_id)
+                    transformed_text = self.rules_engine.apply_rules(
+                        raw_text, source_id, norm_tgt
+                    ) if raw_text else ""
 
-        except (ValueError, errors.RPCError) as e:
-            self._log_event("ERROR", f"Channel not found ({source_id} → {target_id}). Ensure @ayg1133 joined the channel or use @username: {e}")
+                    await self._forward_message(message, target_entity, transformed_text)
+                    self._mark_processed(post_key, message.id, source_id, norm_tgt)
+
         except Exception as e:
-            self._log_event("ERROR", f"Error processing channel {source_id}: {e}")
+            self._log_event("ERROR", f"Error processing messages from channel {source_id}: {e}")
 
-    def _is_duplicate(self, post_key: str) -> bool:
+    def _is_duplicate(self, post_key: str, source_id=None, message_id=None) -> bool:
         """Check if a post was already forwarded."""
         existing = self.db.processed_posts.find_one({"_id": post_key})
-        return existing is not None
+        if existing is not None:
+            return True
+        if source_id is not None and message_id is not None:
+            legacy_key = f"{source_id}:{message_id}"
+            legacy = self.db.processed_posts.find_one({"_id": legacy_key})
+            if legacy is not None:
+                return True
+        return False
 
     def _mark_processed(self, post_key: str, message_id: int, source_id, target_id):
         """Record that a post was processed."""

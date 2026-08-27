@@ -14,6 +14,7 @@ import os
 import sqlite3
 import threading
 import ssl
+import json
 from datetime import datetime, timezone
 
 # Re-export bson.ObjectId for external use, with fallback
@@ -77,6 +78,8 @@ class SQLiteDB:
                         type TEXT,
                         source_id TEXT,
                         target_id TEXT,
+                        target_ids TEXT,
+                        media_types TEXT,
                         pattern TEXT,
                         replacement TEXT,
                         priority INTEGER DEFAULT 0,
@@ -102,6 +105,12 @@ class SQLiteDB:
                         message TEXT
                     );
                 """)
+                # Migrations for existing databases
+                for col in ["target_ids", "media_types"]:
+                    try:
+                        conn.execute(f"ALTER TABLE forwarding_rules ADD COLUMN {col} TEXT;")
+                    except sqlite3.OperationalError:
+                        pass
                 conn.commit()
             finally:
                 conn.close()
@@ -244,7 +253,17 @@ class _SQLiteCollection:
             try:
                 cursor = conn.execute(query, params)
                 rows = cursor.fetchall()
-                return [dict(row) for row in rows]
+                results = []
+                for row in rows:
+                    d = dict(row)
+                    for col in ["target_ids", "media_types"]:
+                        if col in d and isinstance(d[col], str) and d[col].startswith("["):
+                            try:
+                                d[col] = json.loads(d[col])
+                            except Exception:
+                                pass
+                    results.append(d)
+                return results
             finally:
                 conn.close()
 
@@ -265,10 +284,17 @@ class _SQLiteCollection:
         else:
             generated_id = str(doc["_id"])
 
+        def _ser_val(v):
+            if isinstance(v, datetime):
+                return str(v)
+            if isinstance(v, (list, dict)):
+                return json.dumps(v)
+            return v
+
         keys = list(doc.keys())
         placeholders = ",".join(["?" for _ in keys])
         columns = ",".join(keys)
-        values = tuple(str(v) if isinstance(v, datetime) else v for v in doc.values())
+        values = tuple(_ser_val(v) for v in doc.values())
 
         with self.db._lock:
             conn = self.db._get_conn()
@@ -330,8 +356,15 @@ class _SQLiteCollection:
                 conditions.append(f"{key} = ?")
                 params.append(str(value))
 
+        def _ser_val(v):
+            if isinstance(v, datetime):
+                return str(v)
+            if isinstance(v, (list, dict)):
+                return json.dumps(v)
+            return v
+
         set_parts = [f"{k} = ?" for k in set_clause.keys()]
-        set_params = list(set_clause.values()) + params
+        set_params = [_ser_val(v) for v in set_clause.values()] + params
 
         with self.db._lock:
             conn = self.db._get_conn()

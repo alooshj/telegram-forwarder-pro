@@ -465,28 +465,112 @@
     <!-- ==================== MODALS ==================== -->
 
     <!-- Add/Edit Forwarding Rule Modal -->
-    <div id="rule-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-fade-in">
+    <div id="rule-modal" class="fixed inset-0 z-50 bg-black/75 backdrop-blur-sm hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl animate-fade-in my-8">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
-                <h3 id="rule-modal-title" class="font-bold text-white text-base">Add New Forwarding Rule</h3>
+                <div>
+                    <h3 id="rule-modal-title" class="font-bold text-white text-base">Add New Forwarding Pipeline</h3>
+                    <p class="text-[11px] text-slate-400">Configure 1-to-many source and target channels & select media types</p>
+                </div>
                 <button onclick="closeRuleModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
             </div>
             <form id="rule-form" onsubmit="saveRule(event)" class="space-y-4">
                 <input type="hidden" id="rule-form-id">
                 <div>
                     <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_rule_name">Rule Name</label>
-                    <input type="text" id="rule-form-name" required placeholder="e.g. Crypto News Pipeline" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+                    <input type="text" id="rule-form-name" required placeholder="e.g. Crypto News Multi-Channel Pipeline" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
                 </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                
+                <!-- Channel Source & Multiple Targets -->
+                <div class="space-y-3">
                     <div>
                         <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_source_channel">Source Channel (ID or @username)</label>
-                        <input type="text" id="rule-form-source" required placeholder="e.g. @source_news or -10012345" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+                        <div class="relative">
+                            <input type="text" id="rule-form-source" required placeholder="e.g. @source_news or -1001234567890" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500 pl-8 rtl:pr-8">
+                            <span class="absolute left-2.5 rtl:right-2.5 top-2.5 text-xs text-brand-400">📥</span>
+                        </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_target_channel">Target Channel (ID or @username)</label>
-                        <input type="text" id="rule-form-target" required placeholder="e.g. @my_channel or -10098765" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+                        <div class="flex items-center justify-between mb-1">
+                            <label class="block text-xs font-semibold text-slate-400" data-i18n="form_target_channels">Target Channels (One or Multiple separated by comma ,)</label>
+                            <span class="text-[10px] text-cyan-400 font-mono">1 ➔ Many Supported</span>
+                        </div>
+                        <div class="relative">
+                            <input type="text" id="rule-form-target" oninput="updateTargetTagsPreview()" required placeholder="e.g. @my_channel, @backup_channel, -1009876543210" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 pl-8 rtl:pr-8">
+                            <span class="absolute left-2.5 rtl:right-2.5 top-2.5 text-xs text-cyan-400">📤</span>
+                        </div>
+                        <!-- Live Target Tags Preview -->
+                        <div id="target-tags-preview" class="flex flex-wrap gap-1.5 pt-2"></div>
                     </div>
                 </div>
+
+                <!-- Glowing Media Types Tile Selector -->
+                <div class="space-y-2 pt-2 border-t border-slate-800/80">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-300" data-i18n="sec_media_types">Allowed Media Types to Forward</label>
+                            <span class="text-[11px] text-slate-400" data-i18n="sec_media_types_desc">Click any media chip to toggle enabled (lit) or disabled (dimmed)</span>
+                        </div>
+                        <button type="button" onclick="toggleAllMediaChips()" class="text-[11px] font-semibold text-brand-400 hover:text-brand-300">Toggle All</button>
+                    </div>
+
+                    <div class="grid grid-cols-2 sm:grid-cols-3 gap-2.5 pt-1" id="media-chips-container">
+                        <!-- Photo Chip -->
+                        <div onclick="toggleMediaChip('photo')" id="chip-photo" class="media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
+                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                                <span class="text-base">📷</span>
+                                <span class="text-xs font-semibold" data-i18n="media_photo">Photos / صور</span>
+                            </div>
+                            <span class="chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                        </div>
+
+                        <!-- Video Chip -->
+                        <div onclick="toggleMediaChip('video')" id="chip-video" class="media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
+                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                                <span class="text-base">🎥</span>
+                                <span class="text-xs font-semibold" data-i18n="media_video">Videos / فيديو</span>
+                            </div>
+                            <span class="chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                        </div>
+
+                        <!-- Document Chip -->
+                        <div onclick="toggleMediaChip('document')" id="chip-document" class="media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
+                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                                <span class="text-base">📄</span>
+                                <span class="text-xs font-semibold" data-i18n="media_doc">Files / ملفات</span>
+                            </div>
+                            <span class="chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                        </div>
+
+                        <!-- Audio Chip -->
+                        <div onclick="toggleMediaChip('audio')" id="chip-audio" class="media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
+                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                                <span class="text-base">🎵</span>
+                                <span class="text-xs font-semibold" data-i18n="media_audio">Audio / صوتيات</span>
+                            </div>
+                            <span class="chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                        </div>
+
+                        <!-- Text Chip -->
+                        <div onclick="toggleMediaChip('text')" id="chip-text" class="media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
+                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                                <span class="text-base">💬</span>
+                                <span class="text-xs font-semibold" data-i18n="media_text">Text / نصوص</span>
+                            </div>
+                            <span class="chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                        </div>
+
+                        <!-- Sticker Chip -->
+                        <div onclick="toggleMediaChip('sticker')" id="chip-sticker" class="media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
+                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                                <span class="text-base">🎭</span>
+                                <span class="text-xs font-semibold" data-i18n="media_sticker">Stickers / ملصقات</span>
+                            </div>
+                            <span class="chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]"></span>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex items-center space-x-2 rtl:space-x-reverse pt-2">
                     <input type="checkbox" id="rule-form-active" checked class="w-4 h-4 rounded bg-slate-950 border-slate-800 text-brand-600 focus:ring-brand-500">
                     <label for="rule-form-active" class="text-xs font-medium text-slate-300" data-i18n="form_rule_active">Active & Forwarding immediately</label>
@@ -641,7 +725,16 @@
                 lbl_dedup: "منع التكرار المزدوج:",
                 form_rule_name: "اسم المسار / القاعدة",
                 form_source_channel: "القناة المصدر (ID أو @يوزر)",
-                form_target_channel: "القناة الهدف (ID أو @يوزر)",
+                form_target_channel: "القنوات الهدف (واحدة أو أكثر مفصولة بفاصلة ,)",
+                form_target_channels: "القنوات الهدف (واحدة أو أكثر مفصولة بفاصلة ,)",
+                sec_media_types: "أنواع الوسائط المسموح بتوجيهها",
+                sec_media_types_desc: "اضغط على أي نوع لتفعيله (مضيء) أو تعطيله (مطفأ)",
+                media_photo: "الصور (Photos)",
+                media_video: "الفيديوهات (Videos)",
+                media_doc: "الملفات والمستندات (Files)",
+                media_audio: "الصوتيات والمقاطع (Audio)",
+                media_text: "الرسائل النصية (Text)",
+                media_sticker: "الملصقات وGIF (Stickers)",
                 form_rule_active: "تفعيل التوجيه فوراً",
                 form_transform_type: "نوع التحويل",
                 form_priority: "الأولوية (1 = الأعلى)",
@@ -717,7 +810,16 @@
                 lbl_dedup: "Duplicate Prevention:",
                 form_rule_name: "Rule Name",
                 form_source_channel: "Source Channel (ID or @username)",
-                form_target_channel: "Target Channel (ID or @username)",
+                form_target_channel: "Target Channels (one or multiple separated by comma ,)",
+                form_target_channels: "Target Channels (one or multiple separated by comma ,)",
+                sec_media_types: "Allowed Media Types to Forward",
+                sec_media_types_desc: "Click any media chip to toggle enabled (lit) or disabled (dimmed)",
+                media_photo: "Photos / صور",
+                media_video: "Videos / فيديو",
+                media_doc: "Documents / ملفات",
+                media_audio: "Audio / صوتيات",
+                media_text: "Text Only / نصوص",
+                media_sticker: "Stickers & GIFs / ملصقات",
                 form_rule_active: "Active & Forwarding immediately",
                 form_transform_type: "Transformation Type",
                 form_priority: "Priority (1 = highest)",
@@ -884,6 +986,64 @@
             await loadLogs(true);
         }
 
+        // ==================== GLOWING MEDIA CHIPS LOGIC ====================
+        const ALL_MEDIA_TYPES = ['photo', 'video', 'document', 'audio', 'text', 'sticker'];
+        let selectedMediaTypes = new Set(ALL_MEDIA_TYPES);
+
+        function renderMediaChipsState() {
+            ALL_MEDIA_TYPES.forEach(type => {
+                const chip = document.getElementById(`chip-${type}`);
+                if (!chip) return;
+                const dot = chip.querySelector('.chip-status-dot');
+                if (selectedMediaTypes.has(type)) {
+                    chip.className = 'media-chip active flex items-center justify-between p-2.5 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.3)] transition-all cursor-pointer select-none';
+                    if (dot) dot.className = 'chip-status-dot w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_6px_#34d399]';
+                } else {
+                    chip.className = 'media-chip flex items-center justify-between p-2.5 rounded-xl border border-slate-800 bg-slate-950/80 text-slate-500 hover:border-slate-700 transition-all cursor-pointer select-none opacity-60';
+                    if (dot) dot.className = 'chip-status-dot w-2 h-2 rounded-full bg-slate-600';
+                }
+            });
+        }
+
+        function toggleMediaChip(type) {
+            if (selectedMediaTypes.has(type)) {
+                if (selectedMediaTypes.size === 1) {
+                    showToast(currentLang === 'ar' ? 'يجب اختيار نوع وسائط واحد على الأقل' : 'Select at least one media type', 'warning');
+                    return;
+                }
+                selectedMediaTypes.delete(type);
+            } else {
+                selectedMediaTypes.add(type);
+            }
+            renderMediaChipsState();
+        }
+
+        function toggleAllMediaChips() {
+            if (selectedMediaTypes.size === ALL_MEDIA_TYPES.length) {
+                selectedMediaTypes = new Set(['photo', 'text']);
+            } else {
+                selectedMediaTypes = new Set(ALL_MEDIA_TYPES);
+            }
+            renderMediaChipsState();
+        }
+
+        function updateTargetTagsPreview() {
+            const raw = document.getElementById('rule-form-target').value;
+            const container = document.getElementById('target-tags-preview');
+            if (!container) return;
+            const targets = raw.split(/[\n,]+/).map(t => t.trim()).filter(t => t);
+            if (targets.length === 0) {
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = targets.map(t => `
+                <span class="inline-flex items-center space-x-1 rtl:space-x-reverse px-2.5 py-0.5 rounded-lg text-[11px] font-mono font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 animate-fade-in">
+                    <span>📤</span>
+                    <span>${t}</span>
+                </span>
+            `).join('');
+        }
+
         // ==================== FORWARDING RULES ====================
         async function loadRules() {
             const res = await api('/api/rules');
@@ -892,49 +1052,96 @@
             const container = document.getElementById('rules-cards-container');
             const transformList = document.getElementById('transform-rules-list');
 
-            // Forwarding pipelines (rules with source_id & target_id)
-            const forwardRules = allRules.filter(r => r.source_id && r.target_id);
+            // Forwarding pipelines (rules with source_id and target_id/target_ids)
+            const forwardRules = allRules.filter(r => r.source_id && (r.target_id || (r.target_ids && r.target_ids.length > 0)));
 
             if (forwardRules.length === 0) {
                 container.innerHTML = `<div class="col-span-full p-8 text-center bg-slate-950/60 border border-dashed border-slate-800 rounded-2xl text-slate-400 text-xs">
                     <p class="text-base mb-2">📭 ${currentLang === 'ar' ? 'لا توجد مسارات توجيه بعد' : 'No forwarding pipelines yet'}</p>
-                    <p class="mb-4 text-slate-500">${currentLang === 'ar' ? 'اضغط أدناه لإنشاء أول مسار لنقل المنشورات من قناة إلى أخرى.' : 'Create your first pipeline to start monitoring channels.'}</p>
+                    <p class="mb-4 text-slate-500">${currentLang === 'ar' ? 'اضغط أدناه لإنشاء أول مسار لنقل المنشورات من قناة إلى عدة قنوات.' : 'Create your first pipeline to start monitoring channels.'}</p>
                     <button onclick="openRuleModal()" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold">+ ${currentLang === 'ar' ? 'إضافة مسار' : 'Add Pipeline'}</button>
                 </div>`;
             } else {
-                container.innerHTML = forwardRules.map(rule => `
-                    <div class="bg-surface-850 border border-slate-800 rounded-2xl p-5 space-y-4 hover:border-slate-700 transition">
+                const mediaIcons = {
+                    photo: '📷',
+                    video: '🎥',
+                    document: '📄',
+                    audio: '🎵',
+                    text: '💬',
+                    sticker: '🎭'
+                };
+
+                container.innerHTML = forwardRules.map(rule => {
+                    const targets = (rule.target_ids && rule.target_ids.length > 0)
+                        ? rule.target_ids
+                        : (rule.target_id ? rule.target_id.split(/[\n,]+/).map(t => t.trim()).filter(t => t) : []);
+
+                    const mediaTypes = (rule.media_types && Array.isArray(rule.media_types) && rule.media_types.length > 0)
+                        ? rule.media_types
+                        : ALL_MEDIA_TYPES;
+
+                    const mediaBadges = mediaTypes.map(m => `
+                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700 font-medium" title="${m}">
+                            ${mediaIcons[m] || '📁'} ${m}
+                        </span>
+                    `).join('');
+
+                    const targetBadges = targets.map(t => `
+                        <span class="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 font-mono font-semibold rounded-lg text-xs truncate max-w-[130px]" title="${t}">
+                            📤 ${t}
+                        </span>
+                    `).join('');
+
+                    return `
+                    <div class="bg-surface-850 border border-slate-800 rounded-2xl p-5 space-y-4 hover:border-slate-700 transition shadow-lg">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h4 class="font-bold text-white text-sm">${rule.name || 'Unnamed Pipeline'}</h4>
-                                <span class="text-xs text-slate-400 font-mono">ID: ${rule._id}</span>
+                                <h4 class="font-bold text-white text-sm flex items-center space-x-2 rtl:space-x-reverse">
+                                    <span>${rule.name || 'Pipeline'}</span>
+                                    <span class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">${targets.length > 1 ? `1 ➔ ${targets.length}` : '1 ➔ 1'}</span>
+                                </h4>
+                                <span class="text-[11px] text-slate-500 font-mono">ID: ${rule._id}</span>
                             </div>
                             <!-- Active Toggle Switch -->
-                            <button onclick="toggleRuleActive('${rule._id}')" class="px-3 py-1 rounded-full text-xs font-semibold transition ${rule.active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400 border border-slate-700'}">
+                            <button onclick="toggleRuleActive('${rule._id}')" class="px-3 py-1 rounded-full text-xs font-semibold transition ${rule.active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 shadow-[0_0_8px_rgba(16,185,129,0.2)]' : 'bg-slate-800 text-slate-400 border border-slate-700'}">
                                 ${rule.active ? '● ' + (currentLang === 'ar' ? 'نشط' : 'Active') : '○ ' + (currentLang === 'ar' ? 'متوقف' : 'Inactive')}
                             </button>
                         </div>
 
-                        <!-- Route Flow Badge -->
-                        <div class="flex items-center space-x-2 rtl:space-x-reverse bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
-                            <span class="px-2.5 py-1 bg-brand-500/10 text-brand-400 font-mono font-semibold rounded-lg truncate max-w-[140px]" title="${rule.source_id}">
-                                📥 ${rule.source_id}
-                            </span>
-                            <span class="text-slate-500 font-bold">→</span>
-                            <span class="px-2.5 py-1 bg-cyan-500/10 text-cyan-400 font-mono font-semibold rounded-lg truncate max-w-[140px]" title="${rule.target_id}">
-                                📤 ${rule.target_id}
-                            </span>
+                        <!-- Route Flow Badge (1-to-Many) -->
+                        <div class="space-y-2 bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs">
+                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                                <span class="text-[10px] text-slate-500 font-semibold uppercase">Source:</span>
+                                <span class="px-2.5 py-1 bg-brand-500/10 text-brand-400 font-mono font-semibold rounded-lg truncate max-w-[180px]" title="${rule.source_id}">
+                                    📥 ${rule.source_id}
+                                </span>
+                            </div>
+                            <div class="flex items-start space-x-2 rtl:space-x-reverse pt-1 border-t border-slate-900">
+                                <span class="text-[10px] text-slate-500 font-semibold uppercase pt-1">Targets:</span>
+                                <div class="flex flex-wrap gap-1.5">
+                                    ${targetBadges || '<span class="text-slate-500">—</span>'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Media Types Row -->
+                        <div class="flex items-center space-x-1.5 rtl:space-x-reverse overflow-x-auto py-1">
+                            <span class="text-[10px] text-slate-500 font-semibold">Media:</span>
+                            <div class="flex flex-wrap gap-1">
+                                ${mediaBadges}
+                            </div>
                         </div>
 
                         <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
                             <span class="text-slate-500">Priority: ${rule.priority || 0}</span>
                             <div class="flex space-x-2 rtl:space-x-reverse">
-                                <button onclick="editRule('${rule._id}')" class="text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg">✏️ Edit</button>
-                                <button onclick="deleteRule('${rule._id}')" class="text-rose-400 hover:text-rose-300 px-2 py-1 bg-rose-500/10 rounded-lg">🗑️ Delete</button>
+                                <button onclick="editRule('${rule._id}')" class="text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg transition">✏️ Edit</button>
+                                <button onclick="deleteRule('${rule._id}')" class="text-rose-400 hover:text-rose-300 px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg transition">🗑️ Delete</button>
                             </div>
                         </div>
                     </div>
-                `).join('');
+                    `;
+                }).join('');
             }
 
             // Render Text Transformation Rules
@@ -975,7 +1182,10 @@
         function openRuleModal() {
             document.getElementById('rule-form').reset();
             document.getElementById('rule-form-id').value = '';
-            document.getElementById('rule-modal-title').textContent = currentLang === 'ar' ? 'إضافة مسار توجيه جديد' : 'Add New Forwarding Rule';
+            document.getElementById('target-tags-preview').innerHTML = '';
+            selectedMediaTypes = new Set(ALL_MEDIA_TYPES);
+            renderMediaChipsState();
+            document.getElementById('rule-modal-title').textContent = currentLang === 'ar' ? 'إضافة مسار توجيه جديد' : 'Add New Forwarding Pipeline';
             document.getElementById('rule-modal').classList.remove('hidden');
         }
 
@@ -989,19 +1199,47 @@
             document.getElementById('rule-form-id').value = r._id;
             document.getElementById('rule-form-name').value = r.name || '';
             document.getElementById('rule-form-source').value = r.source_id || '';
-            document.getElementById('rule-form-target').value = r.target_id || '';
+            
+            // Format targets
+            let targetsStr = '';
+            if (r.target_ids && Array.isArray(r.target_ids) && r.target_ids.length > 0) {
+                targetsStr = r.target_ids.join(', ');
+            } else {
+                targetsStr = r.target_id || '';
+            }
+            document.getElementById('rule-form-target').value = targetsStr;
+            updateTargetTagsPreview();
+
+            // Populate media types
+            if (r.media_types && Array.isArray(r.media_types) && r.media_types.length > 0) {
+                selectedMediaTypes = new Set(r.media_types);
+            } else {
+                selectedMediaTypes = new Set(ALL_MEDIA_TYPES);
+            }
+            renderMediaChipsState();
+
             document.getElementById('rule-form-active').checked = r.active !== false;
-            document.getElementById('rule-modal-title').textContent = currentLang === 'ar' ? 'تعديل مسار التوجيه' : 'Edit Forwarding Rule';
+            document.getElementById('rule-modal-title').textContent = currentLang === 'ar' ? 'تعديل مسار التوجيه' : 'Edit Forwarding Pipeline';
             document.getElementById('rule-modal').classList.remove('hidden');
         }
 
         async function saveRule(e) {
             e.preventDefault();
             const id = document.getElementById('rule-form-id').value;
+            const targetRaw = document.getElementById('rule-form-target').value.trim();
+            const targets = targetRaw.split(/[\n,]+/).map(t => t.trim()).filter(t => t);
+
+            if (targets.length === 0) {
+                showToast(currentLang === 'ar' ? 'يرجى تحديد قناة هدف واحدة على الأقل' : 'Please specify at least one target channel', 'warning');
+                return;
+            }
+
             const payload = {
                 name: document.getElementById('rule-form-name').value,
                 source_id: document.getElementById('rule-form-source').value.trim(),
-                target_id: document.getElementById('rule-form-target').value.trim(),
+                target_id: targetRaw,
+                target_ids: targets,
+                media_types: Array.from(selectedMediaTypes),
                 active: document.getElementById('rule-form-active').checked,
                 type: 'replace',
                 pattern: '',
@@ -1017,7 +1255,7 @@
             }
 
             if (res.success) {
-                showToast(currentLang === 'ar' ? 'تم حفظ مسار التوجيه بنجاح' : 'Rule saved successfully', 'success');
+                showToast(currentLang === 'ar' ? 'تم حفظ مسار التوجيه بنجاح' : 'Pipeline saved successfully', 'success');
                 closeRuleModal();
                 await loadRules();
                 await fetchStatus();

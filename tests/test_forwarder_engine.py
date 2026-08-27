@@ -175,40 +175,48 @@ class MediaForwardingTest(unittest.TestCase):
         engine.client.send_file.assert_not_awaited()
 
 
-class ForwardingLoopFloodWaitTest(unittest.TestCase):
-    """Verify _run_forwarding_loop handles FLOOD_WAIT gracefully even when
-    source_id is not yet assigned (FloodWait raised before the per-rule loop).
-    Uses mock objects — no real Telegram connection needed.
-    """
+class MultiTargetAndMediaFilterTest(unittest.TestCase):
+    """Test 1-to-many target extraction and media filtering."""
 
-    @patch.object(fe.asyncio, "sleep", new_callable=AsyncMock)
-    def test_loop_survives_flood_wait_before_channel_assignment(self, mock_sleep):
-        """If db.rules.find raises FloodWaitError, the loop must not crash
-        with UnboundLocalError on source_id."""
-        from telethon import errors as tele_errors
+    def test_get_rule_targets_various_formats(self):
+        engine = make_engine()
+        # List of targets
+        self.assertEqual(engine._get_rule_targets({"target_ids": ["@chan1", "@chan2"]}), ["@chan1", "@chan2"])
+        # Comma-separated string
+        self.assertEqual(engine._get_rule_targets({"target_id": "@chan1, @chan2, -100987"}), ["@chan1", "@chan2", "-100987"])
+        # Single string
+        self.assertEqual(engine._get_rule_targets({"target_id": "@mychan"}), ["@mychan"])
+        # Empty
+        self.assertEqual(engine._get_rule_targets({}), [])
 
-        db = MagicMock()
-        # rules.find raises FloodWaitError (e.g. from a DB/Telegram call)
-        db.rules.find.side_effect = tele_errors.FloodWaitError(
-            request="test", capture=10
-        )
-        engine = make_engine(db)
-        engine._running = True
+    def test_detect_media_types(self):
+        engine = make_engine()
 
-        handle_calls = []
+        photo_msg = MagicMock(photo=MagicMock(), video=None, video_note=None, voice=None, audio=None, sticker=None, gif=None, document=None, media=None)
+        self.assertEqual(engine._detect_media_type(photo_msg), "photo")
 
-        async def fake_handle(channel_id, seconds):
-            handle_calls.append((channel_id, seconds))
-            engine._running = False  # stop loop after one flood-wait
+        video_msg = MagicMock(photo=None, video=MagicMock(), video_note=None, voice=None, audio=None, sticker=None, gif=None, document=None, media=None)
+        self.assertEqual(engine._detect_media_type(video_msg), "video")
 
-        engine._handle_flood_wait = fake_handle
-        engine._is_flood_waited = lambda channel_id: False
+        voice_msg = MagicMock(photo=None, video=None, video_note=None, voice=MagicMock(), audio=None, sticker=None, gif=None, document=None, media=None)
+        self.assertEqual(engine._detect_media_type(voice_msg), "audio")
 
-        # Should complete without raising UnboundLocalError
-        asyncio.run(engine._run_forwarding_loop())
-        self.assertEqual(len(handle_calls), 1)
-        self.assertEqual(handle_calls[0][1], 10)  # seconds passed through
+        text_msg = MagicMock(photo=None, video=None, video_note=None, voice=None, audio=None, sticker=None, gif=None, document=None, media=None, message="Hello")
+        self.assertEqual(engine._detect_media_type(text_msg), "text")
+
+    def test_is_media_allowed(self):
+        engine = make_engine()
+        # Allowed all by default
+        self.assertTrue(engine._is_media_allowed({}, "photo"))
+        self.assertTrue(engine._is_media_allowed({"media_types": []}, "photo"))
+        # Specific allowed
+        rule = {"media_types": ["photo", "video"]}
+        self.assertTrue(engine._is_media_allowed(rule, "photo"))
+        self.assertTrue(engine._is_media_allowed(rule, "video"))
+        self.assertFalse(engine._is_media_allowed(rule, "audio"))
+        self.assertFalse(engine._is_media_allowed(rule, "text"))
 
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+

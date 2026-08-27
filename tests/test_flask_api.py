@@ -129,6 +129,21 @@ class FlaskApiTestCase(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.get_json()["success"])
 
+    def test_create_rule_with_multiple_targets_and_media_types(self):
+        resp = self.client.post("/api/rules", json={
+            "name": "1-to-Many Rule",
+            "source_id": "@source_news",
+            "target_id": "@chan1, @chan2, -10012345",
+            "media_types": ["photo", "video", "text"],
+            "active": True
+        })
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertTrue(data["success"])
+        self.assertEqual(len(data["rule"]["target_ids"]), 3)
+        self.assertEqual(data["rule"]["target_ids"], ["@chan1", "@chan2", "-10012345"])
+        self.assertEqual(data["rule"]["media_types"], ["photo", "video", "text"])
+
     def test_blacklist_add_and_remove(self):
         resp = self.client.post("/api/blacklist", json={
             "channel_id": "-1001122334455",

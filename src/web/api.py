@@ -271,17 +271,40 @@ def api_get_rules():
 
 @app.route("/api/rules", methods=["POST"])
 def api_create_rule():
-    """Create a new forwarding rule."""
+    """Create a new forwarding rule with multi-target and media types support."""
     db = get_db()
     if not db:
         return jsonify({"error": "Database not connected"}), 500
     try:
-        data = request.get_json()
+        data = request.get_json() or {}
+        target_id = data.get("target_id", "")
+        target_ids = data.get("target_ids")
+
+        # Normalize target_ids from target_id if string with commas or list
+        if not target_ids:
+            if isinstance(target_id, list):
+                target_ids = target_id
+                target_id = ", ".join(str(t) for t in target_ids)
+            elif isinstance(target_id, str) and ("," in target_id or "\n" in target_id):
+                target_ids = [p.strip() for p in target_id.replace("\n", ",").split(",") if p.strip()]
+            elif target_id:
+                target_ids = [str(target_id).strip()]
+            else:
+                target_ids = []
+        elif isinstance(target_ids, list) and not target_id:
+            target_id = ", ".join(str(t) for t in target_ids)
+
+        media_types = data.get("media_types")
+        if media_types is None or not isinstance(media_types, list):
+            media_types = ["photo", "video", "document", "audio", "text", "sticker"]
+
         rule = {
             "name": data.get("name", "Unnamed Rule"),
             "type": data.get("type", "replace"),
             "source_id": data.get("source_id"),
-            "target_id": data.get("target_id"),
+            "target_id": target_id,
+            "target_ids": target_ids,
+            "media_types": media_types,
             "pattern": data.get("pattern", ""),
             "replacement": data.get("replacement", ""),
             "priority": data.get("priority", 0),
@@ -315,13 +338,20 @@ def api_update_rule(rule_id):
     if not db:
         return jsonify({"error": "Database not connected"}), 500
 
-    data = request.get_json()
+    data = request.get_json() or {}
     object_id = _to_db_id(rule_id)
 
     update_data = {}
-    for key in ["name", "type", "pattern", "replacement", "priority", "active", "source_id", "target_id"]:
+    for key in ["name", "type", "pattern", "replacement", "priority", "active", "source_id", "target_id", "target_ids", "media_types"]:
         if key in data:
             update_data[key] = data[key]
+
+    if "target_id" in update_data and "target_ids" not in update_data:
+        tid = update_data["target_id"]
+        if isinstance(tid, str) and ("," in tid or "\n" in tid):
+            update_data["target_ids"] = [p.strip() for p in tid.replace("\n", ",").split(",") if p.strip()]
+        elif tid:
+            update_data["target_ids"] = [str(tid).strip()]
 
     db.rules.update_one({"_id": object_id}, {"$set": update_data})
     _log_event(db, "INFO", f"Rule '{rule_id}' updated")
