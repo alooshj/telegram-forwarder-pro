@@ -135,9 +135,16 @@ def api_debug():
     config = load_config()
     mongo_raw = config.get("MONGODB_URI", "")
     mongo_clean = mongo_raw.split("?")[0] if mongo_raw else ""
+    # Show current deployed commit for diagnosis
+    try:
+        import subprocess
+        _commit = subprocess.check_output(["git", "rev-parse", "--short", "HEAD"], stderr=subprocess.DEVNULL).decode().strip()
+    except Exception:
+        _commit = "unknown"
     config_info = {
         "db_connected": db is not None,
         "db_type": db_type,
+        "deploy_commit": _commit,
         "mongo_error": db_error,
         "mongo_uri_set": bool(os.environ.get("MONGODB_URI") or os.environ.get("MONGO_URI")),
         "mongo_force_fallback": os.environ.get("MONGODB_FORCE_FALLBACK", "false"),
