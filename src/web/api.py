@@ -315,6 +315,26 @@ def api_get_logs():
         return jsonify({"logs": [], "error": "Database query failed"}), 200
 
 
+@app.route("/api/forwarder/status")
+def api_forwarder_status():
+    """Detailed forwarder status: Telegram connection + active forwarding rules."""
+    db = get_db()
+    info = dict(forwarder_status)
+    if db:
+        try:
+            rules = list(db.rules.find({"active": True, "source_id": {"$ne": None}, "target_id": {"$ne": None}}))
+            info["active_forwarding_rules"] = len(rules)
+            info["db_type"] = type(db).__name__
+        except Exception as e:
+            info["db_error"] = str(e)[:200]
+            info["active_forwarding_rules"] = 0
+            info["db_type"] = None
+    else:
+        info["active_forwarding_rules"] = 0
+        info["db_type"] = None
+    return jsonify(info)
+
+
 @app.route("/api/test-mongo")
 def api_test_mongo():
     """Test MongoDB connection and return detailed results."""
