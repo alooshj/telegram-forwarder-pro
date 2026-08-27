@@ -168,11 +168,26 @@ class MediaForwardingTest(unittest.TestCase):
         target.id = 67890
 
         async def run():
-            await engine._forward_message(original_msg, target, "Plain Text")
+            return await engine._forward_message(original_msg, target, "Plain Text")
 
-        asyncio.run(run())
+        res = asyncio.run(run())
+        self.assertTrue(res)
         engine.client.send_message.assert_awaited_once_with(target, "Plain Text")
         engine.client.send_file.assert_not_awaited()
+
+    def test_forward_message_returns_false_on_chat_write_forbidden(self):
+        from telethon import errors as tele_errors
+        engine = make_engine()
+        engine.client.send_message = AsyncMock(side_effect=tele_errors.ChatWriteForbiddenError(request="test"))
+
+        original_msg = MagicMock(media=None, chat_id=12345, id=99)
+        target = MagicMock(id=67890)
+
+        async def run():
+            return await engine._forward_message(original_msg, target, "Plain Text")
+
+        res = asyncio.run(run())
+        self.assertFalse(res)
 
 
 class MultiTargetAndMediaFilterTest(unittest.TestCase):

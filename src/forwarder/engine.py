@@ -279,7 +279,8 @@ class ForwarderEngine:
             # Handle private invite links
             try:
                 # 1. Try to join private channel via invite hash
-                from telethon.tl.functions.messages import ImportChatInviteRequest
+                from telethon.tl.functions.messages import ImportChatInviteRequest, CheckChatInviteRequest
+                from telethon.tl.types import ChatInviteAlready
                 updates = await self.client(ImportChatInviteRequest(invite_hash))
                 if hasattr(updates, 'chats') and updates.chats:
                     chat = updates.chats[0]
@@ -287,15 +288,24 @@ class ForwarderEngine:
                     self._log_event("INFO", f"🔗 Joined and resolved private channel: {entity_id}")
                     return chat
             except errors.UserAlreadyParticipantError:
-                # Account is already in the channel! Find entity in dialogs
+                # Account is already in the channel! Resolve chat from CheckChatInviteRequest or dialogs
                 try:
-                    dialogs = await self.client.get_dialogs(limit=100)
-                    for dialog in dialogs:
-                        if getattr(dialog.entity, 'username', None) == entity_id:
-                            self._entity_cache[entity_id] = dialog.entity
-                            return dialog.entity
+                    from telethon.tl.functions.messages import CheckChatInviteRequest
+                    from telethon.tl.types import ChatInviteAlready
+                    res = await self.client(CheckChatInviteRequest(invite_hash))
+                    if isinstance(res, ChatInviteAlready) and res.chat:
+                        self._entity_cache[entity_id] = res.chat
+                        self._log_event("INFO", f"🔗 Resolved private channel: {getattr(res.chat, 'title', entity_id)}")
+                        return res.chat
                 except Exception:
-                    pass
+                    try:
+                        dialogs = await self.client.get_dialogs(limit=100)
+                        for dialog in dialogs:
+                            if getattr(dialog.entity, 'username', None) == entity_id:
+                                self._entity_cache[entity_id] = dialog.entity
+                                return dialog.entity
+                    except Exception:
+                        pass
             except errors.FloodWaitError as e:
                 await self._handle_flood_wait(entity_id, e.seconds)
                 return None
@@ -342,7 +352,7 @@ class ForwarderEngine:
         source_entity = await self._get_entity_safe(source_id)
         if not source_entity:
             if not self._is_flood_waited(source_id):
-                self._log_event("WARNING", f"⚠️ Cannot access source channel ({source_id}). Ensure @ayg1133 is a member or use @username.")
+                self._log_event("WARNING", f"⚠️ Cannot access source channel ({source_id}). Ensure @ayg1133 is a member or check channel ID.")
             return
 
         # Prepare and validate target entities
@@ -350,7 +360,7 @@ class ForwarderEngine:
         for tgt in targets:
             norm_tgt = self._normalize_entity_id(tgt)
             if self.rules_engine.is_blacklisted(norm_tgt):
-                logger.info(f"Skipping blacklisted target channel: {norm_tgt}")
+                self._log_event("INFO", f"🚫 Skipping blacklisted target channel: {norm_tgt}")
                 continue
             if self._is_flood_waited(norm_tgt):
                 continue
@@ -360,7 +370,7 @@ class ForwarderEngine:
                 valid_targets.append((norm_tgt, entity))
             else:
                 if not self._is_flood_waited(norm_tgt):
-                    self._log_event("WARNING", f"⚠️ Cannot access target channel ({tgt}). Ensure @ayg1133 is an admin.")
+                    self._log_event("WARNING", f"⚠️ Cannot access target channel ({tgt}). Ensure @ayg1133 is an admin with post permissions.")
 
         if not valid_targets:
             return
@@ -396,9 +406,19 @@ class ForwarderEngine:
                         raw_text, source_id, norm_tgt
                     ) if raw_text else ""
 
-                    await self._forward_message(message, target_entity, transformed_text)
-                    self._mark_processed(post_key, message.id, source_id, norm_tgt)
+                    success = await self._forward_message(
+                        message,
+                        target_entity,
+                        transformed_text,
+                        media_type=media_type,
+                        source_id=source_id,
+                        target_id=norm_tgt
+                    )
+                    if success:
+                        self._mark_processed(post_key, message.id, source_id, norm_tgt)
 
+        except errors.FloodWaitError as e:
+            await self._handle_flood_wait(source_id, e.seconds)
         except Exception as e:
             self._log_event("ERROR", f"Error processing messages from channel {source_id}: {e}")
 
@@ -424,35 +444,97 @@ class ForwarderEngine:
             "forwarded_at": datetime.now(timezone.utc),
         })
 
-    async def _forward_message(self, original_message, target_entity, transformed_text: str):
-        """Forward a message (supporting media, photos, documents, and text) to the target."""
+    async def _forward_message(
+        self, original_message, target_entity, transformed_text: str,
+        media_type: str = "text", source_id=None, target_id=None
+    ) -> bool:
+        """Forward a message (supporting media, photos, documents, and text) to the target.
+        Returns True if sent successfully, False otherwise.
+        """
+        src_name = source_id or getattr(original_message, 'chat_id', 'source')
+        tgt_name = target_id or getattr(target_entity, 'id', target_entity)
+        msg_id = getattr(original_message, 'id', '?')
+
         try:
             has_media = bool(getattr(original_message, "media", None))
-            src_id = getattr(original_message, 'chat_id', 'source')
-            tgt_id = getattr(target_entity, 'id', target_entity)
-            msg_id = getattr(original_message, 'id', '?')
 
             if has_media:
-                # Forward media with transformed caption
                 await self.client.send_file(
                     target_entity,
                     original_message.media,
                     caption=transformed_text or "",
                 )
-                self._log_event("INFO", f"✅ Forwarded post #{msg_id} [Media/File] from {src_id} to {tgt_id}")
+                self._log_event(
+                    "INFO",
+                    f"✅ Forwarded post #{msg_id} [{media_type.upper()}] from {src_name} ➔ {tgt_name}"
+                )
+                return True
             elif transformed_text:
                 await self.client.send_message(target_entity, transformed_text)
-                self._log_event("INFO", f"✅ Forwarded post #{msg_id} [Text] from {src_id} to {tgt_id}")
+                self._log_event(
+                    "INFO",
+                    f"✅ Forwarded post #{msg_id} [TEXT] from {src_name} ➔ {tgt_name}"
+                )
+                return True
+            elif getattr(original_message, "message", None):
+                await self.client.send_message(target_entity, original_message.message)
+                self._log_event(
+                    "INFO",
+                    f"✅ Forwarded post #{msg_id} [TEXT] from {src_name} ➔ {tgt_name}"
+                )
+                return True
             else:
-                await self.client.send_message(target_entity, "[Content not available]")
-                self._log_event("INFO", f"✅ Forwarded post #{msg_id} from {src_id} to {tgt_id}")
+                self._log_event(
+                    "WARNING",
+                    f"⏩ Skipped empty post #{msg_id} from {src_name} (no text or media content)"
+                )
+                return False
 
+        except errors.ChatWriteForbiddenError:
+            self._log_event(
+                "ERROR",
+                f"❌ Failed to forward post #{msg_id} to {tgt_name}: Account @ayg1133 has no permission to send messages. Make sure the account is an Admin with Post Messages rights."
+            )
+            return False
+        except errors.ChatAdminRequiredError:
+            self._log_event(
+                "ERROR",
+                f"❌ Failed to forward post #{msg_id} to {tgt_name}: Admin rights required in target channel."
+            )
+            return False
+        except errors.ChannelPrivateError:
+            self._log_event(
+                "ERROR",
+                f"❌ Failed to forward post #{msg_id} to {tgt_name}: Target channel is private and @ayg1133 is not a member."
+            )
+            return False
+        except errors.UserBannedInChannelError:
+            self._log_event(
+                "ERROR",
+                f"❌ Failed to forward post #{msg_id} to {tgt_name}: Account @ayg1133 is banned or restricted in target channel."
+            )
+            return False
+        except errors.MediaCaptionTooLongError:
+            self._log_event(
+                "ERROR",
+                f"❌ Failed to forward post #{msg_id} to {tgt_name}: Caption is too long ({len(transformed_text)} chars). Limit is 1024."
+            )
+            return False
         except errors.FloodWaitError as e:
-            await self._handle_flood_wait(getattr(target_entity, "id", target_entity), e.seconds)
+            await self._handle_flood_wait(tgt_name, e.seconds)
+            return False
         except errors.RPCError as e:
-            self._log_event("ERROR", f"RPCError forwarding message: {e}")
+            self._log_event(
+                "ERROR",
+                f"❌ Failed to forward post #{msg_id} to {tgt_name}: {getattr(e, 'message', str(e))}"
+            )
+            return False
         except Exception as e:
-            self._log_event("ERROR", f"Unexpected error forwarding: {e}")
+            self._log_event(
+                "ERROR",
+                f"❌ Error forwarding post #{msg_id} to {tgt_name}: {str(e)}"
+            )
+            return False
 
     async def auto_reconnect(self):
         """Auto-reconnect logic for connection stability."""
