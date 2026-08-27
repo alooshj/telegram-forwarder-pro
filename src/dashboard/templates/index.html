@@ -542,16 +542,27 @@
                 }
                 const logs = Array.isArray(data.logs) ? data.logs : [];
                 if (logs.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500">No logs yet.</p>';
+                    container.innerHTML = '<p class="text-gray-500">No logs yet. Activity will appear here when posts are forwarded or settings are updated.</p>';
                     return;
                 }
                 container.innerHTML = logs.map(log => {
                     if (!log || typeof log !== 'object') return '';
-                    const ts = safeStr(log.timestamp);
-                    const lvl = safeStr(log.level, 'INFO');
+                    let ts = safeStr(log.timestamp);
+                    if (ts.includes('T')) {
+                        ts = ts.replace('T', ' ').split('.')[0];
+                    }
+                    const lvl = safeStr(log.level, 'INFO').toUpperCase();
+                    let lvlBadge = `<span class="text-blue-400 font-bold">[${lvl}]</span>`;
+                    if (lvl === 'ERROR') {
+                        lvlBadge = `<span class="text-red-400 font-bold">[${lvl}]</span>`;
+                    } else if (lvl === 'WARNING' || lvl === 'WARN') {
+                        lvlBadge = `<span class="text-yellow-400 font-bold">[${lvl}]</span>`;
+                    } else if (lvl === 'INFO') {
+                        lvlBadge = `<span class="text-green-400 font-bold">[${lvl}]</span>`;
+                    }
                     const msg = safeStr(log.message);
-                    return `[${ts} | ${lvl}] ${msg}`;
-                }).join('<br>');
+                    return `<div class="py-0.5 border-b border-gray-800"><span class="text-gray-500 text-xs">${ts}</span> ${lvlBadge} <span class="text-gray-200">${msg}</span></div>`;
+                }).join('');
             } catch (e) {
                 container.innerHTML = '<p class="text-yellow-400">Could not load logs</p>';
             }

@@ -47,6 +47,27 @@ class ForwarderEngine:
             logger.error(f"Failed to initialize Telegram client: {e}")
             self.client = None
 
+    def _log_event(self, level: str, message: str):
+        """Log to standard logger and persist to database logs collection."""
+        if level == "INFO":
+            logger.info(message)
+        elif level == "WARNING":
+            logger.warning(message)
+        elif level == "ERROR":
+            logger.error(message)
+        else:
+            logger.debug(message)
+
+        if self.db and hasattr(self.db, "logs"):
+            try:
+                self.db.logs.insert_one({
+                    "timestamp": datetime.now(timezone.utc),
+                    "level": level,
+                    "message": message,
+                })
+            except Exception:
+                pass
+
     @staticmethod
     def _normalize_entity_id(entity_id):
         """Normalize channel ID to int if numeric, or string if username."""
@@ -65,13 +86,14 @@ class ForwarderEngine:
     async def start(self):
         """Start the forwarder and begin monitoring source channels."""
         if not self.client:
-            logger.error("Telegram client not initialized — cannot start forwarder")
+            self._log_event("ERROR", "Telegram client not initialized — cannot start forwarder")
             return
 
         try:
             await self.client.start()
             me = await self.client.get_me()
-            logger.info(f"Forwarder started as @{getattr(me, 'username', 'user')}")
+            username = getattr(me, 'username', None) or getattr(me, 'id', 'user')
+            self._log_event("INFO", f"Telegram Forwarder engine connected as @{username}")
 
             self._running = True
 
@@ -87,16 +109,16 @@ class ForwarderEngine:
             await self._run_forwarding_loop()
 
         except errors.FloodWaitError as e:
-            logger.warning(f"FLOOD_WAIT on startup: {e.seconds}s")
+            self._log_event("WARNING", f"FLOOD_WAIT on startup: {e.seconds}s")
             await asyncio.sleep(e.seconds)
             if self._running:
                 await self.start()  # Retry after flood wait
         except (errors.RPCError, ConnectionError, OSError) as e:
-            logger.error(f"Connection error during forwarder start: {e}", exc_info=True)
+            self._log_event("ERROR", f"Connection error during forwarder start: {e}")
             if self._running:
                 await self.auto_reconnect()
         except Exception as e:
-            logger.error(f"Unexpected error starting forwarder: {e}", exc_info=True)
+            self._log_event("ERROR", f"Unexpected error starting forwarder: {e}")
             if self._running:
                 await self.auto_reconnect()
 
@@ -115,7 +137,7 @@ class ForwarderEngine:
             forwarder_status["last_update"] = datetime.now(timezone.utc).isoformat()
         except Exception:
             pass
-        logger.info("Forwarder stopped")
+        self._log_event("INFO", "Telegram Forwarder engine stopped")
 
     async def _run_forwarding_loop(self):
         """Main loop: fetch source rules, process messages."""
@@ -172,7 +194,7 @@ class ForwarderEngine:
 
     async def _handle_flood_wait(self, channel_id, seconds: int):
         """Handle FLOOD_WAIT by pausing and retrying later."""
-        logger.warning(f"FLOOD_WAIT for {channel_id}: {seconds}s")
+        self._log_event("WARNING", f"⏳ Telegram FLOOD_WAIT on channel {channel_id}: waiting {seconds}s")
         self._last_flood_wait[channel_id] = time.time() + seconds + 5  # extra 5s buffer
         await asyncio.sleep(seconds)
 
@@ -214,9 +236,9 @@ class ForwarderEngine:
                 self._mark_processed(post_key, message.id, source_id, target_id)
 
         except ValueError as e:
-            logger.error(f"Entity not found for {source_id} → {target_id}: {e}")
+            self._log_event("ERROR", f"Entity not found for channel {source_id} → {target_id}: {e}")
         except Exception as e:
-            logger.error(f"Error processing channel {source_id}: {e}", exc_info=True)
+            self._log_event("ERROR", f"Error processing channel {source_id}: {e}")
 
     def _is_duplicate(self, post_key: str) -> bool:
         """Check if a post was already forwarded."""
@@ -236,33 +258,37 @@ class ForwarderEngine:
     async def _forward_message(self, original_message, target_entity, transformed_text: str):
         """Forward a message (supporting media, photos, documents, and text) to the target."""
         try:
-            if getattr(original_message, "media", None):
+            has_media = bool(getattr(original_message, "media", None))
+            src_id = getattr(original_message, 'chat_id', 'source')
+            tgt_id = getattr(target_entity, 'id', target_entity)
+            msg_id = getattr(original_message, 'id', '?')
+
+            if has_media:
                 # Forward media with transformed caption
                 await self.client.send_file(
                     target_entity,
                     original_message.media,
                     caption=transformed_text or "",
                 )
+                self._log_event("INFO", f"✅ Forwarded post #{msg_id} [Media/File] from {src_id} to {tgt_id}")
             elif transformed_text:
                 await self.client.send_message(target_entity, transformed_text)
+                self._log_event("INFO", f"✅ Forwarded post #{msg_id} [Text] from {src_id} to {tgt_id}")
             else:
                 await self.client.send_message(target_entity, "[Content not available]")
-
-            logger.info(
-                f"Forwarded message from {getattr(original_message, 'chat_id', 'unknown')} to {getattr(target_entity, 'id', target_entity)}"
-            )
+                self._log_event("INFO", f"✅ Forwarded post #{msg_id} from {src_id} to {tgt_id}")
 
         except errors.FloodWaitError as e:
             await self._handle_flood_wait(getattr(target_entity, "id", target_entity), e.seconds)
         except errors.RPCError as e:
-            logger.error(f"Failed to forward message: {e}")
+            self._log_event("ERROR", f"RPCError forwarding message: {e}")
         except Exception as e:
-            logger.error(f"Unexpected error forwarding: {e}", exc_info=True)
+            self._log_event("ERROR", f"Unexpected error forwarding: {e}")
 
     async def auto_reconnect(self):
         """Auto-reconnect logic for connection stability."""
         if not self.client:
-            logger.error("Cannot reconnect — Telethon client is not initialized")
+            self._log_event("ERROR", "Cannot reconnect — Telethon client is not initialized")
             return False
 
         max_reconnects = self.config.get("MAX_RETRIES", 3)
@@ -271,12 +297,13 @@ class ForwarderEngine:
         for attempt in range(max_reconnects):
             try:
                 if not self.client.is_connected():
+                    self._log_event("WARNING", f"🔄 Attempting auto-reconnect ({attempt + 1}/{max_reconnects})...")
                     await self.client.connect()
-                    logger.info(f"Reconnected on attempt {attempt + 1}")
+                    self._log_event("INFO", f"✅ Reconnected successfully on attempt {attempt + 1}")
                     return True
             except Exception as e:
-                logger.warning(f"Reconnect attempt {attempt + 1} failed: {e}")
+                self._log_event("WARNING", f"Reconnect attempt {attempt + 1} failed: {e}")
                 await asyncio.sleep(retry_delay * (attempt + 1))
 
-        logger.error("Max reconnect attempts exceeded")
+        self._log_event("ERROR", "Max reconnect attempts exceeded")
         return False

@@ -62,6 +62,28 @@ def _to_db_id(raw_id):
     return str(raw_id)
 
 
+def _log_event(db, level: str, message: str):
+    """Log an operational event to logger and db.logs collection."""
+    if level == "INFO":
+        logger.info(message)
+    elif level == "WARNING":
+        logger.warning(message)
+    elif level == "ERROR":
+        logger.error(message)
+    else:
+        logger.debug(message)
+
+    if db and hasattr(db, "logs"):
+        try:
+            db.logs.insert_one({
+                "timestamp": datetime.now(timezone.utc),
+                "level": level,
+                "message": message,
+            })
+        except Exception:
+            pass
+
+
 def _start_forwarder_engine(config, db):
     """Start the forwarder engine in a background thread if not already running."""
     global _engine_instance, _engine_thread
@@ -89,7 +111,7 @@ def _start_forwarder_engine(config, db):
         thread = threading.Thread(target=run_forwarder, daemon=True)
         _engine_thread = thread
         thread.start()
-        logger.info("Forwarder engine started in background thread")
+        _log_event(db, "INFO", "Forwarder engine thread spawned")
         return True
 
 
@@ -105,6 +127,9 @@ def _stop_forwarder_engine():
         forwarder_status["running"] = False
         forwarder_status["connected"] = False
         forwarder_status["last_update"] = datetime.now(timezone.utc).isoformat()
+        db = get_db()
+        if db:
+            _log_event(db, "INFO", "Forwarder engine stopped by user request")
 
 
 def get_db():
@@ -264,6 +289,7 @@ def api_create_rule():
         }
         result = db.rules.insert_one(rule)
         rule["_id"] = str(result.inserted_id)
+        _log_event(db, "INFO", f"Rule '{rule['name']}' created ({rule.get('source_id')} → {rule.get('target_id')})")
         return jsonify({"success": True, "rule": rule})
     except Exception as e:
         logger.error(f"Failed to create rule: {e}")
@@ -278,6 +304,7 @@ def api_delete_rule(rule_id):
         return jsonify({"error": "Database not connected"}), 500
     object_id = _to_db_id(rule_id)
     db.rules.delete_one({"_id": object_id})
+    _log_event(db, "INFO", f"Rule '{rule_id}' deleted")
     return jsonify({"success": True})
 
 
@@ -297,6 +324,7 @@ def api_update_rule(rule_id):
             update_data[key] = data[key]
 
     db.rules.update_one({"_id": object_id}, {"$set": update_data})
+    _log_event(db, "INFO", f"Rule '{rule_id}' updated")
     return jsonify({"success": True})
 
 
@@ -334,6 +362,7 @@ def api_add_blacklist():
     }
     result = db.blacklist.insert_one(entry)
     entry["_id"] = str(result.inserted_id)
+    _log_event(db, "WARNING", f"Channel {channel_id} added to blacklist ({entry['reason']})")
     return jsonify({"success": True, "entry": entry})
 
 
@@ -346,6 +375,7 @@ def api_remove_blacklist(channel_id):
 
     cid = int(channel_id) if str(channel_id).lstrip("-").isdigit() else channel_id
     db.blacklist.delete_one({"channel_id": cid})
+    _log_event(db, "INFO", f"Channel {cid} removed from blacklist")
     return jsonify({"success": True})
 
 
