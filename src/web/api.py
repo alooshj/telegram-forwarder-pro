@@ -397,6 +397,93 @@ def api_get_logs():
         return jsonify({"logs": [], "error": "Database query failed"}), 200
 
 
+@app.route("/api/stats")
+def api_get_stats():
+    """Get aggregated statistics for the dashboard."""
+    db = get_db()
+    stats = {
+        "running": forwarder_status.get("running", False),
+        "connected": forwarder_status.get("connected", False),
+        "last_update": forwarder_status.get("last_update"),
+        "total_rules": 0,
+        "active_rules": 0,
+        "total_forwarded": 0,
+        "blacklist_count": 0,
+        "logs_count": 0,
+        "db_type": type(db).__name__ if db else "Disconnected",
+    }
+    if db:
+        try:
+            rules = list(db.rules.find({}))
+            stats["total_rules"] = len(rules)
+            stats["active_rules"] = sum(1 for r in rules if r.get("active", True))
+            stats["total_forwarded"] = len(list(db.processed_posts.find({})))
+            stats["blacklist_count"] = len(list(db.blacklist.find({})))
+            stats["logs_count"] = len(list(db.logs.find({})))
+        except Exception as e:
+            stats["error"] = str(e)
+    return jsonify(stats)
+
+
+@app.route("/api/rules/<rule_id>/toggle", methods=["POST"])
+def api_toggle_rule(rule_id):
+    """Toggle a rule's active state."""
+    db = get_db()
+    if not db:
+        return jsonify({"error": "Database not connected"}), 500
+    object_id = _to_db_id(rule_id)
+    rule = db.rules.find_one({"_id": object_id})
+    if not rule:
+        return jsonify({"error": "Rule not found"}), 404
+    new_status = not rule.get("active", True)
+    db.rules.update_one({"_id": object_id}, {"$set": {"active": new_status}})
+    _log_event(db, "INFO", f"Rule '{rule.get('name', rule_id)}' {'activated' if new_status else 'deactivated'}")
+    return jsonify({"success": True, "active": new_status})
+
+
+@app.route("/api/rules/test", methods=["POST"])
+def api_test_rule():
+    """Test text transformation against configured rules."""
+    db = get_db()
+    data = request.get_json() or {}
+    text = data.get("text", "")
+    source_id = data.get("source_id")
+    target_id = data.get("target_id")
+    from src.rules.engine import RulesEngine
+    engine = RulesEngine(db=db)
+    transformed = engine.apply_rules(text, source_id, target_id)
+    return jsonify({
+        "success": True,
+        "original": text,
+        "transformed": transformed,
+        "changed": text != transformed,
+    })
+
+
+@app.route("/api/logs/clear", methods=["POST"])
+def api_clear_logs():
+    """Clear all stored logs."""
+    db = get_db()
+    if not db:
+        return jsonify({"error": "Database not connected"}), 500
+    try:
+        if hasattr(db.logs, "delete_many"):
+            db.logs.delete_many({})
+        elif hasattr(db.logs, "table"):
+            with db._lock:
+                conn = db._get_conn()
+                try:
+                    conn.execute("DELETE FROM forwarding_logs")
+                    conn.commit()
+                finally:
+                    conn.close()
+        _log_event(db, "INFO", "Logs cleared by user")
+        return jsonify({"success": True, "message": "Logs cleared"})
+    except Exception as e:
+        logger.error(f"Failed to clear logs: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/forwarder/status")
 def api_forwarder_status():
     """Detailed forwarder status: Telegram connection + active forwarding rules."""

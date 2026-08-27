@@ -1,86 +1,353 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl" class="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Forwarder Pro</title>
+    <title>Telegram Forwarder Pro — لوحة التحكم</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Cairo', 'Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#eef2ff',
+                            100: '#e0e7ff',
+                            400: '#818cf8',
+                            500: '#6366f1',
+                            600: '#4f46e5',
+                            700: '#4338ca',
+                            900: '#312e81',
+                        },
+                        surface: {
+                            800: '#1e293b',
+                            850: '#172033',
+                            900: '#0f172a',
+                            950: '#090d16',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Cairo', 'Inter', sans-serif; }
+        .tab-btn.active {
+            background-color: #4f46e5;
+            color: #ffffff;
+            box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.35);
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
+        .animate-fade-in { animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    </style>
 </head>
-<body class="bg-gray-900 text-gray-100 min-h-screen">
-    <!-- Header -->
-    <header class="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <h1 class="text-2xl font-bold text-white">Telegram Forwarder Pro</h1>
-        <p class="text-gray-400 text-sm">24/7 Automated Post Forwarding & Content Transformation</p>
+<body class="bg-surface-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
+
+    <!-- Toast Notifications Container -->
+    <div id="toast-container" class="fixed top-5 left-5 z-50 flex flex-col space-y-3 pointer-events-none"></div>
+
+    <!-- Navigation Header -->
+    <header class="bg-surface-900/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <!-- Logo & Brand -->
+                <div class="flex items-center space-x-3 rtl:space-x-reverse">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-brand-500/20 text-white font-black text-xl">
+                        ✈️
+                    </div>
+                    <div>
+                        <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                            <span class="font-bold text-lg text-white tracking-wide">Telegram Forwarder</span>
+                            <span class="text-xs bg-brand-500/20 text-brand-400 font-semibold px-2 py-0.5 rounded-full border border-brand-500/30">PRO</span>
+                        </div>
+                        <p class="text-xs text-slate-400" data-i18n="app_subtitle">24/7 Automated Post Forwarding & Content Transformation</p>
+                    </div>
+                </div>
+
+                <!-- Status & Quick Actions -->
+                <div class="flex items-center space-x-3 rtl:space-x-reverse">
+                    <!-- Engine Status Pill -->
+                    <div id="header-status-pill" class="flex items-center space-x-2 rtl:space-x-reverse bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full text-xs font-medium">
+                        <span id="header-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
+                        <span id="header-status-text" class="text-slate-300" data-i18n="status_connecting">Connecting...</span>
+                    </div>
+
+                    <!-- Forwarder Start/Stop Button -->
+                    <button id="quick-toggle-btn" onclick="toggleEngine()" class="flex items-center space-x-1.5 rtl:space-x-reverse px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all">
+                        <span id="quick-toggle-icon">▶</span>
+                        <span id="quick-toggle-text" data-i18n="btn_start">Start</span>
+                    </button>
+
+                    <!-- Language Switcher -->
+                    <button onclick="toggleLanguage()" class="flex items-center space-x-1 rtl:space-x-reverse bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition">
+                        <span>🌐</span>
+                        <span id="lang-switch-label">English</span>
+                    </button>
+                </div>
+            </div>
+        </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="container mx-auto px-6 py-6">
-        <!-- Status Bar -->
-        <div class="bg-gray-800 rounded-lg p-4 mb-6 border border-gray-700 flex items-center justify-between">
-            <div class="flex items-center space-x-4">
-                <div id="status-indicator" class="w-3 h-3 bg-red-500 rounded-full animate-pulse"></div>
-                <span id="status-text" class="text-sm font-medium">Disconnected</span>
-            </div>
-            <div class="flex space-x-2">
-                <button id="start-btn" onclick="startForwarder()"
-                        class="px-4 py-2 bg-green-600 hover:bg-green-700 rounded text-sm font-medium transition">
-                    Start Forwarder
-                </button>
-                <button id="stop-btn" onclick="stopForwarder()"
-                        class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded text-sm font-medium transition"
-                        disabled>
-                    Stop
-                </button>
-            </div>
-        </div>
+    <!-- Main Container -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 space-y-6">
 
-        <!-- Tabs -->
-        <div class="flex space-x-1 mb-6 bg-gray-800 rounded-lg p-1 border border-gray-700">
-            <button onclick="showTab('rules')" id="tab-rules-btn"
-                    class="tab-btn active px-4 py-2 text-sm font-medium rounded bg-blue-600">
-                Forwarding Rules
+        <!-- Top Navigation Tabs -->
+        <div class="bg-surface-900 border border-slate-800 p-1.5 rounded-2xl flex flex-wrap gap-1 shadow-sm">
+            <button onclick="switchTab('overview')" id="tab-overview-btn" class="tab-btn active flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium transition-all">
+                <span>📊</span>
+                <span data-i18n="tab_overview">Overview</span>
             </button>
-            <button onclick="showTab('blacklist')" id="tab-blacklist-btn"
-                    class="tab-btn px-4 py-2 text-sm font-medium rounded hover:bg-gray-700">
-                Blacklist
+            <button onclick="switchTab('forwarding')" id="tab-forwarding-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+                <span>🔄</span>
+                <span data-i18n="tab_forwarding">Forwarding Rules</span>
+                <span id="badge-rules-count" class="bg-slate-800 text-xs px-2 py-0.5 rounded-full text-slate-300">0</span>
             </button>
-            <button onclick="showTab('rules-editor')" id="tab-editor-btn"
-                    class="tab-btn px-4 py-2 text-sm font-medium rounded hover:bg-gray-700">
-                Text Rules
+            <button onclick="switchTab('text-rules')" id="tab-text-rules-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+                <span>✍️</span>
+                <span data-i18n="tab_text_rules">Text Transformation</span>
             </button>
-            <button onclick="showTab('logs')" id="tab-logs-btn"
-                    class="tab-btn px-4 py-2 text-sm font-medium rounded hover:bg-gray-700">
-                Logs
+            <button onclick="switchTab('blacklist')" id="tab-blacklist-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+                <span>🚫</span>
+                <span data-i18n="tab_blacklist">Blacklist</span>
+                <span id="badge-blacklist-count" class="bg-slate-800 text-xs px-2 py-0.5 rounded-full text-slate-300">0</span>
+            </button>
+            <button onclick="switchTab('logs')" id="tab-logs-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+                <span>📜</span>
+                <span data-i18n="tab_logs">Real-Time Logs</span>
+            </button>
+            <button onclick="switchTab('settings')" id="tab-settings-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+                <span>⚙️</span>
+                <span data-i18n="tab_settings">Diagnostics & Settings</span>
             </button>
         </div>
 
-        <!-- Forwarding Rules Tab -->
-        <div id="tab-rules" class="tab-content">
-            <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold">Active Forwarding Rules</h2>
-                    <button onclick="openForwardingRuleForm()"
-                            class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">
-                        Add Rule
+        <!-- ==================== TAB 1: OVERVIEW ==================== -->
+        <div id="tab-content-overview" class="tab-pane space-y-6 animate-fade-in">
+            <!-- Hero Metrics Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Card 1: Forwarded Posts -->
+                <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" data-i18n="metric_forwarded">Total Posts Forwarded</span>
+                        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg">🚀</div>
+                    </div>
+                    <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
+                        <span id="stat-total-forwarded" class="text-3xl font-extrabold text-white">0</span>
+                        <span class="text-xs text-emerald-400 font-medium" data-i18n="metric_posts_unit">posts</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1" data-i18n="metric_forwarded_desc">Photos, videos & text posts</p>
+                </div>
+
+                <!-- Card 2: Active Rules -->
+                <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" data-i18n="metric_active_rules">Active Rules</span>
+                        <div class="w-9 h-9 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-lg">🔄</div>
+                    </div>
+                    <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
+                        <span id="stat-active-rules" class="text-3xl font-extrabold text-white">0</span>
+                        <span class="text-xs text-slate-400">/ <span id="stat-total-rules">0</span> <span data-i18n="metric_rules_total">total</span></span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1" data-i18n="metric_rules_desc">Source to target channel pipelines</p>
+                </div>
+
+                <!-- Card 3: Blacklisted Channels -->
+                <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" data-i18n="metric_blacklist">Blacklisted Channels</span>
+                        <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-lg">🚫</div>
+                    </div>
+                    <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
+                        <span id="stat-blacklist-count" class="text-3xl font-extrabold text-white">0</span>
+                        <span class="text-xs text-rose-400 font-medium" data-i18n="metric_blocked">blocked</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-1" data-i18n="metric_blacklist_desc">Channels ignored automatically</p>
+                </div>
+
+                <!-- Card 4: Database & Engine -->
+                <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" data-i18n="metric_db">Database Storage</span>
+                        <div class="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-lg">🍃</div>
+                    </div>
+                    <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
+                        <span id="stat-db-type" class="text-2xl font-bold text-white">MongoDB</span>
+                    </div>
+                    <p id="stat-db-status" class="text-xs text-emerald-400 mt-1">● Atlas Cluster Connected</p>
+                </div>
+            </div>
+
+            <!-- Operational Status & Quick Test Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <!-- Engine Health & Account Card -->
+                <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
+                            <span>🤖</span>
+                            <span data-i18n="sec_account_status">Telegram Account & Engine</span>
+                        </h3>
+                        <span id="overview-engine-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Running</span>
+                    </div>
+
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span class="text-slate-400" data-i18n="lbl_userbot_account">Userbot Account:</span>
+                            <span id="overview-account-name" class="font-semibold text-brand-400">@ayg1133</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span class="text-slate-400" data-i18n="lbl_session_mode">Session Type:</span>
+                            <span class="font-mono text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-300">StringSession (Cloud)</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span class="text-slate-400" data-i18n="lbl_keepalive">Keep-Alive Cron:</span>
+                            <span class="text-xs font-medium text-emerald-400">✅ Active (Every 5 mins)</span>
+                        </div>
+                        <div class="flex justify-between items-center text-slate-300">
+                            <span class="text-slate-400" data-i18n="lbl_last_sync">Last Heartbeat:</span>
+                            <span id="overview-last-update" class="font-mono text-xs text-slate-400">Just now</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-slate-800 flex gap-2">
+                        <button onclick="triggerManualSync()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-xl text-slate-200 transition">
+                            🔄 <span data-i18n="btn_sync_now">Sync Now</span>
+                        </button>
+                        <button onclick="switchTab('logs')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-xl text-slate-200 transition">
+                            📜 <span data-i18n="btn_view_logs">View Logs</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Live Quick Tester Card -->
+                <div class="lg:col-span-2 bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <h3 class="font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
+                            <span>🧪</span>
+                            <span data-i18n="sec_quick_tester">Live Rule & Transformation Tester</span>
+                        </h3>
+                        <span class="text-xs text-slate-400" data-i18n="sec_quick_tester_desc">Test message output before forwarding</span>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5" data-i18n="lbl_sample_input">Original Sample Post:</label>
+                            <textarea id="quick-test-input" rows="4" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-slate-200 focus:outline-none focus:border-brand-500 custom-scrollbar resize-none" placeholder="Paste sample Telegram post here with @usernames, links, or keywords..."></textarea>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5" data-i18n="lbl_transformed_output">Transformed Output:</label>
+                            <div id="quick-test-output" class="w-full h-[96px] bg-slate-950 border border-slate-800 rounded-xl p-3 text-xs text-emerald-400 font-mono overflow-y-auto custom-scrollbar">
+                                <span class="text-slate-500 italic" data-i18n="txt_tester_placeholder">Click 'Test Output' to preview transformation...</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="flex justify-end pt-2">
+                        <button onclick="runQuickTest()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-brand-600/20 transition flex items-center space-x-1.5 rtl:space-x-reverse">
+                            <span>⚡</span>
+                            <span data-i18n="btn_run_test">Test Output</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 2: FORWARDING RULES ==================== -->
+        <div id="tab-content-forwarding" class="tab-pane hidden space-y-6 animate-fade-in">
+            <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+                <!-- Header & Search -->
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
+                            <span>🔄</span>
+                            <span data-i18n="title_forwarding_rules">Channel Forwarding Pipelines</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1" data-i18n="desc_forwarding_rules">Configure source Telegram channels to monitor and target channels to post into.</p>
+                    </div>
+                    <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                        <input id="rules-search-input" onkeyup="filterRules()" type="text" placeholder="Search rules..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 w-48">
+                        <button onclick="openRuleModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-brand-600/20 transition flex items-center space-x-1.5 rtl:space-x-reverse whitespace-nowrap">
+                            <span>➕</span>
+                            <span data-i18n="btn_add_rule">Add New Pipeline</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Rules Cards Grid -->
+                <div id="rules-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- Rule cards rendered dynamically -->
+                    <div class="col-span-full py-12 text-center text-slate-500">
+                        <span class="animate-spin inline-block mr-2">🔄</span> Loading rules...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 3: TEXT TRANSFORMATION ==================== -->
+        <div id="tab-content-text-rules" class="tab-pane hidden space-y-6 animate-fade-in">
+            <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
+                            <span>✍️</span>
+                            <span data-i18n="title_text_rules">Content Transformation Rules</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1" data-i18n="desc_text_rules">Automatically replace words, strip source @usernames/links, add branding footers, and apply Regex filters.</p>
+                    </div>
+                    <button onclick="openTransformModal()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-600/20 transition flex items-center space-x-1.5 rtl:space-x-reverse whitespace-nowrap">
+                        <span>➕</span>
+                        <span data-i18n="btn_add_transform">Add Transformation</span>
                     </button>
                 </div>
+
+                <!-- Transformation Rules List -->
+                <div id="transform-rules-list" class="space-y-3">
+                    <div class="py-8 text-center text-slate-500">Loading text transformation rules...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB 4: BLACKLIST ==================== -->
+        <div id="tab-content-blacklist" class="tab-pane hidden space-y-6 animate-fade-in">
+            <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
+                            <span>🚫</span>
+                            <span data-i18n="title_blacklist">Channel Blacklist</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-1" data-i18n="desc_blacklist">Blocked channels whose messages will never be forwarded.</p>
+                    </div>
+                    <button onclick="openBlacklistModal()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-rose-600/20 transition flex items-center space-x-1.5 rtl:space-x-reverse">
+                        <span>➕</span>
+                        <span data-i18n="btn_add_blacklist">Add to Blacklist</span>
+                    </button>
+                </div>
+
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left">
+                    <table class="w-full text-left rtl:text-right">
                         <thead>
-                            <tr class="border-b border-gray-700">
-                                <th class="pb-2 text-gray-400">ID</th>
-                                <th class="pb-2 text-gray-400">Source → Target</th>
-                                <th class="pb-2 text-gray-400">Type</th>
-                                <th class="pb-2 text-gray-400">Pattern</th>
-                                <th class="pb-2 text-gray-400">Active</th>
+                            <tr class="border-b border-slate-800 text-xs font-semibold uppercase text-slate-400">
+                                <th class="pb-3 px-4" data-i18n="th_channel_id">Channel ID / Username</th>
+                                <th class="pb-3 px-4" data-i18n="th_reason">Reason</th>
+                                <th class="pb-3 px-4" data-i18n="th_date_added">Date Added</th>
+                                <th class="pb-3 px-4 text-center" data-i18n="th_actions">Actions</th>
                             </tr>
                         </thead>
-                        <tbody id="rules-table-body">
+                        <tbody id="blacklist-table-body" class="divide-y divide-slate-800/60 text-sm">
                             <tr>
-                                <td colspan="5" class="py-8 text-center text-gray-500">
-                                    Loading rules...
-                                </td>
+                                <td colspan="4" class="py-8 text-center text-slate-500">Loading blacklist...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -88,562 +355,899 @@
             </div>
         </div>
 
-        <!-- Blacklist Tab -->
-        <div id="tab-blacklist" class="tab-content hidden">
-            <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold">Blacklisted Channels</h2>
-                    <button onclick="openBlacklistForm()"
-                            class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
-                        Add Blacklist Entry
-                    </button>
+        <!-- ==================== TAB 5: REAL-TIME LOGS ==================== -->
+        <div id="tab-content-logs" class="tab-pane hidden space-y-6 animate-fade-in">
+            <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
+                            <span>📜</span>
+                            <span data-i18n="title_logs">Real-Time Operational Logs</span>
+                        </h2>
+                        <p class="text-xs text-slate-400 mt-0.5" data-i18n="desc_logs">Live feed of all forwarding events, post transformations, and connection states.</p>
+                    </div>
+
+                    <!-- Controls Bar -->
+                    <div class="flex flex-wrap items-center gap-2">
+                        <!-- Level Filter -->
+                        <div class="flex bg-slate-950 border border-slate-800 p-1 rounded-xl text-xs">
+                            <button onclick="setLogLevelFilter('ALL')" id="filter-lvl-all" class="px-2.5 py-1 rounded-lg font-semibold bg-brand-600 text-white">ALL</button>
+                            <button onclick="setLogLevelFilter('INFO')" id="filter-lvl-info" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-emerald-400">INFO</button>
+                            <button onclick="setLogLevelFilter('WARNING')" id="filter-lvl-warn" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-amber-400">WARN</button>
+                            <button onclick="setLogLevelFilter('ERROR')" id="filter-lvl-error" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-rose-400">ERROR</button>
+                        </div>
+
+                        <!-- Auto Poll Toggle -->
+                        <button id="logs-auto-poll-btn" onclick="toggleLogsAutoPoll()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-xl text-emerald-400 border border-emerald-500/20 transition flex items-center space-x-1 rtl:space-x-reverse">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                            <span data-i18n="btn_live_feed">Live Feed</span>
+                        </button>
+
+                        <!-- Refresh -->
+                        <button onclick="loadLogs(true)" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition" title="Refresh">
+                            🔄
+                        </button>
+
+                        <!-- Clear Logs -->
+                        <button onclick="clearLogs()" class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 text-xs font-semibold rounded-xl transition flex items-center space-x-1 rtl:space-x-reverse">
+                            <span>🗑️</span>
+                            <span data-i18n="btn_clear_logs">Clear</span>
+                        </button>
+                    </div>
                 </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="border-b border-gray-700">
-                                <th class="pb-2 text-gray-400">_id</th>
-                                <th class="pb-2 text-gray-400">Channel ID</th>
-                                <th class="pb-2 text-gray-400">Reason</th>
-                                <th class="pb-2 text-gray-400">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="blacklist-table-body">
-                            <tr>
-                                <td colspan="4" class="py-8 text-center text-gray-500">
-                                    Loading blacklist...
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
+
+                <!-- Log Output Terminal Box -->
+                <div id="log-container" class="w-full h-[520px] bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs overflow-y-auto custom-scrollbar space-y-1.5">
+                    <p class="text-slate-500">Loading logs...</p>
                 </div>
             </div>
         </div>
 
-        <!-- Text Rules Editor Tab -->
-        <div id="tab-rules-editor" class="tab-content hidden">
-            <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold">Text Transformation Rules</h2>
-                    <button onclick="openTransformRuleForm()"
-                            class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm">
-                        Add Transformation Rule
-                    </button>
+        <!-- ==================== TAB 6: SETTINGS & DIAGNOSTICS ==================== -->
+        <div id="tab-content-settings" class="tab-pane hidden space-y-6 animate-fade-in">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- System Diagnostics -->
+                <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h3 class="font-bold text-white border-b border-slate-800 pb-3 flex items-center space-x-2 rtl:space-x-reverse">
+                        <span>🩺</span>
+                        <span data-i18n="sec_diagnostics">System & Cloud Diagnostics</span>
+                    </h3>
+                    <div id="diag-container" class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
+                            <span class="text-slate-400" data-i18n="lbl_platform">Hosting Platform:</span>
+                            <span class="text-brand-400 font-semibold">Render (Docker / Python 3.11)</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
+                            <span class="text-slate-400" data-i18n="lbl_mongo_cluster">MongoDB Atlas Cluster:</span>
+                            <span id="diag-mongo-host" class="font-mono text-xs text-slate-300">cluster0.elq8wu0.mongodb.net</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
+                            <span class="text-slate-400" data-i18n="lbl_db_connected">Database Connection:</span>
+                            <span id="diag-db-state" class="text-emerald-400 font-semibold">Connected (MongoDB)</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
+                            <span class="text-slate-400" data-i18n="lbl_session_status">Telegram Session:</span>
+                            <span class="text-emerald-400 font-semibold">Valid & Authenticated</span>
+                        </div>
+                    </div>
                 </div>
-                <p class="text-gray-400 text-sm mb-4">
-                    Configure text replacement, regex patterns, footers, and blacklists.
-                    Rules are applied in priority order (lower number = higher priority).
-                </p>
-                <div id="transformation-rules-list" class="space-y-2">
-                    <p class="text-gray-500">Click above to add your first transformation rule.</p>
+
+                <!-- Forwarder Performance Configuration -->
+                <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-4">
+                    <h3 class="font-bold text-white border-b border-slate-800 pb-3 flex items-center space-x-2 rtl:space-x-reverse">
+                        <span>⚡</span>
+                        <span data-i18n="sec_engine_config">Engine Optimization & Specs</span>
+                    </h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
+                            <span class="text-slate-400" data-i18n="lbl_poll_rate">Channel Polling Rate:</span>
+                            <span class="font-mono text-xs text-slate-300">Every 30 seconds</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
+                            <span class="text-slate-400" data-i18n="lbl_media_support">Media Forwarding:</span>
+                            <span class="text-emerald-400 font-semibold">✅ Full (Photos, Videos, Files)</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
+                            <span class="text-slate-400" data-i18n="lbl_flood_wait">FloodWait Protection:</span>
+                            <span class="text-emerald-400 font-semibold">✅ Automated Backoff + Buffer</span>
+                        </div>
+                        <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
+                            <span class="text-slate-400" data-i18n="lbl_dedup">Duplicate Prevention:</span>
+                            <span class="text-emerald-400 font-semibold">✅ Persistent Unique Post Keys</span>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <!-- Logs Tab -->
-        <div id="tab-logs" class="tab-content hidden">
-            <div class="bg-gray-800 rounded-lg border border-gray-700 p-4">
-                <div class="flex justify-between items-center mb-4">
-                    <h2 class="text-xl font-semibold">Real-Time Logs</h2>
-                    <button onclick="refreshLogs()"
-                            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">
-                        Refresh
-                    </button>
-                </div>
-                <div id="log-container" class="bg-black rounded border border-gray-700 p-3 h-96 overflow-y-auto font-mono text-xs text-gray-300">
-                    <p class="text-gray-500">Loading logs...</p>
-                </div>
-            </div>
-        </div>
     </main>
 
-    <!-- Modals -->
-    <!-- Forwarding Rule Modal -->
-    <div id="forwarding-rule-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
-            <h3 class="text-lg font-semibold mb-4">Add Forwarding Rule</h3>
-            <form id="forwarding-rule-form" class="space-y-4">
+    <!-- ==================== MODALS ==================== -->
+
+    <!-- Add/Edit Forwarding Rule Modal -->
+    <div id="rule-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-fade-in">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 id="rule-modal-title" class="font-bold text-white text-base">Add New Forwarding Rule</h3>
+                <button onclick="closeRuleModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            <form id="rule-form" onsubmit="saveRule(event)" class="space-y-4">
+                <input type="hidden" id="rule-form-id">
                 <div>
-                    <label class="block text-sm text-gray-300 mb-1">Name</label>
-                    <input type="text" id="rule-name" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" required>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_rule_name">Rule Name</label>
+                    <input type="text" id="rule-form-name" required placeholder="e.g. Crypto News Pipeline" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
                 </div>
-                <div>
-                    <label class="block text-sm text-gray-300 mb-1">Source Channel ID</label>
-                    <input type="text" id="source-id" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" required>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_source_channel">Source Channel (ID or @username)</label>
+                        <input type="text" id="rule-form-source" required placeholder="e.g. @source_news or -10012345" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_target_channel">Target Channel (ID or @username)</label>
+                        <input type="text" id="rule-form-target" required placeholder="e.g. @my_channel or -10098765" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+                    </div>
                 </div>
-                <div>
-                    <label class="block text-sm text-gray-300 mb-1">Target Channel ID</label>
-                    <input type="text" id="target-id" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" required>
+                <div class="flex items-center space-x-2 rtl:space-x-reverse pt-2">
+                    <input type="checkbox" id="rule-form-active" checked class="w-4 h-4 rounded bg-slate-950 border-slate-800 text-brand-600 focus:ring-brand-500">
+                    <label for="rule-form-active" class="text-xs font-medium text-slate-300" data-i18n="form_rule_active">Active & Forwarding immediately</label>
                 </div>
-                <div class="flex justify-end space-x-2 pt-4">
-                    <button type="button" onclick="closeModal('forwarding-rule-modal')"
-                            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">
-                        Cancel
-                    </button>
-                    <button type="submit"
-                            class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">
-                        Save Rule
-                    </button>
+                <div class="flex justify-end space-x-2 rtl:space-x-reverse pt-4 border-t border-slate-800">
+                    <button type="button" onclick="closeRuleModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-brand-600/20" data-i18n="btn_save">Save Pipeline</button>
                 </div>
             </form>
         </div>
     </div>
 
-    <!-- Blacklist Modal -->
-    <div id="blacklist-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
-            <h3 class="text-lg font-semibold mb-4">Add Blacklist Entry</h3>
-            <form id="blacklist-form" class="space-y-4">
+    <!-- Add/Edit Transformation Rule Modal -->
+    <div id="transform-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-fade-in">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 id="transform-modal-title" class="font-bold text-white text-base">Add Text Transformation Rule</h3>
+                <button onclick="closeTransformModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            <form id="transform-form" onsubmit="saveTransformRule(event)" class="space-y-4">
+                <input type="hidden" id="transform-form-id">
                 <div>
-                    <label class="block text-sm text-gray-300 mb-1">Channel ID</label>
-                    <input type="text" id="blacklist-channel-id" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" required>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_rule_name">Rule Name</label>
+                    <input type="text" id="transform-form-name" required placeholder="e.g. Strip @Source Links" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
                 </div>
                 <div>
-                    <label class="block text-sm text-gray-300 mb-1">Reason</label>
-                    <input type="text" id="blacklist-reason" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" value="Blacklisted">
-                </div>
-                <div class="flex justify-end space-x-2 pt-4">
-                    <button type="button" onclick="closeModal('blacklist-modal')"
-                            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">
-                        Cancel
-                    </button>
-                    <button type="submit"
-                            class="px-3 py-1 bg-red-600 hover:bg-red-700 rounded text-sm">
-                        Add to Blacklist
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
-    <!-- Transformation Rule Modal -->
-    <div id="transform-rule-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
-        <div class="bg-gray-800 rounded-lg p-6 w-full max-w-md border border-gray-700">
-            <h3 class="text-lg font-semibold mb-4">Add Transformation Rule</h3>
-            <form id="transform-rule-form" class="space-y-4">
-                <div>
-                    <label class="block text-sm text-gray-300 mb-1">Name</label>
-                    <input type="text" id="transform-name" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" required>
-                </div>
-                <div>
-                    <label class="block text-sm text-gray-300 mb-1">Type</label>
-                    <select id="transform-type" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" required>
-                        <option value="replace">Replace</option>
-                        <option value="regex">Regex</option>
-                        <option value="strip">Strip</option>
-                        <option value="footer">Footer</option>
-                        <option value="prefix">Prefix</option>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_transform_type">Transformation Type</label>
+                    <select id="transform-form-type" onchange="updateTransformFields()" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+                        <option value="replace">Direct Text Replace (استبدال نص مباشر)</option>
+                        <option value="regex">Regular Expression / Regex (تعبير نمطي متقدم)</option>
+                        <option value="strip">Strip Pattern / Remove Word (حذف كلمة أو معرف)</option>
+                        <option value="footer">Append Custom Footer / Branding (إضافة تذييل براندنج)</option>
+                        <option value="prefix">Prepend Custom Prefix (إضافة ترويسة في البداية)</option>
                     </select>
                 </div>
-                <div>
-                    <label class="block text-sm text-gray-300 mb-1">Pattern</label>
-                    <input type="text" id="transform-pattern" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white">
+                <div id="transform-pattern-container">
+                    <label id="transform-pattern-label" class="block text-xs font-semibold text-slate-400 mb-1">Search Pattern / Text to match</label>
+                    <input type="text" id="transform-form-pattern" placeholder="e.g. @OldUsername or badword" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
                 </div>
-                <div>
-                    <label class="block text-sm text-gray-300 mb-1">Replacement</label>
-                    <input type="text" id="transform-replacement" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white">
+                <div id="transform-replacement-container">
+                    <label id="transform-replacement-label" class="block text-xs font-semibold text-slate-400 mb-1">Replacement Text / Footer Content</label>
+                    <textarea id="transform-form-replacement" rows="2" placeholder="e.g. @MyChannel or custom branding message" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500 resize-none"></textarea>
                 </div>
-                <div>
-                    <label class="block text-sm text-gray-300 mb-1">Priority</label>
-                    <input type="number" id="transform-priority" class="w-full px-3 py-2 bg-gray-700 rounded border border-gray-600 focus:outline-none focus:border-blue-500 text-white" value="0">
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_priority">Priority (1 = highest)</label>
+                        <input type="number" id="transform-form-priority" value="1" min="1" max="100" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div class="flex items-center pt-5 space-x-2 rtl:space-x-reverse">
+                        <input type="checkbox" id="transform-form-active" checked class="w-4 h-4 rounded bg-slate-950 border-slate-800 text-brand-600 focus:ring-brand-500">
+                        <label for="transform-form-active" class="text-xs font-medium text-slate-300" data-i18n="form_rule_active">Active</label>
+                    </div>
                 </div>
-                <div class="flex items-center">
-                    <input type="checkbox" id="transform-active" class="mr-2" checked>
-                    <label class="text-sm text-gray-300">Active</label>
-                </div>
-                <div class="flex justify-end space-x-2 pt-4">
-                    <button type="button" onclick="closeModal('transform-rule-modal')"
-                            class="px-3 py-1 bg-gray-700 hover:bg-gray-600 rounded text-sm">
-                        Cancel
-                    </button>
-                    <button type="submit"
-                            class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-sm">
-                        Save Rule
-                    </button>
+                <div class="flex justify-end space-x-2 rtl:space-x-reverse pt-4 border-t border-slate-800">
+                    <button type="button" onclick="closeTransformModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-600/20" data-i18n="btn_save">Save Transformation</button>
                 </div>
             </form>
         </div>
     </div>
 
+    <!-- Add to Blacklist Modal -->
+    <div id="blacklist-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
+        <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-fade-in">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="font-bold text-white text-base" data-i18n="modal_add_blacklist">Add Channel to Blacklist</h3>
+                <button onclick="closeBlacklistModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+            </div>
+            <form id="blacklist-form" onsubmit="saveBlacklist(event)" class="space-y-4">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_channel_identifier">Channel ID or @Username</label>
+                    <input type="text" id="blacklist-form-channel" required placeholder="e.g. -10011223344 or @spam_channel" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 mb-1" data-i18n="form_reason">Reason for Blacklisting</label>
+                    <input type="text" id="blacklist-form-reason" placeholder="e.g. Spam / Advertising" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500">
+                </div>
+                <div class="flex justify-end space-x-2 rtl:space-x-reverse pt-4 border-t border-slate-800">
+                    <button type="button" onclick="closeBlacklistModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-semibold" data-i18n="btn_cancel">Cancel</button>
+                    <button type="submit" class="px-5 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-rose-600/20" data-i18n="btn_block_channel">Block Channel</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- JavaScript Application Logic -->
     <script>
-        // Tab navigation
-        function showTab(tabId) {
-            document.querySelectorAll('.tab-content').forEach(t => t.classList.add('hidden'));
-            document.getElementById(`tab-${tabId}`).classList.remove('hidden');
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active', 'bg-blue-600'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.add('hover:bg-gray-700'));
-            event.target.classList.add('active', 'bg-blue-600');
-            event.target.classList.remove('hover:bg-gray-700');
-        }
+        // ==================== I18N DICTIONARY ====================
+        const i18n = {
+            ar: {
+                app_subtitle: "نظام التوجيه والتحويل التلقائي لمنشورات تليجرام 24/7",
+                status_connecting: "جارٍ الاتصال...",
+                status_running: "المحرك نشط ومتصل",
+                status_stopped: "المحرك متوقف",
+                btn_start: "تشغيل المحرك",
+                btn_stop: "إيقاف المحرك",
+                tab_overview: "نظرة عامة",
+                tab_forwarding: "قواعد التوجيه",
+                tab_text_rules: "تحويل النصوص",
+                tab_blacklist: "القائمة السوداء",
+                tab_logs: "السجلات اللحظية",
+                tab_settings: "الإعدادات والتشخيص",
+                metric_forwarded: "إجمالي المنشورات المحولة",
+                metric_posts_unit: "منشور",
+                metric_forwarded_desc: "صور، فيديوهات، ملفات ورسائل نصية",
+                metric_active_rules: "قواعد التوجيه النشطة",
+                metric_rules_total: "إجمالي",
+                metric_rules_desc: "مسارات التحويل من القنوات المصدر إلى الهدف",
+                metric_blacklist: "القنوات المحظورة",
+                metric_blocked: "محظورة",
+                metric_blacklist_desc: "قنوات يتم تجاهل منشوراتها تلقائياً",
+                metric_db: "قاعدة البيانات السحابية",
+                sec_account_status: "حالة الحساب ومحرك التوجيه",
+                lbl_userbot_account: "حساب التوجيه (Userbot):",
+                lbl_session_mode: "نوع الجلسة:",
+                lbl_keepalive: "نظام منع الخمول:",
+                lbl_last_sync: "آخر استجابة نبضية:",
+                btn_sync_now: "مزامنة الآن",
+                btn_view_logs: "عرض السجلات",
+                sec_quick_tester: "مختبر القواعد اللحظي",
+                sec_quick_tester_desc: "معاينة الرسائل وتأثير القواعد عليها مباشرة",
+                lbl_sample_input: "نص المنشور التجريبي (المصدر):",
+                lbl_transformed_output: "النتيجة بعد تطبيق القواعد (الهدف):",
+                txt_tester_placeholder: "اضغط 'تجربة النتيجة' لمعاينة التحويل...",
+                btn_run_test: "تجربة النتيجة",
+                title_forwarding_rules: "مسارات وقواعد التوجيه",
+                desc_forwarding_rules: "حدد القنوات المصدر التي ترغب بمراقبتها والقنوات الهدف للنشر التلقائي فيها.",
+                btn_add_rule: "إضافة مسار توجيه",
+                title_text_rules: "قواعد تعديل وتحويل النصوص",
+                desc_text_rules: "استبدال الكلمات، حذف معرفات المصدر والروابط، وإضافة حقوقك أو تذييل خاص لكل رسالة.",
+                btn_add_transform: "إضافة تحويل نصي",
+                title_blacklist: "القائمة السوداء للقنوات",
+                desc_blacklist: "القنوات المحظورة التي لن يتم نقل أي رسالة منها نهائياً.",
+                btn_add_blacklist: "إضافة قناة للحظر",
+                th_channel_id: "معرف القناة / الرابط",
+                th_reason: "سبب الحظر",
+                th_date_added: "تاريخ الإضافة",
+                th_actions: "الإجراءات",
+                title_logs: "سجلات النشاط المباشرة",
+                desc_logs: "بث مباشر لجميع أحداث التوجيه والتحويل وحالة الاتصال.",
+                btn_live_feed: "بث مباشر",
+                btn_clear_logs: "تفريغ السجلات",
+                sec_diagnostics: "تشخيص النظام والسحابة",
+                lbl_platform: "منصة الاستضافة:",
+                lbl_mongo_cluster: "خادم MongoDB Atlas:",
+                lbl_db_connected: "اتصال قاعدة البيانات:",
+                lbl_session_status: "جلسة تليجرام:",
+                sec_engine_config: "مواصفات وضبط المحرك",
+                lbl_poll_rate: "معدل فحص القنوات:",
+                lbl_media_support: "دعم الوسائط المتعددة:",
+                lbl_flood_wait: "الحماية من FloodWait:",
+                lbl_dedup: "منع التكرار المزدوج:",
+                form_rule_name: "اسم المسار / القاعدة",
+                form_source_channel: "القناة المصدر (ID أو @يوزر)",
+                form_target_channel: "القناة الهدف (ID أو @يوزر)",
+                form_rule_active: "تفعيل التوجيه فوراً",
+                form_transform_type: "نوع التحويل",
+                form_priority: "الأولوية (1 = الأعلى)",
+                btn_cancel: "إلغاء",
+                btn_save: "حفظ",
+                modal_add_blacklist: "إضافة قناة إلى القائمة السوداء",
+                form_channel_identifier: "معرف القناة (ID أو @يوزر)",
+                form_reason: "السبب",
+                btn_block_channel: "حظر القناة"
+            },
+            en: {
+                app_subtitle: "24/7 Automated Post Forwarding & Content Transformation",
+                status_connecting: "Connecting...",
+                status_running: "Running & Connected",
+                status_stopped: "Forwarder Stopped",
+                btn_start: "Start Forwarder",
+                btn_stop: "Stop Forwarder",
+                tab_overview: "Overview",
+                tab_forwarding: "Forwarding Rules",
+                tab_text_rules: "Text Transformation",
+                tab_blacklist: "Blacklist",
+                tab_logs: "Real-Time Logs",
+                tab_settings: "Diagnostics & Settings",
+                metric_forwarded: "Total Posts Forwarded",
+                metric_posts_unit: "posts",
+                metric_forwarded_desc: "Photos, videos, files & text messages",
+                metric_active_rules: "Active Forwarding Rules",
+                metric_rules_total: "total",
+                metric_rules_desc: "Source to target channel pipelines",
+                metric_blacklist: "Blacklisted Channels",
+                metric_blocked: "blocked",
+                metric_blacklist_desc: "Ignored channels during auto-forwarding",
+                metric_db: "Database Storage",
+                sec_account_status: "Telegram Account & Engine",
+                lbl_userbot_account: "Userbot Account:",
+                lbl_session_mode: "Session Type:",
+                lbl_keepalive: "Keep-Alive Heartbeat:",
+                lbl_last_sync: "Last Pulse:",
+                btn_sync_now: "Sync Now",
+                btn_view_logs: "View Logs",
+                sec_quick_tester: "Live Rule & Transformation Tester",
+                sec_quick_tester_desc: "Test message output before forwarding",
+                lbl_sample_input: "Original Sample Post:",
+                lbl_transformed_output: "Transformed Output:",
+                txt_tester_placeholder: "Click 'Test Output' to preview transformation...",
+                btn_run_test: "Test Output",
+                title_forwarding_rules: "Channel Forwarding Pipelines",
+                desc_forwarding_rules: "Configure source Telegram channels to monitor and target channels to post into.",
+                btn_add_rule: "Add New Pipeline",
+                title_text_rules: "Content Transformation Rules",
+                desc_text_rules: "Replace words, strip source @usernames/links, and add custom footers/branding.",
+                btn_add_transform: "Add Transformation",
+                title_blacklist: "Channel Blacklist",
+                desc_blacklist: "Blocked channels whose messages will never be forwarded.",
+                btn_add_blacklist: "Add to Blacklist",
+                th_channel_id: "Channel ID / Username",
+                th_reason: "Reason",
+                th_date_added: "Date Added",
+                th_actions: "Actions",
+                title_logs: "Real-Time Operational Logs",
+                desc_logs: "Live feed of all forwarding events, post transformations, and connection states.",
+                btn_live_feed: "Live Feed",
+                btn_clear_logs: "Clear Logs",
+                sec_diagnostics: "System & Cloud Diagnostics",
+                lbl_platform: "Hosting Platform:",
+                lbl_mongo_cluster: "MongoDB Atlas Cluster:",
+                lbl_db_connected: "Database Connection:",
+                lbl_session_status: "Telegram Session:",
+                sec_engine_config: "Engine Optimization & Specs",
+                lbl_poll_rate: "Channel Polling Rate:",
+                lbl_media_support: "Media Support:",
+                lbl_flood_wait: "FloodWait Protection:",
+                lbl_dedup: "Duplicate Prevention:",
+                form_rule_name: "Rule Name",
+                form_source_channel: "Source Channel (ID or @username)",
+                form_target_channel: "Target Channel (ID or @username)",
+                form_rule_active: "Active & Forwarding immediately",
+                form_transform_type: "Transformation Type",
+                form_priority: "Priority (1 = highest)",
+                btn_cancel: "Cancel",
+                btn_save: "Save Pipeline",
+                modal_add_blacklist: "Add Channel to Blacklist",
+                form_channel_identifier: "Channel ID or @username",
+                form_reason: "Reason",
+                btn_block_channel: "Block Channel"
+            }
+        };
 
-        // Modal functions
-        function openForwardingRuleForm() {
-            document.getElementById('forwarding-rule-modal').classList.remove('hidden');
-        }
+        let currentLang = localStorage.getItem('tp_lang') || 'ar';
+        let allRules = [];
+        let allLogs = [];
+        let currentLogLevel = 'ALL';
+        let logsPollInterval = null;
+        let isEngineRunning = false;
 
-        function openBlacklistForm() {
-            document.getElementById('blacklist-modal').classList.remove('hidden');
-        }
+        // Apply Language
+        function setLanguage(lang) {
+            currentLang = lang;
+            localStorage.setItem('tp_lang', lang);
+            document.documentElement.lang = lang;
+            document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+            document.getElementById('lang-switch-label').textContent = lang === 'ar' ? 'English' : 'العربية';
 
-        function openTransformRuleForm() {
-            document.getElementById('transform-rule-modal').classList.remove('hidden');
-        }
-
-        function closeModal(modalId) {
-            document.getElementById(modalId).classList.add('hidden');
-        }
-
-        // Close modals when clicking outside
-        document.querySelectorAll('[id$="-modal"]').forEach(modal => {
-            modal.addEventListener('click', e => {
-                if (e.target === modal) closeModal(modal.id);
+            // Translate elements
+            document.querySelectorAll('[data-i18n]').forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (i18n[lang] && i18n[lang][key]) {
+                    el.textContent = i18n[lang][key];
+                }
             });
-        });
+        }
 
-        // API helper — returns null on error, never throws
-        async function apiFetch(url, options = {}) {
+        function toggleLanguage() {
+            setLanguage(currentLang === 'ar' ? 'en' : 'ar');
+        }
+
+        // ==================== TOAST NOTIFICATIONS ====================
+        function showToast(msg, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            const colors = {
+                success: 'bg-emerald-600/95 border-emerald-500 text-white',
+                error: 'bg-rose-600/95 border-rose-500 text-white',
+                warning: 'bg-amber-600/95 border-amber-500 text-white',
+                info: 'bg-brand-600/95 border-brand-500 text-white',
+            };
+            toast.className = `px-4 py-3 rounded-xl border text-xs font-semibold shadow-xl flex items-center space-x-2 rtl:space-x-reverse pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+            toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span><span>${msg}</span>`;
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            }, 10);
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4000);
+        }
+
+        // ==================== TAB NAVIGATION ====================
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+
+            const targetPane = document.getElementById(`tab-content-${tabId}`);
+            const targetBtn = document.getElementById(`tab-${tabId}-btn`);
+            if (targetPane) targetPane.classList.remove('hidden');
+            if (targetBtn) targetBtn.classList.add('active');
+
+            if (tabId === 'forwarding' || tabId === 'text-rules') loadRules();
+            if (tabId === 'blacklist') loadBlacklist();
+            if (tabId === 'logs') loadLogs();
+        }
+
+        // ==================== API HELPERS ====================
+        async function api(url, method = 'GET', body = null) {
             try {
-                const response = await fetch(url, {
-                    headers: { 'Content-Type': 'application/json', ...options.headers },
-                    ...options
-                });
-                if (!response.ok) {
-                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                const opts = { method, headers: { 'Content-Type': 'application/json' } };
+                if (body) opts.body = JSON.stringify(body);
+                const res = await fetch(url, opts);
+                return await res.json();
+            } catch (err) {
+                console.error(`API Error on ${url}:`, err);
+                return { error: err.message };
+            }
+        }
+
+        // ==================== ENGINE CONTROLS ====================
+        async function fetchStatus() {
+            const data = await api('/api/stats');
+            isEngineRunning = data.running || false;
+
+            const dot = document.getElementById('header-status-dot');
+            const text = document.getElementById('header-status-text');
+            const quickBtn = document.getElementById('quick-toggle-btn');
+            const quickIcon = document.getElementById('quick-toggle-icon');
+            const quickText = document.getElementById('quick-toggle-text');
+            const overviewBadge = document.getElementById('overview-engine-badge');
+
+            if (isEngineRunning) {
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+                text.textContent = i18n[currentLang].status_running;
+                quickBtn.className = 'flex items-center space-x-1.5 rtl:space-x-reverse px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all';
+                quickIcon.textContent = '⏹';
+                quickText.textContent = i18n[currentLang].btn_stop;
+                if (overviewBadge) {
+                    overviewBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                    overviewBadge.textContent = i18n[currentLang].status_running;
                 }
-                const json = await response.json();
-                // Normalize: if the response is not an object, return empty object
-                return (json && typeof json === 'object') ? json : {};
-            } catch (error) {
-                console.error('API Error:', error);
-                if (url.includes('status') || url.includes('start') || url.includes('stop')) {
-                    return { error: error.message };
+            } else {
+                dot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
+                text.textContent = i18n[currentLang].status_stopped;
+                quickBtn.className = 'flex items-center space-x-1.5 rtl:space-x-reverse px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all';
+                quickIcon.textContent = '▶';
+                quickText.textContent = i18n[currentLang].btn_start;
+                if (overviewBadge) {
+                    overviewBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                    overviewBadge.textContent = i18n[currentLang].status_stopped;
                 }
-                showNotification('Connection error — check if the server is running', 'error');
-                return null;
+            }
+
+            // Stats cards
+            document.getElementById('stat-total-forwarded').textContent = data.total_forwarded || 0;
+            document.getElementById('stat-active-rules').textContent = data.active_rules || 0;
+            document.getElementById('stat-total-rules').textContent = data.total_rules || 0;
+            document.getElementById('stat-blacklist-count').textContent = data.blacklist_count || 0;
+            document.getElementById('badge-rules-count').textContent = data.total_rules || 0;
+            document.getElementById('badge-blacklist-count').textContent = data.blacklist_count || 0;
+            document.getElementById('stat-db-type').textContent = data.db_type || 'MongoDB';
+
+            if (data.last_update) {
+                const d = new Date(data.last_update);
+                document.getElementById('overview-last-update').textContent = d.toLocaleTimeString();
             }
         }
 
-        // Safe accessor — reads nested property with optional chaining fallback
-        function safeId(item) {
-            if (!item) return '—';
-            const id = item._id ?? item.id ?? item.M_ID ?? item.m_id ?? item.rule_id ?? item.ruleId ?? '';
-            if (!id) return '—';
-            const str = String(id);
-            return str.length > 8 ? str.substring(0, 8) : str;
-        }
+        async function toggleEngine() {
+            const btn = document.getElementById('quick-toggle-btn');
+            btn.disabled = true;
+            btn.classList.add('opacity-50');
 
-        function safeStr(value, fallback = '—') {
-            if (value === null || value === undefined) return fallback;
-            return String(value);
-        }
-
-        // Notification helper (replaces alert() calls)
-        function showNotification(message, type = 'info') {
-            const existing = document.getElementById('notification');
-            if (existing) existing.remove();
-
-            const el = document.createElement('div');
-            el.id = 'notification';
-            el.className = `fixed bottom-4 right-4 px-4 py-2 rounded text-sm font-medium shadow-lg transition-transform z-50 ${
-                type === 'error' ? 'bg-red-600' : type === 'success' ? 'bg-green-600' : 'bg-blue-600'
-            }`;
-            el.textContent = message;
-            document.body.appendChild(el);
-            setTimeout(() => el.remove(), 3000);
-        }
-
-        // Forwarding Rule Form Submit
-        document.getElementById('forwarding-rule-form').addEventListener('submit', async e => {
-            e.preventDefault();
-            const name = document.getElementById('rule-name').value.trim();
-            const sourceId = document.getElementById('source-id').value.trim();
-            const targetId = document.getElementById('target-id').value.trim();
-
-            if (!name || !sourceId || !targetId) {
-                showNotification('Please fill in all fields', 'error');
-                return;
+            if (isEngineRunning) {
+                const res = await api('/api/forward/stop', 'POST');
+                if (res.success) showToast(currentLang === 'ar' ? 'تم إيقاف المحرك بنجاح' : 'Forwarder stopped successfully', 'info');
+            } else {
+                const res = await api('/api/forward/start', 'POST');
+                if (res.success) showToast(currentLang === 'ar' ? 'تم تشغيل المحرك بنجاح' : 'Forwarder started successfully', 'success');
+                else showToast(res.error || 'Failed to start forwarder', 'error');
             }
 
-            await apiFetch('/api/rules', {
-                method: 'POST',
-                body: JSON.stringify({
-                    name: name,
-                    type: 'replace',
-                    source_id: sourceId,
-                    target_id: targetId,
-                    pattern: '',
-                    replacement: '',
-                    priority: 0,
-                    active: true
-                })
-            });
+            await fetchStatus();
+            btn.disabled = false;
+            btn.classList.remove('opacity-50');
+        }
 
-            closeModal('forwarding-rule-modal');
-            showNotification(`Rule "${name}" added successfully`, 'success');
-            loadRules();
-            e.target.reset();
-        });
+        async function triggerManualSync() {
+            showToast(currentLang === 'ar' ? 'جارٍ مزامنة القواعد والتحقق من المنشورات...' : 'Syncing rules and checking channels...', 'info');
+            await fetchStatus();
+            await loadLogs(true);
+        }
 
-        // Blacklist Form Submit
-        document.getElementById('blacklist-form').addEventListener('submit', async e => {
-            e.preventDefault();
-            const channelId = document.getElementById('blacklist-channel-id').value.trim();
-            const reason = document.getElementById('blacklist-reason').value.trim() || 'Blacklisted';
-
-            if (!channelId) {
-                showNotification('Channel ID is required', 'error');
-                return;
-            }
-
-            await apiFetch('/api/blacklist', {
-                method: 'POST',
-                body: JSON.stringify({
-                    channel_id: parseInt(channelId),
-                    reason: reason
-                })
-            });
-
-            closeModal('blacklist-modal');
-            showNotification(`Channel ${channelId} added to blacklist`, 'success');
-            loadBlacklist();
-            e.target.reset();
-        });
-
-        // Transform Rule Form Submit
-        document.getElementById('transform-rule-form').addEventListener('submit', async e => {
-            e.preventDefault();
-            const name = document.getElementById('transform-name').value.trim();
-            const type = document.getElementById('transform-type').value;
-            const pattern = document.getElementById('transform-pattern').value.trim();
-            const replacement = document.getElementById('transform-replacement').value.trim();
-            const priority = parseInt(document.getElementById('transform-priority').value) || 0;
-            const active = document.getElementById('transform-active').checked;
-
-            if (!name) {
-                showNotification('Rule name is required', 'error');
-                return;
-            }
-
-            await apiFetch('/api/rules', {
-                method: 'POST',
-                body: JSON.stringify({
-                    name: name,
-                    type: type,
-                    pattern: pattern,
-                    replacement: replacement,
-                    priority: priority,
-                    active: active
-                })
-            });
-
-            closeModal('transform-rule-modal');
-            showNotification(`Transformation rule "${name}" added successfully`, 'success');
-            loadRules();
-            e.target.reset();
-        });
-
-        // Load rules
+        // ==================== FORWARDING RULES ====================
         async function loadRules() {
-            try {
-                const data = await apiFetch('/api/rules');
-                if (!data || data.error) {
-                    document.getElementById('rules-table-body').innerHTML =
-                        '<tr><td colspan="5" class="py-8 text-center text-gray-400">No rules configured (DB not connected)</td></tr>';
-                    document.getElementById('transformation-rules-list').innerHTML =
-                        '<p class="text-gray-400">No transformation rules (DB not connected)</p>';
-                    return;
-                }
-                // Ensure rules is always a safe array (handles empty list, null, or missing field)
-                const rules = Array.isArray(data.rules) ? data.rules : [];
-                if (rules.length === 0) {
-                    document.getElementById('rules-table-body').innerHTML =
-                        '<tr><td colspan="5" class="py-8 text-center text-gray-500">No rules configured</td></tr>';
-                    document.getElementById('transformation-rules-list').innerHTML =
-                        '<p class="text-gray-500">Click "Add Transformation Rule" to create your first rule.</p>';
-                    return;
-                }
-                const tbody = document.getElementById('rules-table-body');
-                tbody.innerHTML = rules.map(rule => `
-                    <tr class="border-b border-gray-700">
-                        <td class="py-2">${safeId(rule)}</td>
-                        <td class="py-2">${safeStr(rule.source_id)} → ${safeStr(rule.target_id)}</td>
-                        <td class="py-2">${safeStr(rule.type)}</td>
-                        <td class="py-2">${safeStr(rule.pattern)}</td>
-                        <td class="py-2">${rule && rule.active ? '✅' : '❌'}</td>
-                    </tr>
-                `).join('');
+            const res = await api('/api/rules');
+            allRules = res.rules || [];
 
-                const list = document.getElementById('transformation-rules-list');
-                list.innerHTML = rules.map(rule => `
-                    <div class="bg-gray-700 rounded p-3 border border-gray-600 flex justify-between items-center">
-                        <div>
-                            <span class="font-medium">${safeStr(rule.name)}</span>
-                            <span class="text-xs text-gray-400">(${safeStr(rule.type)}) &middot; priority: ${safeStr(rule.priority)}</span>
+            const container = document.getElementById('rules-cards-container');
+            const transformList = document.getElementById('transform-rules-list');
+
+            // Forwarding pipelines (rules with source_id & target_id)
+            const forwardRules = allRules.filter(r => r.source_id && r.target_id);
+
+            if (forwardRules.length === 0) {
+                container.innerHTML = `<div class="col-span-full p-8 text-center bg-slate-950/60 border border-dashed border-slate-800 rounded-2xl text-slate-400 text-xs">
+                    <p class="text-base mb-2">📭 ${currentLang === 'ar' ? 'لا توجد مسارات توجيه بعد' : 'No forwarding pipelines yet'}</p>
+                    <p class="mb-4 text-slate-500">${currentLang === 'ar' ? 'اضغط أدناه لإنشاء أول مسار لنقل المنشورات من قناة إلى أخرى.' : 'Create your first pipeline to start monitoring channels.'}</p>
+                    <button onclick="openRuleModal()" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold">+ ${currentLang === 'ar' ? 'إضافة مسار' : 'Add Pipeline'}</button>
+                </div>`;
+            } else {
+                container.innerHTML = forwardRules.map(rule => `
+                    <div class="bg-surface-850 border border-slate-800 rounded-2xl p-5 space-y-4 hover:border-slate-700 transition">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h4 class="font-bold text-white text-sm">${rule.name || 'Unnamed Pipeline'}</h4>
+                                <span class="text-xs text-slate-400 font-mono">ID: ${rule._id}</span>
+                            </div>
+                            <!-- Active Toggle Switch -->
+                            <button onclick="toggleRuleActive('${rule._id}')" class="px-3 py-1 rounded-full text-xs font-semibold transition ${rule.active ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-slate-800 text-slate-400 border border-slate-700'}">
+                                ${rule.active ? '● ' + (currentLang === 'ar' ? 'نشط' : 'Active') : '○ ' + (currentLang === 'ar' ? 'متوقف' : 'Inactive')}
+                            </button>
                         </div>
-                        <span class="${rule && rule.active ? 'text-green-400' : 'text-red-400'}">
-                            ${rule && rule.active ? 'Active' : 'Inactive'}
-                        </span>
+
+                        <!-- Route Flow Badge -->
+                        <div class="flex items-center space-x-2 rtl:space-x-reverse bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs">
+                            <span class="px-2.5 py-1 bg-brand-500/10 text-brand-400 font-mono font-semibold rounded-lg truncate max-w-[140px]" title="${rule.source_id}">
+                                📥 ${rule.source_id}
+                            </span>
+                            <span class="text-slate-500 font-bold">→</span>
+                            <span class="px-2.5 py-1 bg-cyan-500/10 text-cyan-400 font-mono font-semibold rounded-lg truncate max-w-[140px]" title="${rule.target_id}">
+                                📤 ${rule.target_id}
+                            </span>
+                        </div>
+
+                        <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
+                            <span class="text-slate-500">Priority: ${rule.priority || 0}</span>
+                            <div class="flex space-x-2 rtl:space-x-reverse">
+                                <button onclick="editRule('${rule._id}')" class="text-slate-400 hover:text-white px-2 py-1 bg-slate-800 rounded-lg">✏️ Edit</button>
+                                <button onclick="deleteRule('${rule._id}')" class="text-rose-400 hover:text-rose-300 px-2 py-1 bg-rose-500/10 rounded-lg">🗑️ Delete</button>
+                            </div>
+                        </div>
                     </div>
                 `).join('');
-            } catch (e) {
-                document.getElementById('rules-table-body').innerHTML =
-                    '<tr><td colspan="5" class="py-8 text-center text-yellow-400">Could not load rules</td></tr>';
+            }
+
+            // Render Text Transformation Rules
+            if (transformList) {
+                if (allRules.length === 0) {
+                    transformList.innerHTML = `<p class="text-slate-500 text-xs">${currentLang === 'ar' ? 'لا توجد قواعد تحويل نصوص حالياً.' : 'No text transformation rules configured.'}</p>`;
+                } else {
+                    transformList.innerHTML = allRules.map(r => `
+                        <div class="flex items-center justify-between bg-surface-850 border border-slate-800 p-4 rounded-xl text-xs">
+                            <div class="space-y-1">
+                                <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                                    <span class="px-2 py-0.5 font-bold uppercase rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">${r.type || 'replace'}</span>
+                                    <span class="font-bold text-white text-sm">${r.name || 'Rule'}</span>
+                                </div>
+                                <div class="text-slate-400 font-mono">
+                                    <span>Match: <strong class="text-slate-200">"${r.pattern || '*'}"</strong></span>
+                                    ${r.replacement ? ` → Replace: <strong class="text-emerald-400">"${r.replacement}"</strong>` : ''}
+                                </div>
+                            </div>
+                            <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                                <button onclick="deleteRule('${r._id}')" class="text-rose-400 hover:text-rose-300 px-2.5 py-1.5 bg-rose-500/10 rounded-lg">🗑️</button>
+                            </div>
+                        </div>
+                    `).join('');
+                }
             }
         }
 
-        // Load blacklist
+        async function toggleRuleActive(ruleId) {
+            const res = await api(`/api/rules/${ruleId}/toggle`, 'POST');
+            if (res.success) {
+                showToast(res.active ? (currentLang === 'ar' ? 'تم تفعيل القاعدة' : 'Rule activated') : (currentLang === 'ar' ? 'تم إيقاف القاعدة' : 'Rule deactivated'), 'success');
+                await loadRules();
+                await fetchStatus();
+            }
+        }
+
+        function openRuleModal() {
+            document.getElementById('rule-form').reset();
+            document.getElementById('rule-form-id').value = '';
+            document.getElementById('rule-modal-title').textContent = currentLang === 'ar' ? 'إضافة مسار توجيه جديد' : 'Add New Forwarding Rule';
+            document.getElementById('rule-modal').classList.remove('hidden');
+        }
+
+        function closeRuleModal() {
+            document.getElementById('rule-modal').classList.add('hidden');
+        }
+
+        function editRule(ruleId) {
+            const r = allRules.find(x => x._id === ruleId);
+            if (!r) return;
+            document.getElementById('rule-form-id').value = r._id;
+            document.getElementById('rule-form-name').value = r.name || '';
+            document.getElementById('rule-form-source').value = r.source_id || '';
+            document.getElementById('rule-form-target').value = r.target_id || '';
+            document.getElementById('rule-form-active').checked = r.active !== false;
+            document.getElementById('rule-modal-title').textContent = currentLang === 'ar' ? 'تعديل مسار التوجيه' : 'Edit Forwarding Rule';
+            document.getElementById('rule-modal').classList.remove('hidden');
+        }
+
+        async function saveRule(e) {
+            e.preventDefault();
+            const id = document.getElementById('rule-form-id').value;
+            const payload = {
+                name: document.getElementById('rule-form-name').value,
+                source_id: document.getElementById('rule-form-source').value.trim(),
+                target_id: document.getElementById('rule-form-target').value.trim(),
+                active: document.getElementById('rule-form-active').checked,
+                type: 'replace',
+                pattern: '',
+                replacement: '',
+                priority: 1
+            };
+
+            let res;
+            if (id) {
+                res = await api(`/api/rules/${id}`, 'PUT', payload);
+            } else {
+                res = await api('/api/rules', 'POST', payload);
+            }
+
+            if (res.success) {
+                showToast(currentLang === 'ar' ? 'تم حفظ مسار التوجيه بنجاح' : 'Rule saved successfully', 'success');
+                closeRuleModal();
+                await loadRules();
+                await fetchStatus();
+            } else {
+                showToast(res.error || 'Failed to save rule', 'error');
+            }
+        }
+
+        async function deleteRule(ruleId) {
+            if (!confirm(currentLang === 'ar' ? 'هل أنت متأكد من رغبتك في حذف هذه القاعدة؟' : 'Are you sure you want to delete this rule?')) return;
+            const res = await api(`/api/rules/${ruleId}`, 'DELETE');
+            if (res.success) {
+                showToast(currentLang === 'ar' ? 'تم حذف القاعدة بنجاح' : 'Rule deleted successfully', 'info');
+                await loadRules();
+                await fetchStatus();
+            }
+        }
+
+        function filterRules() {
+            const query = document.getElementById('rules-search-input').value.toLowerCase();
+            document.querySelectorAll('#rules-cards-container > div').forEach(card => {
+                card.style.display = card.innerText.toLowerCase().includes(query) ? '' : 'none';
+            });
+        }
+
+        // ==================== TEXT TRANSFORMATION MODAL ====================
+        function openTransformModal() {
+            document.getElementById('transform-form').reset();
+            document.getElementById('transform-form-id').value = '';
+            document.getElementById('transform-modal').classList.remove('hidden');
+            updateTransformFields();
+        }
+
+        function closeTransformModal() {
+            document.getElementById('transform-modal').classList.add('hidden');
+        }
+
+        function updateTransformFields() {
+            const type = document.getElementById('transform-form-type').value;
+            const pLabel = document.getElementById('transform-pattern-label');
+            const rLabel = document.getElementById('transform-replacement-label');
+
+            if (type === 'footer') {
+                pLabel.textContent = 'Trigger Pattern (leave empty to append to all messages)';
+                rLabel.textContent = 'Footer Content (e.g. 📢 Follow @MyChannel)';
+            } else if (type === 'prefix') {
+                pLabel.textContent = 'Trigger Pattern (leave empty for all messages)';
+                rLabel.textContent = 'Prefix Content to add at the top';
+            } else if (type === 'strip') {
+                pLabel.textContent = 'Word, @Username, or Link to remove';
+                rLabel.textContent = 'Replacement (leave empty to completely remove)';
+            } else {
+                pLabel.textContent = 'Search Text or Regex Pattern';
+                rLabel.textContent = 'Replacement Text';
+            }
+        }
+
+        async function saveTransformRule(e) {
+            e.preventDefault();
+            const payload = {
+                name: document.getElementById('transform-form-name').value,
+                type: document.getElementById('transform-form-type').value,
+                pattern: document.getElementById('transform-form-pattern').value,
+                replacement: document.getElementById('transform-form-replacement').value,
+                priority: parseInt(document.getElementById('transform-form-priority').value) || 1,
+                active: document.getElementById('transform-form-active').checked
+            };
+
+            const res = await api('/api/rules', 'POST', payload);
+            if (res.success) {
+                showToast(currentLang === 'ar' ? 'تمت إضافة قاعدة التحويل' : 'Transformation rule saved', 'success');
+                closeTransformModal();
+                await loadRules();
+            } else {
+                showToast(res.error || 'Failed to save', 'error');
+            }
+        }
+
+        // ==================== BLACKLIST ====================
         async function loadBlacklist() {
-            try {
-                const data = await apiFetch('/api/blacklist');
-                if (!data || data.error) {
-                    document.getElementById('blacklist-table-body').innerHTML =
-                        '<tr><td colspan="4" class="py-8 text-center text-gray-400">Blacklist not available (DB not connected)</td></tr>';
-                    return;
-                }
-                // Ensure entries is always a safe array
-                const entries = Array.isArray(data.blacklist) ? data.blacklist : [];
-                if (entries.length === 0) {
-                    document.getElementById('blacklist-table-body').innerHTML =
-                        '<tr><td colspan="4" class="py-8 text-center text-gray-500">No blacklisted channels</td></tr>';
-                    return;
-                }
-                const tbody = document.getElementById('blacklist-table-body');
-                tbody.innerHTML = entries.map(entry => `
-                    <tr class="border-b border-gray-700">
-                        <td class="py-2">${safeId(entry)}</td>
-                        <td class="py-2">${safeStr(entry.channel_id)}</td>
-                        <td class="py-2">${safeStr(entry.reason)}</td>
-                        <td class="py-2">
-                            <button onclick="removeBlacklist(${entry && entry.channel_id ? entry.channel_id : ''})"
-                                    class="text-red-400 hover:text-red-300">Remove</button>
+            const res = await api('/api/blacklist');
+            const list = res.blacklist || [];
+            const tbody = document.getElementById('blacklist-table-body');
+
+            if (list.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="py-8 text-center text-slate-500 text-xs">${currentLang === 'ar' ? 'القائمة السوداء فارغة.' : 'Blacklist is empty.'}</td></tr>`;
+            } else {
+                tbody.innerHTML = list.map(item => `
+                    <tr class="hover:bg-slate-800/40 transition">
+                        <td class="py-3 px-4 font-mono font-semibold text-rose-400">${item.channel_id}</td>
+                        <td class="py-3 px-4 text-slate-300">${item.reason || 'Blocked'}</td>
+                        <td class="py-3 px-4 text-slate-500 text-xs">${item.added_at ? new Date(item.added_at).toLocaleDateString() : '-'}</td>
+                        <td class="py-3 px-4 text-center">
+                            <button onclick="removeBlacklist('${item.channel_id}')" class="px-2 py-1 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-lg text-xs">Remove</button>
                         </td>
                     </tr>
                 `).join('');
-            } catch (e) {
-                document.getElementById('blacklist-table-body').innerHTML =
-                    '<tr><td colspan="4" class="py-8 text-center text-yellow-400">Could not load blacklist</td></tr>';
+            }
+        }
+
+        function openBlacklistModal() {
+            document.getElementById('blacklist-form').reset();
+            document.getElementById('blacklist-modal').classList.remove('hidden');
+        }
+
+        function closeBlacklistModal() {
+            document.getElementById('blacklist-modal').classList.add('hidden');
+        }
+
+        async function saveBlacklist(e) {
+            e.preventDefault();
+            const payload = {
+                channel_id: document.getElementById('blacklist-form-channel').value.trim(),
+                reason: document.getElementById('blacklist-form-reason').value.trim() || 'Blacklisted'
+            };
+            const res = await api('/api/blacklist', 'POST', payload);
+            if (res.success) {
+                showToast(currentLang === 'ar' ? 'تم حظر القناة بنجاح' : 'Channel added to blacklist', 'success');
+                closeBlacklistModal();
+                await loadBlacklist();
+                await fetchStatus();
             }
         }
 
         async function removeBlacklist(channelId) {
-            await apiFetch(`/api/blacklist/${channelId}`, { method: 'DELETE' });
-            showNotification(`Channel ${channelId} removed from blacklist`, 'success');
-            loadBlacklist();
-        }
-
-        // Load logs
-        async function loadLogs() {
-            const container = document.getElementById('log-container');
-            try {
-                const data = await apiFetch('/api/logs');
-                if (!data || data.error) {
-                    container.innerHTML = '<p class="text-gray-400">Logs not available (DB not connected)</p>';
-                    return;
-                }
-                const logs = Array.isArray(data.logs) ? data.logs : [];
-                if (logs.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500">No logs yet. Activity will appear here when posts are forwarded or settings are updated.</p>';
-                    return;
-                }
-                container.innerHTML = logs.map(log => {
-                    if (!log || typeof log !== 'object') return '';
-                    let ts = safeStr(log.timestamp);
-                    if (ts.includes('T')) {
-                        ts = ts.replace('T', ' ').split('.')[0];
-                    }
-                    const lvl = safeStr(log.level, 'INFO').toUpperCase();
-                    let lvlBadge = `<span class="text-blue-400 font-bold">[${lvl}]</span>`;
-                    if (lvl === 'ERROR') {
-                        lvlBadge = `<span class="text-red-400 font-bold">[${lvl}]</span>`;
-                    } else if (lvl === 'WARNING' || lvl === 'WARN') {
-                        lvlBadge = `<span class="text-yellow-400 font-bold">[${lvl}]</span>`;
-                    } else if (lvl === 'INFO') {
-                        lvlBadge = `<span class="text-green-400 font-bold">[${lvl}]</span>`;
-                    }
-                    const msg = safeStr(log.message);
-                    return `<div class="py-0.5 border-b border-gray-800"><span class="text-gray-500 text-xs">${ts}</span> ${lvlBadge} <span class="text-gray-200">${msg}</span></div>`;
-                }).join('');
-            } catch (e) {
-                container.innerHTML = '<p class="text-yellow-400">Could not load logs</p>';
+            const res = await api(`/api/blacklist/${channelId}`, 'DELETE');
+            if (res.success) {
+                showToast(currentLang === 'ar' ? 'تمت إزالة القناة من القائمة السوداء' : 'Channel removed from blacklist', 'info');
+                await loadBlacklist();
+                await fetchStatus();
             }
         }
 
-        async function refreshLogs() {
-            loadLogs();
+        // ==================== LIVE LOGS ====================
+        async function loadLogs(isManual = false) {
+            const res = await api('/api/logs');
+            allLogs = res.logs || [];
+            renderLogs();
+            if (isManual) showToast(currentLang === 'ar' ? 'تم تحديث السجلات' : 'Logs refreshed', 'info');
         }
 
-        // Status management
-        async function loadStatus() {
-            const data = await apiFetch('/api/status');
-            if (!data || data.error) {
-                document.getElementById('status-text').textContent = 'Cannot reach server';
-                document.getElementById('status-indicator').className = 'w-3 h-3 bg-yellow-500 rounded-full animate-pulse';
+        function setLogLevelFilter(lvl) {
+            currentLogLevel = lvl;
+            ['all', 'info', 'warn', 'error'].forEach(l => {
+                const btn = document.getElementById(`filter-lvl-${l}`);
+                if (btn) btn.className = 'px-2.5 py-1 rounded-lg text-slate-400';
+            });
+            const activeBtn = document.getElementById(`filter-lvl-${lvl.toLowerCase() === 'warning' ? 'warn' : lvl.toLowerCase()}`);
+            if (activeBtn) activeBtn.className = 'px-2.5 py-1 rounded-lg font-semibold bg-brand-600 text-white';
+            renderLogs();
+        }
+
+        function renderLogs() {
+            const container = document.getElementById('log-container');
+            let filtered = allLogs;
+            if (currentLogLevel !== 'ALL') {
+                filtered = allLogs.filter(l => (l.level || 'INFO').toUpperCase() === currentLogLevel);
+            }
+
+            if (filtered.length === 0) {
+                container.innerHTML = `<p class="text-slate-500 text-xs">${currentLang === 'ar' ? 'لا توجد سجلات تطابق الفلتر المحدد.' : 'No logs matching current filter.'}</p>`;
                 return;
             }
-            const indicator = document.getElementById('status-indicator');
-            const text = document.getElementById('status-text');
-            const startBtn = document.getElementById('start-btn');
-            const stopBtn = document.getElementById('stop-btn');
 
-            if (data.running && data.connected) {
-                indicator.className = 'w-3 h-3 bg-green-500 rounded-full';
-                text.textContent = 'Running & Connected';
-                startBtn.disabled = true;
-                stopBtn.disabled = false;
+            container.innerHTML = filtered.map(l => {
+                let ts = l.timestamp ? l.timestamp.replace('T', ' ').split('.')[0] : '';
+                const lvl = (l.level || 'INFO').toUpperCase();
+                let badge = '<span class="text-cyan-400 font-bold">[INFO]</span>';
+                if (lvl === 'ERROR') badge = '<span class="text-rose-400 font-bold">[ERROR]</span>';
+                else if (lvl === 'WARNING' || lvl === 'WARN') badge = '<span class="text-amber-400 font-bold">[WARN]</span>';
+                else if (lvl === 'INFO') badge = '<span class="text-emerald-400 font-bold">[INFO]</span>';
+
+                return `<div class="py-1 border-b border-slate-900/80 flex items-start space-x-2 rtl:space-x-reverse">
+                    <span class="text-slate-500 font-mono text-[11px] whitespace-nowrap">${ts}</span>
+                    <span class="whitespace-nowrap">${badge}</span>
+                    <span class="text-slate-200 break-all leading-relaxed">${l.message || ''}</span>
+                </div>`;
+            }).join('');
+        }
+
+        function toggleLogsAutoPoll() {
+            const btn = document.getElementById('logs-auto-poll-btn');
+            if (logsPollInterval) {
+                clearInterval(logsPollInterval);
+                logsPollInterval = null;
+                btn.className = 'px-3 py-1.5 bg-slate-800 text-xs font-medium rounded-xl text-slate-400 border border-slate-700 transition';
+                btn.innerHTML = `<span>⏸️</span> <span>${currentLang === 'ar' ? 'متوقف مؤقتاً' : 'Paused'}</span>`;
             } else {
-                indicator.className = 'w-3 h-3 bg-red-500 rounded-full animate-pulse';
-                text.textContent = 'Stopped / Disconnected';
-                startBtn.disabled = false;
-                stopBtn.disabled = true;
+                logsPollInterval = setInterval(loadLogs, 3000);
+                btn.className = 'px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-xl text-emerald-400 border border-emerald-500/20 transition flex items-center space-x-1 rtl:space-x-reverse';
+                btn.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> <span>${i18n[currentLang].btn_live_feed}</span>`;
+                loadLogs();
             }
         }
 
-        async function startForwarder() {
-            const data = await apiFetch('/api/forward/start', { method: 'POST' });
-            if (data && !data.error) {
-                showNotification('Forwarder started', 'success');
-                loadStatus();
-            } else {
-                showNotification('Failed to start forwarder', 'error');
-            }
-        }
-
-        async function stopForwarder() {
-            const data = await apiFetch('/api/forward/stop', { method: 'POST' });
-            if (data && !data.error) {
-                showNotification('Forwarder stopped', 'success');
-                loadStatus();
-            } else {
-                showNotification('Failed to stop forwarder', 'error');
-            }
-        }
-
-        // Initial load
-        async function initialize() {
-            console.log('[TFP] Initializing dashboard...');
-            try {
-                await loadStatus();
-                await loadRules();
-                await loadBlacklist();
+        async function clearLogs() {
+            if (!confirm(currentLang === 'ar' ? 'هل أنت متأكد من رغبتك في مسح كافة السجلات؟' : 'Clear all stored logs?')) return;
+            const res = await api('/api/logs/clear', 'POST');
+            if (res.success) {
+                showToast(currentLang === 'ar' ? 'تم تفريغ السجلات' : 'Logs cleared', 'info');
                 await loadLogs();
-                console.log('[TFP] Dashboard initialized successfully');
-            } catch (err) {
-                console.error('[TFP] Initialization error:', err);
-                document.getElementById('status-text').textContent = 'Init error — see console';
-                document.getElementById('status-indicator').className = 'w-3 h-3 bg-yellow-500 rounded-full animate-pulse';
             }
         }
 
-        // Run initialization - wait for DOM to be fully loaded
-        document.addEventListener('DOMContentLoaded', function() {
-            initialize();
-        });
+        // ==================== QUICK RULE TESTER ====================
+        async function runQuickTest() {
+            const input = document.getElementById('quick-test-input').value;
+            const output = document.getElementById('quick-test-output');
+            if (!input.trim()) {
+                showToast(currentLang === 'ar' ? 'يرجى إدخال نص تجريبي أولاً' : 'Please enter sample text first', 'warning');
+                return;
+            }
 
-        // Auto-refresh
-        setInterval(() => {
-            loadStatus();
-            loadLogs();
-        }, 5000);
+            output.innerHTML = '<span class="text-slate-500 animate-pulse">Transforming with active rules...</span>';
+            const res = await api('/api/rules/test', 'POST', { text: input });
+            if (res.transformed !== undefined) {
+                output.textContent = res.transformed;
+            } else {
+                output.textContent = input;
+            }
+        }
+
+        // ==================== INIT ====================
+        window.addEventListener('DOMContentLoaded', async () => {
+            setLanguage(currentLang);
+            await fetchStatus();
+            await loadRules();
+            logsPollInterval = setInterval(loadLogs, 3500);
+            setInterval(fetchStatus, 8000);
+        });
     </script>
 </body>
 </html>

@@ -137,10 +137,61 @@ class FlaskApiTestCase(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.get_json()["success"])
 
-        resp = self.client.delete("/api/blacklist/-1001122334455")
+    def test_stats_endpoint(self):
+        resp = self.client.get("/api/stats")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertIn("total_rules", data)
+        self.assertIn("active_rules", data)
+        self.assertIn("blacklist_count", data)
+        self.assertIn("running", data)
+        self.assertIn("db_type", data)
+
+    def test_rule_toggle_endpoint(self):
+        # Create a rule first
+        resp = self.client.post("/api/rules", json={
+            "name": "Toggle Test",
+            "source_id": "-100111",
+            "target_id": "-100222",
+            "active": True
+        })
+        self.assertEqual(resp.status_code, 200)
+        rule_id = resp.get_json()["rule"]["_id"]
+
+        # Toggle to false
+        resp = self.client.post(f"/api/rules/{rule_id}/toggle")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertTrue(data["success"])
+        self.assertFalse(data["active"])
+
+        # Toggle back to true
+        resp = self.client.post(f"/api/rules/{rule_id}/toggle")
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertTrue(data["active"])
+
+    def test_rules_test_endpoint(self):
+        # Create a replace rule
+        self.client.post("/api/rules", json={
+            "name": "Test Replace",
+            "type": "replace",
+            "pattern": "Apple",
+            "replacement": "Orange",
+            "active": True
+        })
+        resp = self.client.post("/api/rules/test", json={"text": "I love Apple"})
+        self.assertEqual(resp.status_code, 200)
+        data = resp.get_json()
+        self.assertTrue(data["success"])
+        self.assertIn("I love Orange", data["transformed"])
+
+    def test_logs_clear_endpoint(self):
+        resp = self.client.post("/api/logs/clear")
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.get_json()["success"])
 
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)
+
