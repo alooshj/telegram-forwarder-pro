@@ -422,14 +422,18 @@ def get_db_connection(mongo_uri: str, db_name: str):
 
     # If MongoDB URI is explicitly set and looks valid, try MongoDB (unless forced to fallback)
     if not force_fallback and mongo_uri and (mongo_uri.startswith("mongodb://") or mongo_uri.startswith("mongodb+srv://")):
+        # Strip query params (Atlas appends ?appName=Cluster0&retryWrites=true...).
+        # Passing appName inside the URI query can trigger a TLS handshake alert
+        # (TLSV1_ALERT_INTERNAL_ERROR) on some OpenSSL builds — pass it as kwarg instead.
+        clean_uri = mongo_uri.split("?")[0]
+        logger.info(f"Attempting MongoDB connection to: {clean_uri[:40]}... (params stripped)")
         try:
-            db = MongoDB(mongo_uri, db_name)
+            db = MongoDB(clean_uri, db_name)
             logger.info("Using MongoDB backend")
             return db
         except Exception as e:
             _last_mongo_error = f"{type(e).__name__}: {str(e)[:400]}"
             logger.error(f"MongoDB connection failed: {_last_mongo_error}")
-            # Check if it's an SRV resolution issue (missing dnspython) — give a clear hint
             if "localhost" in str(e) and "srv" in mongo_uri.lower():
                 logger.error("SRV URI failed to resolve — ensure 'dnspython' is installed.")
             logger.warning("Falling back to SQLite...")
