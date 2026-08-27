@@ -15,7 +15,7 @@ import logging
 import time
 from datetime import datetime, timezone
 
-from telethon import TelegramClient, errors
+from telethon import TelegramClient, errors, events
 from telethon.sessions import StringSession
 
 from src.rules.engine import RulesEngine
@@ -104,6 +104,9 @@ class ForwarderEngine:
 
             self._running = True
 
+            # Register real-time push event listener
+            self._setup_event_handlers()
+
             # Update Flask app status if accessible
             try:
                 from src.web.api import forwarder_status
@@ -128,6 +131,101 @@ class ForwarderEngine:
             self._log_event("ERROR", f"Unexpected error starting forwarder: {e}")
             if self._running:
                 await self.auto_reconnect()
+
+    def _setup_event_handlers(self):
+        """Register real-time push listener so incoming messages are forwarded instantly (< 1s)."""
+        if not self.client or getattr(self, "_event_handlers_registered", False):
+            return
+
+        @self.client.on(events.NewMessage)
+        async def _on_new_message(event):
+            if not self._running:
+                return
+
+            try:
+                chat_id = event.chat_id
+                rules = list(self.db.rules.find({"active": True}))
+                for rule in rules:
+                    source_id = rule.get("source_id")
+                    if not source_id:
+                        continue
+
+                    norm_source = self._normalize_entity_id(source_id)
+                    matches = False
+
+                    # 1. Match integer ID
+                    if isinstance(norm_source, int) and norm_source == chat_id:
+                        matches = True
+                    # 2. Match username
+                    elif hasattr(event.chat, 'username') and event.chat.username:
+                        src_str = str(source_id).strip().lstrip('@').lower()
+                        if event.chat.username.lower() == src_str:
+                            matches = True
+                    # 3. Match cached entity
+                    elif source_id in self._entity_cache:
+                        cached_id = getattr(self._entity_cache[source_id], 'id', None)
+                        if cached_id and (cached_id == chat_id or f"-100{cached_id}" == str(chat_id)):
+                            matches = True
+
+                    if matches:
+                        targets = self._get_rule_targets(rule)
+                        if targets:
+                            await self._forward_event_message(event.message, source_id, targets, rule)
+            except Exception as e:
+                logger.debug(f"Error in real-time message handler: {e}")
+
+        self._event_handlers_registered = True
+        self._log_event("INFO", "⚡ Instant Real-Time Push Forwarding is active (< 1s latency)")
+
+    async def _forward_event_message(self, message, source_id, targets: list, rule: dict):
+        """Instantly process and forward a new incoming post in real-time."""
+        try:
+            has_text = bool(getattr(message, "message", None))
+            has_media = bool(getattr(message, "media", None))
+
+            if not has_text and not has_media:
+                return
+
+            # Media filtering
+            media_type = self._detect_media_type(message)
+            if not self._is_media_allowed(rule, media_type):
+                self._log_event("INFO", f"⏩ Skipped real-time post #{message.id}: media type '{media_type}' disabled in rule.")
+                return
+
+            raw_text = message.message or ""
+
+            for tgt in targets:
+                norm_tgt = self._normalize_entity_id(tgt)
+                if self.rules_engine.is_blacklisted(norm_tgt):
+                    continue
+                if self._is_flood_waited(norm_tgt):
+                    continue
+
+                post_key = f"{source_id}:{message.id}:{norm_tgt}"
+                if self._is_duplicate(post_key, source_id, message.id):
+                    continue
+
+                target_entity = await self._get_entity_safe(norm_tgt)
+                if not target_entity:
+                    continue
+
+                transformed_text = self.rules_engine.apply_rules(
+                    raw_text, source_id, norm_tgt
+                ) if raw_text else ""
+
+                success = await self._forward_message(
+                    message,
+                    target_entity,
+                    transformed_text,
+                    media_type=media_type,
+                    source_id=source_id,
+                    target_id=norm_tgt
+                )
+                if success:
+                    self._mark_processed(post_key, message.id, source_id, norm_tgt)
+
+        except Exception as e:
+            self._log_event("ERROR", f"Error in real-time forwarding for post #{getattr(message, 'id', '?')}: {e}")
 
     async def stop(self):
         """Stop the forwarder gracefully."""
@@ -176,7 +274,7 @@ class ForwarderEngine:
 
                     await self._process_channel_multi(norm_source, targets, rule)
 
-                check_interval = int(self.config.get("CHECK_INTERVAL", 30))
+                check_interval = int(self.config.get("CHECK_INTERVAL", 10))
                 for _ in range(check_interval):
                     if not self._running:
                         break
