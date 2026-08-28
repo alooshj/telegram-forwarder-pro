@@ -625,6 +625,19 @@ class MongoDB:
     def logs(self):
         return self.db.forwarding_logs
 
+    @property
+    def transactions(self):
+        return getattr(self.db, "transactions", None) or self.db["transactions"]
+
+    @property
+    def license_keys(self):
+        return getattr(self.db, "license_keys", None) or self.db["license_keys"]
+
+    def __getattr__(self, name):
+        if hasattr(self.db, name):
+            return getattr(self.db, name)
+        return self.db[name]
+
 
 def get_db_connection(mongo_uri: str, db_name: str):
     """Factory: try MongoDB first, fall back to SQLite if MongoDB is unavailable.

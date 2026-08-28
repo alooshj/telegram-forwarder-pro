@@ -25,10 +25,27 @@ class LicenseKeyManager:
     """Manager for admin activation codes / license keys."""
 
     @staticmethod
-    def generate_key(db, plan_id: str, created_by: str, notes: str = "", custom_days: int = None) -> dict:
+    def _get_col(db, col_name: str):
+        if hasattr(db, col_name):
+            return getattr(db, col_name)
+        if hasattr(db, "db"):
+            if hasattr(db.db, col_name):
+                return getattr(db.db, col_name)
+            try:
+                return db.db[col_name]
+            except Exception:
+                pass
+        try:
+            return db[col_name]
+        except Exception:
+            return None
+
+    @classmethod
+    def generate_key(cls, db, plan_id: str, created_by: str, notes: str = "", custom_days: int = None) -> dict:
         """Generate a new license key with designated duration."""
-        if not db or not hasattr(db, "license_keys"):
-            raise RuntimeError("Database does not support license_keys")
+        keys_col = cls._get_col(db, "license_keys")
+        if keys_col is None:
+            raise RuntimeError("Database collection 'license_keys' is not available")
 
         plan_cfg = get_plan(plan_id)
         if not plan_cfg and not custom_days:
@@ -55,17 +72,19 @@ class LicenseKeyManager:
             "notes": notes.strip()
         }
 
-        db.license_keys.insert_one(key_doc)
+        keys_col.insert_one(key_doc)
         return key_doc
 
-    @staticmethod
-    def redeem_key(db, user_id: str, key_code: str) -> tuple:
+    @classmethod
+    def redeem_key(cls, db, user_id: str, key_code: str) -> tuple:
         """Redeem a license key for a user and stack subscription expiration."""
-        if not db or not user_id or not key_code:
+        keys_col = cls._get_col(db, "license_keys")
+        users_col = cls._get_col(db, "users")
+        if keys_col is None or users_col is None or not user_id or not key_code:
             return False, "Invalid redemption parameters", {}
 
         clean_code = key_code.strip().upper()
-        key_doc = db.license_keys.find_one({"key_code": clean_code})
+        key_doc = keys_col.find_one({"key_code": clean_code})
 
         if not key_doc:
             return False, "كود التفعيل غير صالح أو غير موجود (Invalid Code)", {}
@@ -73,7 +92,7 @@ class LicenseKeyManager:
         if key_doc.get("is_redeemed"):
             return False, "تم استخدام كود التفعيل هذا مسبقاً (Code Already Redeemed)", {}
 
-        user = db.users.find_one({"_id": user_id})
+        user = users_col.find_one({"_id": user_id})
         if not user:
             return False, "المستخدم غير موجود (User Not Found)", {}
 
@@ -84,7 +103,7 @@ class LicenseKeyManager:
         current_exp = user.get("subscription_expires_at")
         new_expires_at = calculate_new_expiration(current_exp, duration_days)
 
-        db.users.update_one(
+        users_col.update_one(
             {"_id": user_id},
             {"$set": {
                 "subscription_status": "active",
@@ -97,7 +116,7 @@ class LicenseKeyManager:
             }}
         )
 
-        db.license_keys.update_one(
+        keys_col.update_one(
             {"_id": key_doc["_id"]},
             {"$set": {
                 "is_redeemed": True,
@@ -112,13 +131,14 @@ class LicenseKeyManager:
         msg = f"تم تفعيل الكود بنجاح وتمديد اشتراكك لمدة {duration_days} يوماً بنجاح!"
         return True, msg, updated_sub
 
-    @staticmethod
-    def list_keys(db, limit: int = 100) -> list:
+    @classmethod
+    def list_keys(cls, db, limit: int = 100) -> list:
         """List generated license keys ordered by creation date."""
-        if not db or not hasattr(db, "license_keys"):
+        keys_col = cls._get_col(db, "license_keys")
+        if keys_col is None:
             return []
 
-        cursor = db.license_keys.find({}).sort("created_at", -1).limit(limit)
+        cursor = keys_col.find({}).sort("created_at", -1).limit(limit)
         results = []
         for k in cursor:
             created_at_val = k.get("created_at")
@@ -138,10 +158,12 @@ class LicenseKeyManager:
             })
         return results
 
-    @staticmethod
-    def delete_key(db, key_id: str) -> bool:
+    @classmethod
+    def delete_key(cls, db, key_id: str) -> bool:
         """Delete an unredeemed license key."""
-        if not db or not hasattr(db, "license_keys"):
+        keys_col = cls._get_col(db, "license_keys")
+        if keys_col is None:
             return False
-        db.license_keys.delete_one({"_id": key_id})
+        keys_col.delete_one({"_id": key_id})
         return True
+
