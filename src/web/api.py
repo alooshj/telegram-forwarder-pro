@@ -747,8 +747,8 @@ def api_telegram_send_code():
     """Step 1: Send Telegram MTProto verification code to phone."""
     db = get_db()
     config = load_config()
-    api_id = int(config.get("TELEGRAM_API_ID", 0))
-    api_hash = config.get("TELEGRAM_API_HASH", "")
+    api_id = int(config.get("API_ID") or config.get("TELEGRAM_API_ID") or os.environ.get("API_ID", 0) or os.environ.get("TELEGRAM_API_ID", 0))
+    api_hash = config.get("API_HASH") or config.get("TELEGRAM_API_HASH") or os.environ.get("API_HASH", "") or os.environ.get("TELEGRAM_API_HASH", "")
 
     if not api_id or not api_hash:
         return jsonify({"success": False, "error": "Telegram API credentials not configured on server"}), 500
@@ -770,8 +770,8 @@ def api_telegram_verify_code():
     """Step 2: Verify Telegram MTProto login code and save session."""
     db = get_db()
     config = load_config()
-    api_id = int(config.get("TELEGRAM_API_ID", 0))
-    api_hash = config.get("TELEGRAM_API_HASH", "")
+    api_id = int(config.get("API_ID") or config.get("TELEGRAM_API_ID") or os.environ.get("API_ID", 0) or os.environ.get("TELEGRAM_API_ID", 0))
+    api_hash = config.get("API_HASH") or config.get("TELEGRAM_API_HASH") or os.environ.get("API_HASH", "") or os.environ.get("TELEGRAM_API_HASH", "")
 
     if not api_id or not api_hash:
         return jsonify({"success": False, "error": "Telegram API credentials not configured on server"}), 500
