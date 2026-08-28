@@ -1524,6 +1524,21 @@
             const container = document.getElementById('rules-cards-container');
             const transformList = document.getElementById('transform-rules-list');
 
+            if (!currentUser) {
+                if (container) {
+                    container.innerHTML = `<div class="col-span-full p-8 text-center bg-slate-950/60 border border-dashed border-slate-800 rounded-2xl text-slate-400 text-xs">
+                        <svg class="w-10 h-10 text-slate-600 mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <p class="text-sm font-bold text-slate-300 mb-1">${currentLang === 'ar' ? 'سجل دخولك لعرض قنواتك وقواعدك' : 'Log in to view your pipelines'}</p>
+                        <p class="mb-4 text-slate-500">${currentLang === 'ar' ? 'قم بتسجيل الدخول بحسابك لعرض وإدارة مسارات التوجيه الخاصة بك.' : 'Sign in to manage and view your custom forwarding pipelines.'}</p>
+                        <button onclick="openAuthModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-brand-600/20 transition inline-flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg> <span>${currentLang === 'ar' ? 'تسجيل الدخول' : 'Sign In'}</span></button>
+                    </div>`;
+                }
+                if (transformList) {
+                    transformList.innerHTML = `<div class="p-6 text-center text-xs text-slate-500">${currentLang === 'ar' ? 'سجل دخولك لعرض قواعد تحويل النصوص الخاصة بك' : 'Log in to view text transform rules'}</div>`;
+                }
+                return;
+            }
+
             // Forwarding pipelines (rules with source_id and target_id/target_ids)
             const forwardRules = allRules.filter(r => r.source_id && (r.target_id || (r.target_ids && r.target_ids.length > 0)));
 
@@ -2148,6 +2163,8 @@
             closeAuthModal();
             showToast(currentLang === 'ar' ? 'تم تسجيل الخروج بنجاح' : 'Logged out', 'info');
             await checkAuthStatus();
+            await fetchStatus();
+            await loadRules();
         }
 
         // ==================== TELEGRAM WEB CONNECT LOGIC ====================

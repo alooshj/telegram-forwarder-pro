@@ -255,15 +255,23 @@ def api_debug():
 
 @app.route("/api/rules")
 def api_get_rules():
-    """Get all forwarding rules."""
+    """Get all forwarding rules for the authenticated user."""
     db = get_db()
     if not db:
         return jsonify({"rules": [], "warning": "Database not connected"}), 200
+
+    from src.web.auth import get_current_user_from_request
+    user = get_current_user_from_request(db)
+    if not user:
+        # Not logged in: show empty rules list for privacy
+        return jsonify({"rules": [], "authenticated": False})
+
+    user_id = str(user["_id"])
     try:
-        rules = list(db.rules.find({}))
+        rules = list(db.rules.find({"$or": [{"user_id": user_id}, {"user_id": None}, {"user_id": {"$exists": False}}]}))
         for rule in rules:
             rule["_id"] = str(rule["_id"])
-        return jsonify({"rules": rules})
+        return jsonify({"rules": rules, "authenticated": True})
     except Exception as e:
         logger.error(f"Failed to fetch rules: {e}")
         return jsonify({"rules": [], "error": str(e)}), 200
@@ -276,6 +284,10 @@ def api_create_rule():
     if not db:
         return jsonify({"error": "Database not connected"}), 500
     try:
+        from src.web.auth import get_current_user_from_request
+        user = get_current_user_from_request(db)
+        user_id = str(user["_id"]) if user else None
+
         data = request.get_json() or {}
         target_id = data.get("target_id", "")
         target_ids = data.get("target_ids")
@@ -299,6 +311,7 @@ def api_create_rule():
             media_types = ["photo", "video", "document", "audio", "text", "sticker"]
 
         rule = {
+            "user_id": user_id,
             "name": data.get("name", "Unnamed Rule"),
             "type": data.get("type", "replace"),
             "source_id": data.get("source_id"),
@@ -449,16 +462,28 @@ def api_get_stats():
     from src.web.auth import get_current_user_from_request
     user = get_current_user_from_request(db) if db else None
 
-    tg_connected = False
-    tg_username = None
-    if user and user.get("telegram_account") and user["telegram_account"].get("session_string"):
-        tg_connected = True
-        tg_username = user["telegram_account"].get("username") or user["telegram_account"].get("first_name")
-    elif forwarder_status.get("connected") and forwarder_status.get("running"):
-        tg_connected = True
+    if not user:
+        return jsonify({
+            "running": False,
+            "connected": False,
+            "telegram_connected": False,
+            "telegram_username": None,
+            "last_update": None,
+            "total_rules": 0,
+            "active_rules": 0,
+            "total_forwarded": 0,
+            "blacklist_count": 0,
+            "logs_count": 0,
+            "db_type": type(db).__name__ if db else "Disconnected",
+        })
+
+    user_id = str(user["_id"])
+    tg_account = user.get("telegram_account") or {}
+    tg_connected = bool(tg_account.get("session_string"))
+    tg_username = tg_account.get("username") or tg_account.get("first_name")
 
     stats = {
-        "running": forwarder_status.get("running", False),
+        "running": forwarder_status.get("running", False) if tg_connected else False,
         "connected": tg_connected,
         "telegram_connected": tg_connected,
         "telegram_username": tg_username,
@@ -472,7 +497,7 @@ def api_get_stats():
     }
     if db:
         try:
-            rules = list(db.rules.find({}))
+            rules = list(db.rules.find({"$or": [{"user_id": user_id}, {"user_id": None}, {"user_id": {"$exists": False}}]}))
             stats["total_rules"] = len(rules)
             stats["active_rules"] = sum(1 for r in rules if r.get("active", True))
             stats["total_forwarded"] = len(list(db.processed_posts.find({})))
