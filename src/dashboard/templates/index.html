@@ -1900,8 +1900,9 @@
             if (tabId === 'blacklist') loadBlacklist();
             if (tabId === 'logs') loadLogs();
             if (tabId === 'admin') {
-                loadAdminUsers();
-                loadAdminKeys();
+                if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com')) {
+                    loadAdminData();
+                }
             }
         }
 
@@ -3428,6 +3429,11 @@
         }
 
         async function loadAdminData() {
+            if (!currentUser) return;
+            const isSuper = (currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com');
+            const isAdmin = (currentUser.role === 'admin' || isSuper);
+            if (!isAdmin) return;
+
             try {
                 const [usersRes, keysRes] = await Promise.all([
                     api('/api/v1/admin/users'),
