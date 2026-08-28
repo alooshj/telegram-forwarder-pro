@@ -3563,93 +3563,159 @@
     </div>
 
     <!-- ==================== MODAL: CHECKOUT & AUTOMATED PAYMENT ==================== -->
-    <div id="checkout-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-surface-900 border border-slate-700/80 rounded-3xl max-w-lg w-full p-6 sm:p-7 space-y-5 shadow-2xl animate-fade-in my-6 relative overflow-hidden">
-            <!-- Background Glow -->
-            <div class="absolute -top-12 -left-12 w-48 h-48 bg-amber-500/15 rounded-full blur-3xl pointer-events-none"></div>
+    <div id="checkout-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-slate-700/80 rounded-3xl max-w-lg w-full p-6 sm:p-7 space-y-5 shadow-2xl shadow-cyan-950/50 animate-fade-in my-6 relative overflow-hidden">
+            <!-- Ambient Cyber Glow -->
+            <div class="absolute -top-16 -right-16 w-56 h-56 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
+            <div class="absolute -bottom-16 -left-16 w-56 h-56 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
-            <div class="flex items-center justify-between border-b border-slate-800 pb-3.5 relative z-10">
-                <div class="flex items-center space-x-2.5 rtl:space-x-reverse">
-                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/30 text-amber-400 flex items-center justify-center shadow-sm">
-                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-4 relative z-10">
+                <div class="flex items-center space-x-3 rtl:space-x-reverse">
+                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-cyan-500/20 to-indigo-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
                     </div>
                     <div>
-                        <h3 class="font-black text-white text-base">إتمام الشراء والتفعيل الفوري</h3>
-                        <p class="text-xs text-slate-400">Automated Webhook Checkout</p>
+                        <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                            <h3 class="font-black text-white text-base">بوابة الدفع والتفعيل الفوري</h3>
+                            <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 rounded-full">NOWPayments Live</span>
+                        </div>
+                        <p class="text-xs text-slate-400">Crypto Checkout & Instant Webhook Activation</p>
                     </div>
                 </div>
-                <button onclick="closeCheckoutModal()" class="text-slate-400 hover:text-white p-1.5 rounded-xl bg-slate-800/80 border border-slate-700">
+                <button onclick="closeCheckoutModal()" class="text-slate-400 hover:text-white p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 border border-slate-700/80 transition">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
             </div>
 
             <!-- View 1: Loading State -->
             <div id="checkout-loading-view" class="py-12 text-center space-y-3">
-                <svg class="animate-spin w-8 h-8 text-amber-400 mx-auto" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
-                <p class="text-xs text-slate-300 font-medium">جارٍ تجهيز طلب الدفع الآمن وإنشاء رقم المعاملة...</p>
+                <div class="relative w-12 h-12 mx-auto">
+                    <div class="w-12 h-12 rounded-full border-2 border-emerald-500/20 border-t-emerald-400 animate-spin"></div>
+                    <div class="absolute inset-0 flex items-center justify-center text-xs">💎</div>
+                </div>
+                <p class="text-xs text-slate-300 font-medium">جارٍ إنشاء فاتورة الدفع المشفرة وتجهيز رقم المعاملة...</p>
             </div>
 
             <!-- View 2: Waiting for Webhook Payment -->
-            <div id="checkout-waiting-view" class="hidden space-y-4 text-xs">
+            <div id="checkout-waiting-view" class="hidden space-y-4.5 text-xs relative z-10">
                 <!-- Order Summary Card -->
-                <div class="bg-slate-950 border border-slate-800 rounded-2xl p-4 space-y-2.5">
-                    <div class="flex justify-between items-center text-slate-400 border-b border-slate-850 pb-2">
-                        <span>رقم الطلب (Order ID):</span>
-                        <span id="checkout-order-id" class="font-mono text-cyan-300 font-bold select-all">--</span>
+                <div class="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-inner">
+                    <div class="flex justify-between items-center text-slate-400 border-b border-slate-800/80 pb-2.5">
+                        <span class="text-slate-400">الخطة المختارة:</span>
+                        <span id="checkout-plan-name" class="text-white font-black text-sm bg-slate-800/80 px-3 py-1 rounded-xl border border-slate-700">--</span>
                     </div>
-                    <div class="flex justify-between items-center text-slate-400 border-b border-slate-850 pb-2">
-                        <span>الخطة المختارة:</span>
-                        <span id="checkout-plan-name" class="text-white font-bold">--</span>
-                    </div>
-                    <div class="flex justify-between items-center text-slate-400">
-                        <span>المبلغ المطلوب:</span>
-                        <span id="checkout-amount" class="text-amber-300 font-black text-base">--</span>
-                    </div>
-                </div>
-
-                <!-- NOWPayments Primary Crypto Action Button -->
-                <div class="space-y-2 pt-1">
-                    <a id="btn-nowpayments-pay" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-3.5 bg-gradient-to-r from-emerald-500 via-cyan-500 to-indigo-600 hover:from-emerald-400 hover:to-indigo-500 text-slate-950 font-black text-sm rounded-2xl shadow-xl shadow-cyan-500/20 transition-all flex items-center justify-center space-x-2 rtl:space-x-reverse hover:scale-[1.02] active:scale-95 text-center">
-                        <span class="text-base">💎</span>
-                        <span>الانتقال للدفع بالعملات المشفرة (NOWPayments)</span>
-                        <svg class="w-4 h-4 rtl:rotate-180 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                    </a>
-                </div>
-
-                <!-- Supported Crypto Coins Grid Badges -->
-                <div class="p-3.5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950/40 border border-indigo-500/30 rounded-2xl space-y-2.5">
-                    <div class="flex items-center justify-between text-indigo-300 font-bold">
-                        <div class="flex items-center space-x-1.5 rtl:space-x-reverse">
-                            <span>⚡ تدعم بوابة NOWPayments +300 عملة رقمية</span>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <span class="text-slate-400 text-[11px] block">المبلغ المطلوب للدفع:</span>
+                            <span id="checkout-amount" class="text-emerald-400 font-black text-2xl tracking-tight">--</span>
                         </div>
-                        <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">تفعيل فوري لحظي</span>
-                    </div>
-                    <div class="flex flex-wrap gap-1.5 text-[11px] font-mono font-bold">
-                        <span class="px-2 py-1 bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded-lg">USDT (TRC20)</span>
-                        <span class="px-2 py-1 bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 rounded-lg">USDT (BEP20)</span>
-                        <span class="px-2 py-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 rounded-lg">BTC</span>
-                        <span class="px-2 py-1 bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 rounded-lg">ETH</span>
-                        <span class="px-2 py-1 bg-rose-500/15 text-rose-300 border border-rose-500/30 rounded-lg">TRX</span>
-                        <span class="px-2 py-1 bg-purple-500/15 text-purple-300 border border-purple-500/30 rounded-lg">SOL</span>
-                        <span class="px-2 py-1 bg-blue-500/15 text-blue-300 border border-blue-500/30 rounded-lg">LTC</span>
-                        <span class="px-2 py-1 bg-slate-800 text-slate-400 rounded-lg">+300 More</span>
+                        <div class="text-left rtl:text-right">
+                            <span class="text-slate-400 text-[11px] block">رقم الطلب (Order ID):</span>
+                            <span id="checkout-order-id" class="font-mono text-cyan-300 font-bold select-all text-[11px]">--</span>
+                        </div>
                     </div>
                 </div>
 
-                <!-- Live Listener Pulse Radar -->
-                <div class="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center space-x-3 rtl:space-x-reverse animate-pulse">
-                    <div class="w-3.5 h-3.5 rounded-full bg-amber-400 flex items-center justify-center animate-ping flex-shrink-0"></div>
+                <!-- Primary Action Button: Open NOWPayments Hosted Invoice -->
+                <div class="space-y-1.5">
+                    <a id="btn-nowpayments-pay" href="#" target="_blank" rel="noopener noreferrer" class="group relative w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm rounded-2xl shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-200 flex items-center justify-center space-x-2 rtl:space-x-reverse hover:scale-[1.02] active:scale-95 text-center overflow-hidden">
+                        <span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-none"></span>
+                        <span class="text-lg">💎</span>
+                        <span>المتابعة إلى صفحة الدفع بالعملات المشفرة</span>
+                        <svg class="w-4 h-4 rtl:rotate-180 text-slate-950 font-bold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </a>
+                    <p class="text-[10px] text-center text-slate-400">ستفتح لك صفحة آمنة تتيح لك اختيار عملتك ومسح كود QR أو نسخ المحفظة</p>
+                </div>
+
+                <!-- Supported Cryptocurrency Grid with Authentic Badges -->
+                <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 space-y-2.5">
+                    <div class="flex items-center justify-between text-slate-300 font-bold text-[11px]">
+                        <div class="flex items-center space-x-1.5 rtl:space-x-reverse text-cyan-400">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v12M6 12h12"></path></svg>
+                            <span>العملات والشبكات الأكثر استخداماً:</span>
+                        </div>
+                        <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">+300 Coins</span>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 text-[11px]">
+                        <!-- USDT -->
+                        <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center space-x-2 rtl:space-x-reverse">
+                            <div class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0">₮</div>
+                            <div>
+                                <span class="font-bold text-emerald-300 block leading-tight">USDT</span>
+                                <span class="text-[9px] text-slate-400 block font-mono">TRC20 / BEP20</span>
+                            </div>
+                        </div>
+                        <!-- BTC -->
+                        <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center space-x-2 rtl:space-x-reverse">
+                            <div class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0">₿</div>
+                            <div>
+                                <span class="font-bold text-amber-300 block leading-tight">Bitcoin</span>
+                                <span class="text-[9px] text-slate-400 block font-mono">BTC</span>
+                            </div>
+                        </div>
+                        <!-- ETH -->
+                        <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center space-x-2 rtl:space-x-reverse">
+                            <div class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0">Ξ</div>
+                            <div>
+                                <span class="font-bold text-indigo-300 block leading-tight">Ethereum</span>
+                                <span class="text-[9px] text-slate-400 block font-mono">ERC20</span>
+                            </div>
+                        </div>
+                        <!-- TRX -->
+                        <div class="p-2 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center space-x-2 rtl:space-x-reverse">
+                            <div class="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0">◈</div>
+                            <div>
+                                <span class="font-bold text-rose-300 block leading-tight">TRON</span>
+                                <span class="text-[9px] text-slate-400 block font-mono">TRX</span>
+                            </div>
+                        </div>
+                        <!-- SOL -->
+                        <div class="p-2 rounded-xl bg-purple-500/10 border border-purple-500/25 flex items-center space-x-2 rtl:space-x-reverse">
+                            <div class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0">◎</div>
+                            <div>
+                                <span class="font-bold text-purple-300 block leading-tight">Solana</span>
+                                <span class="text-[9px] text-slate-400 block font-mono">SOL</span>
+                            </div>
+                        </div>
+                        <!-- LTC & Others -->
+                        <div class="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-center space-x-2 rtl:space-x-reverse">
+                            <div class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0">Ł</div>
+                            <div>
+                                <span class="font-bold text-cyan-300 block leading-tight">Litecoin</span>
+                                <span class="text-[9px] text-slate-400 block font-mono">LTC / BNB</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 3 Quick Step Guide -->
+                <div class="grid grid-cols-3 gap-2 text-[10px] text-slate-400 text-center">
+                    <div class="p-2 rounded-xl bg-slate-900 border border-slate-800">
+                        <span class="text-amber-400 font-bold block mb-0.5">1. اضغط للمتابعة</span>
+                        <span>اختر عملتك وشبكتك المفضلة</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-slate-900 border border-slate-800">
+                        <span class="text-cyan-400 font-bold block mb-0.5">2. أرسل التحويل</span>
+                        <span>امسح الـ QR أو انسخ المحفظة</span>
+                    </div>
+                    <div class="p-2 rounded-xl bg-slate-900 border border-slate-800">
+                        <span class="text-emerald-400 font-bold block mb-0.5">3. تفعيل لحظي</span>
+                        <span>يتفعل الحساب فور تأكيد الشبكة</span>
+                    </div>
+                </div>
+
+                <!-- Live Blockchain Radar Listener -->
+                <div class="p-3.5 bg-slate-950 border border-emerald-500/30 rounded-2xl flex items-center space-x-3 rtl:space-x-reverse">
+                    <div class="relative flex items-center justify-center flex-shrink-0 w-4 h-4">
+                        <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                        <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
+                    </div>
                     <div class="space-y-0.5">
-                        <p class="font-bold text-amber-300 text-xs">بانتظار تأكيد الشبكة وإشعار الـ IPN Webhook تلقائياً...</p>
-                        <p class="text-[10px] text-slate-400">بمجرد وصول التحويل وتأكيده في البلوكتشين، يتم ترقية حسابك وتمديد التوجيه فوراً.</p>
+                        <p class="font-bold text-emerald-300 text-xs">رادار مراقبة تأكيدات البلوكتشين نشط (Live Blockchain IPN)</p>
+                        <p class="text-[10px] text-slate-400">لا داعي لإرسال إيصالات؛ يتم التحقق والتمديد تلقائياً عبر NOWPayments IPN Webhook.</p>
                     </div>
-                </div>
-
-                <!-- Test Simulator Button (For Demo & Testing) -->
-                <div class="border-t border-slate-800 pt-2.5">
-                    <button id="btn-simulate-pay" onclick="simulatePaymentSuccess()" class="w-full py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-amber-300 border border-slate-700/80 rounded-xl text-[11px] font-bold transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse">
-                        <span>⚡ محاكاة تأكيد الدفع الفوري (Test Webhook Simulation)</span>
-                    </button>
                 </div>
             </div>
 
@@ -3660,7 +3726,7 @@
                 </div>
                 <div class="space-y-1">
                     <h4 class="text-xl font-black text-white">تم تفعيل اشتراكك بنجاح! 🎉</h4>
-                    <p class="text-xs text-slate-300">تم استلام تأكيد الـ Webhook وتحديث مدة اشتراكك بالكامل دون أي قيود.</p>
+                    <p class="text-xs text-slate-300">تم استلام تأكيد المعاملة من البلوكتشين وتمديد مدة حسابك بالكامل دون أي قيود.</p>
                 </div>
                 <button onclick="closeCheckoutModal(); switchTab('forwarding');" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition">
                     ابدأ التوجيه الآن (Go to Forwarding)
