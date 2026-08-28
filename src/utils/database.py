@@ -152,6 +152,8 @@ class SQLiteDB:
                         currency TEXT DEFAULT 'USD',
                         payment_provider TEXT,
                         transaction_id TEXT,
+                        invoice_id TEXT,
+                        invoice_url TEXT,
                         status TEXT DEFAULT 'pending',
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         completed_at TIMESTAMP
@@ -187,6 +189,12 @@ class SQLiteDB:
                 for col in ["subscription_status", "subscription_expires_at", "max_target_channels", "plan", "role", "is_frozen", "frozen_reason"]:
                     try:
                         conn.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT;")
+                    except sqlite3.OperationalError:
+                        pass
+                # Migrations for transactions
+                for col in ["invoice_id", "invoice_url"]:
+                    try:
+                        conn.execute(f"ALTER TABLE transactions ADD COLUMN {col} TEXT;")
                     except sqlite3.OperationalError:
                         pass
                 conn.commit()

@@ -2940,7 +2940,7 @@
             try {
                 const res = await api('/api/v1/payments/create-checkout', 'POST', {
                     plan_id: planId,
-                    provider: 'cryptomus'
+                    provider: 'nowpayments'
                 });
 
                 if (res.success && res.checkout) {
@@ -2949,6 +2949,11 @@
                     document.getElementById('checkout-order-id').textContent = chk.order_id;
                     document.getElementById('checkout-plan-name').textContent = chk.plan_name;
                     document.getElementById('checkout-amount').textContent = `$${chk.amount} USD`;
+
+                    const payBtn = document.getElementById('btn-nowpayments-pay');
+                    if (payBtn) {
+                        payBtn.href = chk.invoice_url || chk.checkout_url || '#';
+                    }
 
                     document.getElementById('checkout-loading-view').classList.add('hidden');
                     document.getElementById('checkout-waiting-view').classList.remove('hidden');
@@ -3597,33 +3602,53 @@
                         <span id="checkout-plan-name" class="text-white font-bold">--</span>
                     </div>
                     <div class="flex justify-between items-center text-slate-400">
-                        <span>المبلغ المستحق:</span>
+                        <span>المبلغ المطلوب:</span>
                         <span id="checkout-amount" class="text-amber-300 font-black text-base">--</span>
                     </div>
                 </div>
 
-                <!-- Payment Methods Info -->
-                <div class="p-3.5 bg-gradient-to-r from-cyan-500/10 to-indigo-500/10 border border-cyan-500/20 rounded-2xl space-y-2 text-cyan-300">
-                    <div class="flex items-center space-x-2 rtl:space-x-reverse font-bold">
-                        <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2" ry="2"></rect><line x1="1" y1="10" x2="23" y2="10"></line></svg>
-                        <span>طرق الدفع المدعومة (USDT / Crypto / Cards):</span>
+                <!-- NOWPayments Primary Crypto Action Button -->
+                <div class="space-y-2 pt-1">
+                    <a id="btn-nowpayments-pay" href="#" target="_blank" rel="noopener noreferrer" class="w-full py-3.5 bg-gradient-to-r from-emerald-500 via-cyan-500 to-indigo-600 hover:from-emerald-400 hover:to-indigo-500 text-slate-950 font-black text-sm rounded-2xl shadow-xl shadow-cyan-500/20 transition-all flex items-center justify-center space-x-2 rtl:space-x-reverse hover:scale-[1.02] active:scale-95 text-center">
+                        <span class="text-base">💎</span>
+                        <span>الانتقال للدفع بالعملات المشفرة (NOWPayments)</span>
+                        <svg class="w-4 h-4 rtl:rotate-180 text-slate-950" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </a>
+                </div>
+
+                <!-- Supported Crypto Coins Grid Badges -->
+                <div class="p-3.5 bg-gradient-to-r from-slate-950 via-slate-900 to-indigo-950/40 border border-indigo-500/30 rounded-2xl space-y-2.5">
+                    <div class="flex items-center justify-between text-indigo-300 font-bold">
+                        <div class="flex items-center space-x-1.5 rtl:space-x-reverse">
+                            <span>⚡ تدعم بوابة NOWPayments +300 عملة رقمية</span>
+                        </div>
+                        <span class="text-[10px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">تفعيل فوري لحظي</span>
                     </div>
-                    <p class="text-slate-300 text-[11px]">يتم قبول الدفع عبر Cryptomus أو المحافظ الرقمية أو البطاقات البنكية. بمجرد إتمام التحويل، ترسل البوابة إشعار Webhook مشفر للسيرفر لتفعيل حسابك فوراً دون أي تدخل يدوي.</p>
+                    <div class="flex flex-wrap gap-1.5 text-[11px] font-mono font-bold">
+                        <span class="px-2 py-1 bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 rounded-lg">USDT (TRC20)</span>
+                        <span class="px-2 py-1 bg-cyan-500/15 text-cyan-300 border border-cyan-500/30 rounded-lg">USDT (BEP20)</span>
+                        <span class="px-2 py-1 bg-amber-500/15 text-amber-300 border border-amber-500/30 rounded-lg">BTC</span>
+                        <span class="px-2 py-1 bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 rounded-lg">ETH</span>
+                        <span class="px-2 py-1 bg-rose-500/15 text-rose-300 border border-rose-500/30 rounded-lg">TRX</span>
+                        <span class="px-2 py-1 bg-purple-500/15 text-purple-300 border border-purple-500/30 rounded-lg">SOL</span>
+                        <span class="px-2 py-1 bg-blue-500/15 text-blue-300 border border-blue-500/30 rounded-lg">LTC</span>
+                        <span class="px-2 py-1 bg-slate-800 text-slate-400 rounded-lg">+300 More</span>
+                    </div>
                 </div>
 
                 <!-- Live Listener Pulse Radar -->
-                <div class="p-4 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center space-x-3 rtl:space-x-reverse animate-pulse">
-                    <div class="w-4 h-4 rounded-full bg-amber-400 flex items-center justify-center animate-ping flex-shrink-0"></div>
+                <div class="p-3.5 bg-amber-500/10 border border-amber-500/30 rounded-2xl flex items-center space-x-3 rtl:space-x-reverse animate-pulse">
+                    <div class="w-3.5 h-3.5 rounded-full bg-amber-400 flex items-center justify-center animate-ping flex-shrink-0"></div>
                     <div class="space-y-0.5">
-                        <p class="font-bold text-amber-300">بانتظار تأكيد الدفع التلقائي عبر الـ Webhook...</p>
-                        <p class="text-[11px] text-slate-400">الواجهة تستمع للحظة التأكيد وسيتم تحديث وتفعيل الحساب تلقائياً.</p>
+                        <p class="font-bold text-amber-300 text-xs">بانتظار تأكيد الشبكة وإشعار الـ IPN Webhook تلقائياً...</p>
+                        <p class="text-[10px] text-slate-400">بمجرد وصول التحويل وتأكيده في البلوكتشين، يتم ترقية حسابك وتمديد التوجيه فوراً.</p>
                     </div>
                 </div>
 
                 <!-- Test Simulator Button (For Demo & Testing) -->
-                <div class="border-t border-slate-800 pt-3">
-                    <button id="btn-simulate-pay" onclick="simulatePaymentSuccess()" class="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-300 border border-amber-500/30 rounded-xl font-bold transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse">
-                        <span>⚡ محاكاة تأكيد الدفع الفوري (Test Webhook)</span>
+                <div class="border-t border-slate-800 pt-2.5">
+                    <button id="btn-simulate-pay" onclick="simulatePaymentSuccess()" class="w-full py-2 bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-amber-300 border border-slate-700/80 rounded-xl text-[11px] font-bold transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse">
+                        <span>⚡ محاكاة تأكيد الدفع الفوري (Test Webhook Simulation)</span>
                     </button>
                 </div>
             </div>

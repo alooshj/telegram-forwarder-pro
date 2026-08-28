@@ -56,6 +56,11 @@ def load_config():
         "CHECK_INTERVAL": int(os.environ.get("CHECK_INTERVAL", "30") or "30"),
         "MAX_RETRIES": int(os.environ.get("MAX_RETRIES", "3") or "3"),
         "RETRY_DELAY": int(os.environ.get("RETRY_DELAY", "10") or "10"),
+
+        # NOWPayments Cryptocurrency Gateway
+        "NOWPAYMENTS_API_KEY": os.environ.get("NOWPAYMENTS_API_KEY", "1W5AC5M-NYBM2NJ-NQN36B4-C338EH5"),
+        "NOWPAYMENTS_IPN_SECRET": os.environ.get("NOWPAYMENTS_IPN_SECRET", "c37ecbc1-6a5a-4e56-917b-3c77672a812b"),
+        "NOWPAYMENTS_API_URL": os.environ.get("NOWPAYMENTS_API_URL", "https://api.nowpayments.io/v1"),
     }
     return config
 

@@ -50,9 +50,15 @@ class WebhookEngine:
         return hmac.new(secret_key, payload_bytes, hashlib.sha256).hexdigest()
 
     @staticmethod
-    def create_checkout_order(db, user_id: str, plan_id: str, provider: str = "cryptomus") -> Tuple[bool, dict]:
+    def create_checkout_order(
+        db,
+        user_id: str,
+        plan_id: str,
+        provider: str = "nowpayments",
+        base_url: Optional[str] = None
+    ) -> Tuple[bool, dict]:
         """
-        Create a new pending transaction for a subscription checkout.
+        Create a new pending transaction and generate a NOWPayments cryptocurrency invoice.
         """
         if not db or not user_id or not plan_id:
             return False, {"error": "Invalid checkout parameters"}
@@ -62,6 +68,30 @@ class WebhookEngine:
             return False, {"error": "Invalid plan selected for purchase"}
 
         order_id = f"ORD-{datetime.now(timezone.utc).strftime('%Y%m%d')}-{uuid.uuid4().hex[:8].upper()}"
+
+        # 1. Create live NOWPayments Crypto Invoice
+        invoice_url = None
+        invoice_id = None
+        from src.billing.nowpayments import NOWPaymentsGateway
+        try:
+            callback_url = f"{base_url.rstrip('/')}/api/v1/payments/nowpayments-webhook" if base_url else "https://telegram-forwarder-pro.onrender.com/api/v1/payments/nowpayments-webhook"
+            success_url = f"{base_url.rstrip('/')}/?payment=success&order_id={order_id}" if base_url else "https://telegram-forwarder-pro.onrender.com/?payment=success"
+            cancel_url = f"{base_url.rstrip('/')}/?payment=cancel" if base_url else "https://telegram-forwarder-pro.onrender.com/?payment=cancel"
+
+            ok, inv_res = NOWPaymentsGateway.create_invoice(
+                order_id=order_id,
+                price_amount=float(plan["price_usd"]),
+                price_currency="usd",
+                plan_name=plan["name"],
+                callback_url=callback_url,
+                success_url=success_url,
+                cancel_url=cancel_url
+            )
+            if ok:
+                invoice_url = inv_res.get("invoice_url")
+                invoice_id = inv_res.get("invoice_id")
+        except Exception as e:
+            logger.warning(f"NOWPayments direct invoice creation error (will fallback): {e}")
 
         tx_doc = {
             "_id": str(uuid.uuid4()),
@@ -73,15 +103,17 @@ class WebhookEngine:
             "currency": "USD",
             "payment_provider": provider,
             "transaction_id": None,
+            "invoice_id": invoice_id,
+            "invoice_url": invoice_url,
             "status": "pending",
             "created_at": datetime.now(timezone.utc),
             "completed_at": None,
         }
 
         try:
-            if hasattr(db, "transactions"):
+            if hasattr(db, "transactions") and db.transactions is not None:
                 db.transactions.insert_one(tx_doc)
-            logger.info(f"Created checkout order {order_id} for user {user_id} (Plan: {plan['id']}, ${plan['price_usd']})")
+            logger.info(f"Created checkout order {order_id} for user {user_id} (Plan: {plan['id']}, ${plan['price_usd']}, NOWPayments: {invoice_url or 'N/A'})")
             return True, {
                 "order_id": order_id,
                 "plan_id": plan["id"],
@@ -89,7 +121,9 @@ class WebhookEngine:
                 "amount": plan["price_usd"],
                 "currency": "USD",
                 "payment_provider": provider,
-                "checkout_url": f"/checkout/{order_id}",
+                "invoice_id": invoice_id,
+                "invoice_url": invoice_url,
+                "checkout_url": invoice_url or f"/checkout/{order_id}",
             }
         except Exception as e:
             logger.error(f"Failed to create checkout transaction: {e}")
@@ -98,16 +132,16 @@ class WebhookEngine:
     @staticmethod
     def get_order_status(db, order_id: str) -> Optional[dict]:
         """Fetch current transaction status by order_id."""
-        if not db or not order_id or not hasattr(db, "transactions"):
+        if not db or not order_id or not hasattr(db, "transactions") or db.transactions is None:
             return None
         return db.transactions.find_one({"order_id": order_id})
 
     @classmethod
     def process_webhook_payment(cls, db, payload: dict, raw_body: Optional[bytes] = None, signature: Optional[str] = None) -> Tuple[bool, dict]:
         """
-        Process incoming payment confirmation from payment gateway:
-        1. Validates signature if present/required.
-        2. Validates payment status is SUCCESS/COMPLETED/PAID.
+        Process incoming payment confirmation from payment gateway (NOWPayments / Cryptomus / Webhook):
+        1. Validates signature if present.
+        2. Validates payment status is SUCCESS/COMPLETED/PAID/FINISHED/CONFIRMED.
         3. Identifies user and plan from transaction ledger.
         4. Calculates extended expiration and updates user record to 'active'.
         5. Marks transaction as 'completed'.
@@ -115,27 +149,34 @@ class WebhookEngine:
         if not db:
             return False, {"error": "Database unavailable"}
 
-        # 1. Verify signature if provided
-        if raw_body and signature:
-            if not cls.verify_signature(raw_body, signature):
+        # 1. Verify signature if provided (HMAC-SHA512 for NOWPayments or HMAC-SHA256)
+        if signature:
+            from src.billing.nowpayments import NOWPaymentsGateway
+            is_nowpayments_sig = NOWPaymentsGateway.verify_ipn_signature(payload, signature)
+            is_standard_sig = raw_body and cls.verify_signature(raw_body, signature)
+            if not is_nowpayments_sig and not is_standard_sig:
+                # If neither matched, reject
                 logger.warning("Rejected webhook: Invalid HMAC signature")
                 return False, {"error": "Invalid signature"}
 
         order_id = payload.get("order_id") or payload.get("merchant_order_id") or payload.get("reference")
-        payment_status = str(payload.get("status") or payload.get("payment_status") or "").upper()
-        provider_tx_id = payload.get("txid") or payload.get("transaction_id") or payload.get("payment_id") or str(uuid.uuid4())
+        payment_status = str(payload.get("payment_status") or payload.get("status") or "").upper()
+        provider_tx_id = str(payload.get("payment_id") or payload.get("txid") or payload.get("transaction_id") or uuid.uuid4().hex[:12].upper())
 
         if not order_id:
             return False, {"error": "Missing order_id in webhook payload"}
 
-        # 2. Check payment success state
-        success_states = ("SUCCESS", "PAID", "COMPLETED", "CONFIRMED")
+        # 2. Check payment success state (NOWPayments uses 'finished', 'confirmed', 'sending', 'paid')
+        success_states = ("SUCCESS", "PAID", "COMPLETED", "CONFIRMED", "FINISHED", "SENDING")
         if payment_status not in success_states:
-            logger.info(f"Webhook received non-completed status '{payment_status}' for order {order_id}")
-            return True, {"status": "ignored", "message": f"Payment status '{payment_status}' is not terminal success"}
+            logger.info(f"Webhook received non-terminal status '{payment_status}' for order {order_id}")
+            # Update tx status to pending/waiting in db
+            if hasattr(db, "transactions") and db.transactions is not None:
+                db.transactions.update_one({"order_id": order_id}, {"$set": {"status": payment_status.lower()}})
+            return True, {"status": "ignored", "message": f"Payment status '{payment_status}' recorded"}
 
         # 3. Lookup transaction
-        if not hasattr(db, "transactions"):
+        if not hasattr(db, "transactions") or db.transactions is None:
             return False, {"error": "Transactions store unavailable"}
 
         tx = db.transactions.find_one({"order_id": order_id})

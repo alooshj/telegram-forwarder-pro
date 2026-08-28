@@ -409,7 +409,80 @@ class BillingWebhookTestCase(unittest.TestCase):
             keys = resp_list.get_json()["keys"]
             self.assertTrue(any(k["key_code"] == key_code for k in keys))
 
+    def test_nowpayments_signature_verification(self):
+        """Test NOWPayments HMAC-SHA512 signature verification on sorted JSON payload."""
+        from src.billing.nowpayments import NOWPaymentsGateway
+        secret = "c37ecbc1-6a5a-4e56-917b-3c77672a812b"
+        payload = {
+            "payment_id": 123456789,
+            "payment_status": "finished",
+            "pay_amount": 15.0,
+            "price_amount": 15.0,
+            "price_currency": "usd",
+            "order_id": "ORD-20260828-TEST"
+        }
+        # Compute signature
+        sorted_json = json.dumps(payload, separators=(',', ':'), sort_keys=True)
+        sig = hmac.new(secret.encode("utf-8"), sorted_json.encode("utf-8"), hashlib.sha512).hexdigest()
+
+        # Valid
+        self.assertTrue(NOWPaymentsGateway.verify_ipn_signature(payload, sig, secret))
+        # Invalid
+        self.assertFalse(NOWPaymentsGateway.verify_ipn_signature(payload, "invalid_signature", secret))
+
+    def test_nowpayments_checkout_and_ipn_activation(self):
+        """Test full NOWPayments checkout creation and automated IPN webhook activation."""
+        user = UserManager.create_user(self.db, "crypto_buyer@test.com", "pass123", role="client")
+        token = generate_auth_token(user["_id"], user["email"])
+
+        with patch("src.web.api.get_db", return_value=self.db), \
+             patch("src.billing.nowpayments.NOWPaymentsGateway.create_invoice", return_value=(True, {
+                 "invoice_id": "998877",
+                 "invoice_url": "https://nowpayments.io/payment/?iid=998877",
+                 "order_id": "ORD-TEST-123"
+             })):
+
+            # 1. User initiates checkout
+            resp = self.client.post(
+                "/api/v1/payments/create-checkout",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"plan_id": "quarterly"}
+            )
+            self.assertEqual(resp.status_code, 200)
+            data = resp.get_json()
+            self.assertTrue(data["success"])
+            order_id = data["checkout"]["order_id"]
+            self.assertEqual(data["checkout"]["invoice_url"], "https://nowpayments.io/payment/?iid=998877")
+
+            # 2. NOWPayments sends IPN Webhook callback with status 'finished'
+            ipn_payload = {
+                "payment_id": 55443322,
+                "payment_status": "finished",
+                "pay_amount": 35.0,
+                "price_amount": 35.0,
+                "price_currency": "usd",
+                "order_id": order_id
+            }
+            secret = "c37ecbc1-6a5a-4e56-917b-3c77672a812b"
+            sorted_json = json.dumps(ipn_payload, separators=(',', ':'), sort_keys=True)
+            sig = hmac.new(secret.encode("utf-8"), sorted_json.encode("utf-8"), hashlib.sha512).hexdigest()
+
+            ipn_resp = self.client.post(
+                "/api/v1/payments/nowpayments-webhook",
+                headers={"x-nowpayments-sig": sig, "Content-Type": "application/json"},
+                data=json.dumps(ipn_payload)
+            )
+            self.assertEqual(ipn_resp.status_code, 200)
+            self.assertEqual(ipn_resp.get_json()["status"], "success")
+
+            # 3. Verify user subscription is now active with 90 days quarterly plan
+            info = UserManager.get_subscription_info(self.db, user["_id"])
+            self.assertTrue(info["is_active"])
+            self.assertEqual(info["plan"], "quarterly")
+            self.assertGreaterEqual(info["days_remaining"], 89)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

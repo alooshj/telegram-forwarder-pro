@@ -1157,10 +1157,11 @@ def api_create_checkout():
 
     data = request.get_json() or {}
     plan_id = data.get("plan_id", "monthly")
-    provider = data.get("provider", "cryptomus")
+    provider = data.get("provider", "nowpayments")
+    base_url = request.host_url
 
     from src.billing.webhook import WebhookEngine
-    success, result = WebhookEngine.create_checkout_order(db, str(user["_id"]), plan_id, provider)
+    success, result = WebhookEngine.create_checkout_order(db, str(user["_id"]), plan_id, provider, base_url=base_url)
     if not success:
         return jsonify({"success": False, "error": result.get("error")}), 400
 
@@ -1196,15 +1197,17 @@ def api_check_order_status(order_id):
         "is_completed": tx.get("status") == "completed",
         "plan_id": tx.get("plan_id"),
         "amount": tx.get("amount"),
+        "invoice_url": tx.get("invoice_url"),
         "subscription": sub_info
     })
 
 
+@app.route("/api/v1/payments/nowpayments-webhook", methods=["POST"])
 @app.route("/api/v1/payments/webhook", methods=["POST"])
 def api_payments_webhook():
     """
-    Zero-touch automated payment activation Webhook API.
-    Verifies cryptographic signature, updates transactions ledger,
+    Zero-touch automated cryptocurrency payment activation Webhook (NOWPayments IPN).
+    Verifies cryptographic HMAC signature, updates transactions ledger,
     and instantly activates customer subscription without human intervention.
     """
     db = get_db()
@@ -1213,7 +1216,14 @@ def api_payments_webhook():
 
     raw_body = request.get_data()
     payload = request.get_json(silent=True) or {}
-    signature = request.headers.get("X-Signature") or request.headers.get("Sign") or request.headers.get("Signature") or request.args.get("signature")
+    signature = (
+        request.headers.get("x-nowpayments-sig")
+        or request.headers.get("X-NOWPayments-Sig")
+        or request.headers.get("X-Signature")
+        or request.headers.get("Sign")
+        or request.headers.get("Signature")
+        or request.args.get("signature")
+    )
 
     from src.billing.webhook import WebhookEngine
     success, res = WebhookEngine.process_webhook_payment(db, payload, raw_body, signature)
