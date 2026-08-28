@@ -24,7 +24,13 @@ class FlaskApiTestCase(unittest.TestCase):
             from src.web.auth import UserManager, generate_auth_token
             user = db.users.find_one({"email": "test_api_user@example.com"})
             if not user:
-                user = UserManager.create_user(db, "test_api_user@example.com", "password123", "API Tester")
+                user = UserManager.create_user(db, "test_api_user@example.com", "password123", "API Tester", plan="annual", role="super_admin")
+            else:
+                db.users.update_one(
+                    {"_id": user["_id"]},
+                    {"$set": {"subscription_status": "active", "role": "super_admin", "max_target_channels": 999}}
+                )
+                user = db.users.find_one({"_id": user["_id"]})
             token = generate_auth_token(str(user["_id"]), user["email"])
             self.auth_headers = {"Authorization": f"Bearer {token}"}
             UserManager.update_telegram_account(db, str(user["_id"]), {

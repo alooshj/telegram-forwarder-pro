@@ -133,11 +133,28 @@ class SQLiteDB:
                         email TEXT UNIQUE,
                         name TEXT,
                         password_hash TEXT,
-                        plan TEXT DEFAULT 'free',
-                        role TEXT DEFAULT 'user',
+                        plan TEXT DEFAULT 'trial',
+                        role TEXT DEFAULT 'client',
+                        subscription_status TEXT DEFAULT 'trial',
+                        subscription_expires_at TIMESTAMP,
+                        max_target_channels INTEGER DEFAULT 2,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         telegram_account TEXT,
                         updated_at TIMESTAMP
+                    );
+                    CREATE TABLE IF NOT EXISTS transactions (
+                        _id TEXT PRIMARY KEY,
+                        order_id TEXT UNIQUE,
+                        user_id TEXT,
+                        plan_id TEXT,
+                        plan_name TEXT,
+                        amount REAL,
+                        currency TEXT DEFAULT 'USD',
+                        payment_provider TEXT,
+                        transaction_id TEXT,
+                        status TEXT DEFAULT 'pending',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        completed_at TIMESTAMP
                     );
                     CREATE TABLE IF NOT EXISTS pending_auth (
                         _id TEXT PRIMARY KEY,
@@ -147,10 +164,16 @@ class SQLiteDB:
                         created_at REAL
                     );
                 """)
-                # Migrations for existing databases
+                # Migrations for forwarding_rules
                 for col in ["target_ids", "media_types", "user_id", "forward_mode", "forward_delay", "whitelist_keywords", "blacklist_keywords", "strip_mentions", "strip_links", "header_template", "footer_template"]:
                     try:
                         conn.execute(f"ALTER TABLE forwarding_rules ADD COLUMN {col} TEXT;")
+                    except sqlite3.OperationalError:
+                        pass
+                # Migrations for users
+                for col in ["subscription_status", "subscription_expires_at", "max_target_channels", "plan", "role"]:
+                    try:
+                        conn.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT;")
                     except sqlite3.OperationalError:
                         pass
                 conn.commit()
@@ -161,6 +184,10 @@ class SQLiteDB:
     @property
     def users(self):
         return _SQLiteCollection(self, "users")
+
+    @property
+    def transactions(self):
+        return _SQLiteCollection(self, "transactions")
 
     @property
     def pending_auth(self):

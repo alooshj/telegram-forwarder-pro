@@ -12,7 +12,7 @@ import hashlib
 import time
 import logging
 from functools import wraps
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from flask import request, jsonify, g
 from werkzeug.security import generate_password_hash, check_password_hash
 
@@ -113,8 +113,8 @@ class UserManager:
     """Helper class for user database operations."""
 
     @staticmethod
-    def create_user(db, email: str, password: str, name: str = "", plan: str = "free") -> dict:
-        """Create a new registered user."""
+    def create_user(db, email: str, password: str, name: str = "", plan: str = "trial", role: str = None) -> dict:
+        """Create a new registered user with 3-day automatic trial and role hierarchy."""
         if not email or not password:
             raise ValueError("Email and password are required")
 
@@ -125,15 +125,35 @@ class UserManager:
 
         user_id = str(uuid.uuid4())
         hashed_password = generate_password_hash(password)
+        now = datetime.now(timezone.utc)
+
+        # First registered user defaults to super_admin unless role is explicitly specified
+        user_count = db.users.count_documents({}) if hasattr(db, "users") else 0
+        if user_count == 0 and role is None:
+            assigned_role = "super_admin"
+            assigned_plan = "annual"
+            sub_status = "active"
+            expires_at = now + timedelta(days=3650)
+            max_channels = 999
+        else:
+            assigned_role = role or "client"
+            assigned_plan = plan or "trial"
+            sub_status = "trial" if assigned_plan == "trial" else "active"
+            expires_at = now + timedelta(days=3) if assigned_plan == "trial" else now + timedelta(days=30)
+            max_channels = 2 if assigned_plan == "trial" else 999
 
         user_doc = {
             "_id": user_id,
             "email": email,
             "name": name.strip() or email.split("@")[0],
             "password_hash": hashed_password,
-            "plan": plan,
-            "role": "user",
-            "created_at": datetime.now(timezone.utc),
+            "plan": assigned_plan,
+            "role": assigned_role,
+            "subscription_status": sub_status,
+            "subscription_expires_at": expires_at,
+            "max_target_channels": max_channels,
+            "created_at": now,
+            "updated_at": now,
             "telegram_account": None,  # Will store connected telegram info
         }
 
@@ -199,3 +219,41 @@ class UserManager:
             {"$set": {"telegram_account": None, "updated_at": datetime.now(timezone.utc)}}
         )
         return True
+
+    @staticmethod
+    def get_subscription_info(db, user_id: str) -> dict:
+        """Retrieve full subscription metadata for user."""
+        user = UserManager.get_user_by_id(db, user_id)
+        if not user:
+            return {
+                "status": "expired",
+                "is_active": False,
+                "plan": "none",
+                "role": "client",
+                "expires_at": None,
+                "days_remaining": 0,
+                "max_target_channels": 0,
+            }
+
+        from src.billing.plans import check_subscription_status, get_plan
+        status, is_active, expires_at, days_left = check_subscription_status(user)
+        plan_id = user.get("plan", "trial")
+        plan_cfg = get_plan(plan_id) or {}
+
+        return {
+            "status": status,
+            "is_active": is_active,
+            "plan": plan_id,
+            "plan_name": plan_cfg.get("name", plan_id.capitalize()),
+            "plan_name_ar": plan_cfg.get("name_ar", plan_id),
+            "role": user.get("role", "client"),
+            "expires_at": expires_at.isoformat() if expires_at else None,
+            "days_remaining": days_left,
+            "max_target_channels": user.get("max_target_channels", plan_cfg.get("max_target_channels", 999)),
+        }
+
+    @staticmethod
+    def is_subscription_valid(db, user_id: str) -> bool:
+        """Check if user has an active or trial subscription (or is super_admin)."""
+        info = UserManager.get_subscription_info(db, user_id)
+        return info.get("is_active", False)

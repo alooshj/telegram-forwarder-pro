@@ -11,6 +11,7 @@ Provides endpoints for:
 """
 
 import os
+import uuid
 import logging
 import threading
 import asyncio
@@ -176,6 +177,13 @@ def get_db():
         _db_initialized = True
         logger.info(f"Database initialized: {type(db).__name__}")
 
+        # Start subscription auto-expiration background worker
+        try:
+            from src.billing.expiration import expiration_worker
+            expiration_worker.start(get_db)
+        except Exception as e:
+            logger.debug(f"Could not start expiration worker: {e}")
+
         # Start forwarder engine only if explicitly enabled via AUTO_START_ENGINE
         if os.environ.get("AUTO_START_ENGINE", "").lower() in ("true", "1") and config.get("SESSION_STRING") and config.get("API_ID"):
             _start_forwarder_engine(config, db)
@@ -324,6 +332,18 @@ def api_create_rule():
         media_types = data.get("media_types")
         if media_types is None or not isinstance(media_types, list):
             media_types = ["photo", "video", "document", "audio", "text", "sticker"]
+
+        # Check subscription status and target channel limits
+        from src.billing.plans import check_subscription_status
+        status, is_active, _, _ = check_subscription_status(user)
+        if not is_active:
+            return jsonify({"error": "Your subscription has expired. Please renew your plan to create or modify rules."}), 403
+
+        max_targets = user.get("max_target_channels", 999) if user.get("role") != "super_admin" else 999
+        if status == "trial" and len(target_ids) > max_targets:
+            return jsonify({
+                "error": f"Plan Limit: Free Trial allows a maximum of {max_targets} target channels per rule. Please upgrade your subscription for unlimited channels."
+            }), 400
 
         rule = {
             "user_id": user_id,
@@ -548,11 +568,15 @@ def api_get_stats():
     tg_username = tg_account.get("username") or tg_account.get("first_name")
     is_running = worker_pool.is_user_running(user_id) if tg_connected else False
 
+    from src.web.auth import UserManager
+    sub_info = UserManager.get_subscription_info(db, user_id)
+
     stats = {
         "running": is_running,
         "connected": tg_connected,
         "telegram_connected": tg_connected,
         "telegram_username": tg_username,
+        "subscription": sub_info,
         "last_update": forwarder_status.get("last_update"),
         "total_rules": 0,
         "active_rules": 0,
@@ -709,6 +733,13 @@ def api_start_forwarder():
     if not user:
         return jsonify({"success": False, "error": "Please log in first"}), 401
     user_id = str(user["_id"])
+
+    # Check subscription validity
+    if not UserManager.is_subscription_valid(db, user_id):
+        return jsonify({
+            "success": False,
+            "error": "Your subscription or trial period has expired. Please upgrade or renew your plan to start forwarding."
+        }), 403
 
     session_string = UserManager.get_user_telegram_session(db, user_id)
     if not session_string:
@@ -1051,6 +1082,239 @@ def api_telegram_avatar(entity_id):
     resp = Response(_DEFAULT_CHANNEL_AVATAR_SVG, mimetype="image/svg+xml")
     resp.headers["Cache-Control"] = "public, max-age=86400"
     return resp
+
+
+# ==========================================
+# --- Automated Billing & Webhook Routes ---
+# ==========================================
+
+@app.route("/api/v1/plans", methods=["GET"])
+def api_get_plans():
+    """Retrieve all available subscription plans."""
+    from src.billing.plans import PLANS
+    return jsonify({
+        "success": True,
+        "plans": list(PLANS.values())
+    })
+
+
+@app.route("/api/v1/user/subscription", methods=["GET"])
+def api_get_user_subscription():
+    """Get authenticated user's current subscription details."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request, UserManager
+    user = get_current_user_from_request(db)
+    if not user:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    info = UserManager.get_subscription_info(db, str(user["_id"]))
+    return jsonify({"success": True, "subscription": info, "user": {
+        "id": str(user["_id"]),
+        "email": user.get("email"),
+        "name": user.get("name"),
+        "role": user.get("role", "client")
+    }})
+
+
+@app.route("/api/v1/payments/create-checkout", methods=["POST"])
+def api_create_checkout():
+    """Initiate checkout for a chosen subscription plan."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request
+    user = get_current_user_from_request(db)
+    if not user:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    plan_id = data.get("plan_id", "monthly")
+    provider = data.get("provider", "cryptomus")
+
+    from src.billing.webhook import WebhookEngine
+    success, result = WebhookEngine.create_checkout_order(db, str(user["_id"]), plan_id, provider)
+    if not success:
+        return jsonify({"success": False, "error": result.get("error")}), 400
+
+    return jsonify({"success": True, "checkout": result})
+
+
+@app.route("/api/v1/payments/check-status/<order_id>", methods=["GET"])
+def api_check_order_status(order_id):
+    """Check payment status of an order for realtime frontend polling."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request, UserManager
+    user = get_current_user_from_request(db)
+    if not user:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    from src.billing.webhook import WebhookEngine
+    tx = WebhookEngine.get_order_status(db, order_id)
+    if not tx:
+        return jsonify({"success": False, "error": "Order not found"}), 404
+
+    # Security check: User must own the order or be admin
+    if tx.get("user_id") != str(user["_id"]) and user.get("role") != "super_admin":
+        return jsonify({"success": False, "error": "Forbidden"}), 403
+
+    sub_info = UserManager.get_subscription_info(db, str(user["_id"]))
+    return jsonify({
+        "success": True,
+        "order_id": order_id,
+        "status": tx.get("status", "pending"),
+        "is_completed": tx.get("status") == "completed",
+        "plan_id": tx.get("plan_id"),
+        "amount": tx.get("amount"),
+        "subscription": sub_info
+    })
+
+
+@app.route("/api/v1/payments/webhook", methods=["POST"])
+def api_payments_webhook():
+    """
+    Zero-touch automated payment activation Webhook API.
+    Verifies cryptographic signature, updates transactions ledger,
+    and instantly activates customer subscription without human intervention.
+    """
+    db = get_db()
+    if not db:
+        return jsonify({"status": "error", "message": "Database unavailable"}), 500
+
+    raw_body = request.get_data()
+    payload = request.get_json(silent=True) or {}
+    signature = request.headers.get("X-Signature") or request.headers.get("Sign") or request.headers.get("Signature") or request.args.get("signature")
+
+    from src.billing.webhook import WebhookEngine
+    success, res = WebhookEngine.process_webhook_payment(db, payload, raw_body, signature)
+
+    if not success:
+        return jsonify(res), 400
+
+    return jsonify(res), 200
+
+
+@app.route("/api/v1/payments/simulate-success", methods=["POST"])
+def api_simulate_payment():
+    """Test/Demo simulation endpoint to instantly confirm a pending checkout order."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request
+    user = get_current_user_from_request(db)
+    if not user:
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    data = request.get_json() or {}
+    order_id = data.get("order_id")
+    if not order_id:
+        return jsonify({"success": False, "error": "Missing order_id"}), 400
+
+    payload = {
+        "order_id": order_id,
+        "status": "COMPLETED",
+        "transaction_id": f"SIM-TX-{uuid.uuid4().hex[:12].upper()}"
+    }
+
+    from src.billing.webhook import WebhookEngine
+    success, res = WebhookEngine.process_webhook_payment(db, payload)
+    if not success:
+        return jsonify({"success": False, "error": res.get("error")}), 400
+
+    return jsonify({"success": True, "result": res})
+
+
+@app.route("/api/v1/admin/users", methods=["GET"])
+def api_admin_get_users():
+    """Admin endpoint: List all registered users and their subscriptions."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request, UserManager
+    current_user = get_current_user_from_request(db)
+    if not current_user or current_user.get("role") not in ("admin", "super_admin"):
+        return jsonify({"success": False, "error": "Forbidden: Admin access required"}), 403
+
+    users_list = []
+    try:
+        for u in db.users.find({}):
+            sub = UserManager.get_subscription_info(db, str(u["_id"]))
+            users_list.append({
+                "_id": str(u["_id"]),
+                "email": u.get("email"),
+                "name": u.get("name"),
+                "role": u.get("role", "client"),
+                "plan": u.get("plan", "trial"),
+                "subscription_status": sub.get("status"),
+                "subscription_expires_at": sub.get("expires_at"),
+                "days_remaining": sub.get("days_remaining"),
+                "telegram_connected": bool(u.get("telegram_account")),
+                "telegram_username": (u.get("telegram_account") or {}).get("username"),
+                "created_at": u.get("created_at").isoformat() if hasattr(u.get("created_at"), "isoformat") else str(u.get("created_at")),
+            })
+    except Exception as e:
+        logger.error(f"Failed to fetch admin users: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+    return jsonify({"success": True, "users": users_list})
+
+
+@app.route("/api/v1/admin/users/<user_id>/subscription", methods=["POST"])
+def api_admin_update_subscription(user_id):
+    """Admin endpoint: Manually extend or set subscription for a user."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request, UserManager
+    current_user = get_current_user_from_request(db)
+    if not current_user or current_user.get("role") not in ("admin", "super_admin"):
+        return jsonify({"success": False, "error": "Forbidden: Admin access required"}), 403
+
+    target_user = db.users.find_one({"_id": user_id})
+    if not target_user:
+        return jsonify({"success": False, "error": "User not found"}), 404
+
+    data = request.get_json() or {}
+    plan_id = data.get("plan_id", "monthly")
+    add_days = int(data.get("days", 30))
+    new_role = data.get("role")
+
+    from src.billing.plans import calculate_new_expiration, get_plan
+    plan = get_plan(plan_id) or {"id": plan_id, "name": plan_id.capitalize(), "max_target_channels": 999}
+    curr_expires = target_user.get("subscription_expires_at")
+    if isinstance(curr_expires, str):
+        try:
+            curr_expires = datetime.fromisoformat(curr_expires.replace("Z", "+00:00"))
+        except Exception:
+            curr_expires = None
+
+    new_expires = calculate_new_expiration(curr_expires, add_days)
+
+    update_fields = {
+        "subscription_status": "active",
+        "plan": plan_id,
+        "subscription_expires_at": new_expires,
+        "max_target_channels": plan.get("max_target_channels", 999),
+        "updated_at": datetime.now(timezone.utc)
+    }
+
+    # Only super_admin can change role to super_admin or admin
+    if new_role and current_user.get("role") == "super_admin":
+        update_fields["role"] = new_role
+
+    db.users.update_one({"_id": user_id}, {"$set": update_fields})
+    _log_event(db, "INFO", f"Admin {current_user.get('email')} updated subscription for user {target_user.get('email')} (+{add_days} days)")
+
+    return jsonify({"success": True, "message": "Subscription updated successfully", "expires_at": new_expires.isoformat()})
 
 
 @app.errorhandler(400)
