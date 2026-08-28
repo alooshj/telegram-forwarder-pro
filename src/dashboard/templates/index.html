@@ -1909,7 +1909,14 @@
         // ==================== API HELPERS ====================
         async function api(url, method = 'GET', body = null) {
             try {
-                const opts = { method, headers: { 'Content-Type': 'application/json' } };
+                const headers = { 'Content-Type': 'application/json' };
+                if (window.Clerk && window.Clerk.session) {
+                    try {
+                        const token = await window.Clerk.session.getToken();
+                        if (token) headers['Authorization'] = `Bearer ${token}`;
+                    } catch (e) {}
+                }
+                const opts = { method, headers };
                 if (body) opts.body = JSON.stringify(body);
                 const res = await fetch(url, opts);
                 const contentType = res.headers.get('content-type') || '';
@@ -3112,9 +3119,10 @@
         let activeCheckoutOrderId = null;
 
         async function loadUserSubscription() {
+            if (!currentUser) return;
             try {
                 const res = await api('/api/v1/user/subscription');
-                if (res.success && res.subscription) {
+                if (res && res.success && res.subscription) {
                     currentSubscription = res.subscription;
                     updateSubscriptionUI(res.subscription, res.user);
                 }

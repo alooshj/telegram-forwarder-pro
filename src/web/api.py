@@ -1401,10 +1401,10 @@ def api_get_user_subscription():
     from src.web.auth import get_current_user_from_request, UserManager
     user = get_current_user_from_request(db)
     if not user:
-        return jsonify({"success": False, "error": "Unauthorized"}), 401
+        return jsonify({"success": True, "authenticated": False, "subscription": None}), 200
 
     info = UserManager.get_subscription_info(db, str(user["_id"]))
-    return jsonify({"success": True, "subscription": info, "user": {
+    return jsonify({"success": True, "authenticated": True, "subscription": info, "user": {
         "id": str(user["_id"]),
         "email": user.get("email"),
         "name": user.get("name"),
