@@ -936,9 +936,19 @@ def api_telegram_disconnect():
     })
 
 
-@app.route("/api/telegram/avatar/<int:entity_id>")
+@app.route("/api/telegram/avatar/<path:entity_id>")
 def api_telegram_avatar(entity_id):
     """Serve channel/group profile avatar image."""
+    entity_str = str(entity_id).strip()
+    if not entity_str or entity_str.startswith("http") or entity_str == "undefined":
+        return jsonify({"error": "Invalid entity ID"}), 404
+
+    target_entity = entity_str
+    try:
+        target_entity = int(entity_str)
+    except ValueError:
+        target_entity = entity_str.lstrip("@")
+
     db = get_db()
     from src.web.auth import get_current_user_from_request, UserManager
     user = get_current_user_from_request(db) if db else None
@@ -958,7 +968,7 @@ def api_telegram_avatar(entity_id):
     api_hash = config.get("API_HASH") or config.get("TELEGRAM_API_HASH") or os.environ.get("API_HASH", "") or os.environ.get("TELEGRAM_API_HASH", "")
 
     from src.web.telegram_auth import fetch_channel_avatar
-    photo_bytes = asyncio.run(fetch_channel_avatar(api_id, api_hash, session_string, entity_id))
+    photo_bytes = asyncio.run(fetch_channel_avatar(api_id, api_hash, session_string, target_entity))
     if photo_bytes:
         from flask import Response
         resp = Response(photo_bytes, mimetype="image/jpeg")

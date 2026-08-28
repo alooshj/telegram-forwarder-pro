@@ -219,7 +219,12 @@ async def fetch_user_telegram_dialogs(api_id: int, api_hash: str, session_string
             if is_channel or is_group:
                 dialog_type = "channel" if is_channel and not getattr(entity, "megagroup", False) else "group"
                 username = getattr(entity, "username", None) or ""
-                photo_url = f"https://t.me/i/userpic/320/{username}.jpg" if username else f"/api/telegram/avatar/{dialog.id}"
+                # Only use t.me userpic for standard public usernames without special characters
+                if username and username.replace('_', '').isalnum():
+                    photo_url = f"https://t.me/i/userpic/320/{username}.jpg"
+                else:
+                    photo_url = f"/api/telegram/avatar/{dialog.id}"
+
                 dialogs_list.append({
                     "id": dialog.id,
                     "title": dialog.name or "Untitled",

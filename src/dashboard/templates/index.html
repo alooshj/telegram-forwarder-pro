@@ -1584,28 +1584,34 @@
                         </span>
                     `).join('');
 
+                    const getAvatarForTarget = (id) => {
+                        if (!id) return '';
+                        const s = String(id).trim();
+                        if (s.startsWith('@') && s.length > 1 && !s.includes('/')) {
+                            return `https://t.me/i/userpic/320/${s.substring(1)}.jpg`;
+                        }
+                        if (s.startsWith('http')) return s;
+                        return `/api/telegram/avatar/${encodeURIComponent(s)}`;
+                    };
+
                     const targetBadges = targets.map(t => {
-                        const targetAvatar = t.startsWith('@')
-                            ? `https://t.me/i/userpic/320/${t.replace('@', '')}.jpg`
-                            : `/api/telegram/avatar/${t}`;
+                        const targetAvatar = getAvatarForTarget(t);
                         return `
-                        <span class="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 font-mono font-semibold rounded-lg text-xs truncate max-w-[160px] inline-flex items-center gap-1.5" title="${t}">
+                        <span class="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 font-mono font-semibold rounded-lg text-xs truncate max-w-[160px] inline-flex items-center gap-1.5" title="${escapeHtml(t)}">
                             <img src="${targetAvatar}" onerror="this.style.display='none'" class="w-3.5 h-3.5 rounded-full object-cover border border-cyan-500/40 flex-shrink-0" alt="">
-                            <span>${t}</span>
+                            <span>${escapeHtml(t)}</span>
                         </span>
                     `;
                     }).join('');
 
-                    const sourceAvatar = (rule.source_id && rule.source_id.startsWith('@'))
-                        ? `https://t.me/i/userpic/320/${rule.source_id.replace('@', '')}.jpg`
-                        : `/api/telegram/avatar/${rule.source_id}`;
+                    const sourceAvatar = getAvatarForTarget(rule.source_id);
 
                     return `
                     <div class="bg-surface-850 border border-slate-800 rounded-2xl p-5 space-y-4 hover:border-slate-700 transition shadow-lg">
                         <div class="flex items-center justify-between">
                             <div>
                                 <h4 class="font-bold text-white text-sm flex items-center space-x-2 rtl:space-x-reverse">
-                                    <span>${rule.name || 'Pipeline'}</span>
+                                    <span>${escapeHtml(rule.name || 'Pipeline')}</span>
                                     <span class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">${targets.length > 1 ? `1 -> ${targets.length}` : '1 -> 1'}</span>
                                 </h4>
                                 <span class="text-[11px] text-slate-500 font-mono">ID: ${rule._id}</span>
@@ -1620,9 +1626,9 @@
                         <div class="space-y-2 bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs">
                             <div class="flex items-center space-x-2 rtl:space-x-reverse">
                                 <span class="text-[10px] text-slate-500 font-semibold uppercase">Source:</span>
-                                <span class="px-2.5 py-1 bg-brand-500/10 text-brand-400 font-mono font-semibold rounded-lg truncate max-w-[220px] inline-flex items-center gap-1.5" title="${rule.source_id}">
+                                <span class="px-2.5 py-1 bg-brand-500/10 text-brand-400 font-mono font-semibold rounded-lg truncate max-w-[220px] inline-flex items-center gap-1.5" title="${escapeHtml(rule.source_id)}">
                                     <img src="${sourceAvatar}" onerror="this.style.display='none'" class="w-4 h-4 rounded-full object-cover border border-brand-500/40 flex-shrink-0" alt="">
-                                    <span>${rule.source_id}</span>
+                                    <span>${escapeHtml(rule.source_id)}</span>
                                 </span>
                             </div>
                             <div class="flex items-start space-x-2 rtl:space-x-reverse pt-1 border-t border-slate-900">
