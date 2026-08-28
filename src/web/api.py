@@ -936,6 +936,37 @@ def api_telegram_disconnect():
     })
 
 
+@app.route("/api/telegram/avatar/<int:entity_id>")
+def api_telegram_avatar(entity_id):
+    """Serve channel/group profile avatar image."""
+    db = get_db()
+    from src.web.auth import get_current_user_from_request, UserManager
+    user = get_current_user_from_request(db) if db else None
+
+    session_string = None
+    if user and db:
+        session_string = UserManager.get_user_telegram_session(db, str(user["_id"]))
+    if not session_string:
+        config = load_config()
+        session_string = config.get("SESSION_STRING")
+
+    if not session_string:
+        return jsonify({"error": "No session"}), 404
+
+    config = load_config()
+    api_id = int(config.get("API_ID") or config.get("TELEGRAM_API_ID") or os.environ.get("API_ID", 0) or os.environ.get("TELEGRAM_API_ID", 0))
+    api_hash = config.get("API_HASH") or config.get("TELEGRAM_API_HASH") or os.environ.get("API_HASH", "") or os.environ.get("TELEGRAM_API_HASH", "")
+
+    from src.web.telegram_auth import fetch_channel_avatar
+    photo_bytes = asyncio.run(fetch_channel_avatar(api_id, api_hash, session_string, entity_id))
+    if photo_bytes:
+        from flask import Response
+        resp = Response(photo_bytes, mimetype="image/jpeg")
+        resp.headers["Cache-Control"] = "public, max-age=86400"
+        return resp
+    return jsonify({"error": "No avatar found"}), 404
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors with JSON response."""

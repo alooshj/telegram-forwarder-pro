@@ -120,6 +120,28 @@ class SaaSArchitectureTestCase(unittest.TestCase):
             self.assertTrue(stopped)
             self.assertFalse(pool.is_user_running(user_id))
 
+    @patch("src.web.telegram_auth.fetch_channel_avatar")
+    def test_api_telegram_avatar_endpoint(self, mock_avatar):
+        """Test GET /api/telegram/avatar/<entity_id> endpoint."""
+        user = UserManager.create_user(self.db, "avatar_user@test.com", "pass12345")
+        token = generate_auth_token(user["_id"], user["email"])
+        UserManager.update_telegram_account(self.db, user["_id"], {
+            "telegram_user_id": 998877,
+            "username": "avataruser",
+            "session_string": "1BJWNxAvatarTestSession=="
+        })
+
+        mock_avatar.return_value = b"\xff\xd8\xff\xe0\x00\x10JFIF"  # Fake JPEG bytes
+
+        with patch("src.web.api.get_db", return_value=self.db):
+            res = self.client.get(
+                "/api/telegram/avatar/12345678",
+                headers={"Authorization": f"Bearer {token}"}
+            )
+            self.assertEqual(res.status_code, 200)
+            self.assertEqual(res.mimetype, "image/jpeg")
+            self.assertEqual(res.data, b"\xff\xd8\xff\xe0\x00\x10JFIF")
+
 
 if __name__ == "__main__":
     unittest.main()

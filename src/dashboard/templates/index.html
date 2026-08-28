@@ -914,15 +914,25 @@
                     </div>
 
                     <!-- Channels Quick Picker Expandable Box -->
-                    <div id="channels-picker-panel" class="hidden p-3.5 bg-slate-950/90 border border-brand-500/40 rounded-xl space-y-2.5 shadow-lg">
+                    <div id="channels-picker-panel" class="hidden p-3.5 bg-slate-950/95 border border-brand-500/40 rounded-xl space-y-3 shadow-2xl">
                         <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                             <div class="flex items-center space-x-2 rtl:space-x-reverse text-xs font-bold text-brand-300">
                                 <svg class="w-3.5 h-3.5 text-indigo-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
                                 <span>قنواتك المشترك بها حساب التوجيه:</span>
+                                <span id="channels-count-badge" class="px-1.5 py-0.5 bg-brand-500/20 text-brand-300 font-mono text-[10px] rounded-full">0</span>
                             </div>
-                            <button type="button" onclick="closeChannelsPicker()" class="text-xs text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">إغلاق <svg class="w-3 h-3 inline ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                            <button type="button" onclick="closeChannelsPicker()" class="text-xs text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 hover:bg-slate-700 rounded transition flex items-center gap-1"><span>إغلاق</span> <svg class="w-3 h-3 inline ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                         </div>
-                        <div id="channels-picker-list" class="space-y-1.5 max-h-48 overflow-y-auto pr-1"></div>
+
+                        <!-- Live Channel Search Bar -->
+                        <div class="relative">
+                            <input type="text" id="channels-search-input" oninput="filterChannelsList()" placeholder="ابحث باسم القناة أو المعرف (@username أو ID)..." class="w-full bg-slate-900 border border-slate-700/80 rounded-xl pl-9 pr-4 rtl:pr-9 rtl:pl-4 py-2 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-brand-400 focus:ring-1 focus:ring-brand-400/20">
+                            <span class="absolute left-3 rtl:right-3 top-2.5 text-slate-400">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                            </span>
+                        </div>
+
+                        <div id="channels-picker-list" class="space-y-1.5 max-h-60 overflow-y-auto pr-1"></div>
                     </div>
 
                     <!-- Source Channel Input -->
@@ -1574,11 +1584,21 @@
                         </span>
                     `).join('');
 
-                    const targetBadges = targets.map(t => `
-                        <span class="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 font-mono font-semibold rounded-lg text-xs truncate max-w-[130px]" title="${t}">
-                            <svg class='w-3 h-3 inline text-cyan-400 ml-0.5 rtl:mr-0.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='16 16 12 12 8 16'></polyline><line x1='12' y1='12' x2='12' y2='21'></line></svg> ${t}
+                    const targetBadges = targets.map(t => {
+                        const targetAvatar = t.startsWith('@')
+                            ? `https://t.me/i/userpic/320/${t.replace('@', '')}.jpg`
+                            : `/api/telegram/avatar/${t}`;
+                        return `
+                        <span class="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 font-mono font-semibold rounded-lg text-xs truncate max-w-[160px] inline-flex items-center gap-1.5" title="${t}">
+                            <img src="${targetAvatar}" onerror="this.style.display='none'" class="w-3.5 h-3.5 rounded-full object-cover border border-cyan-500/40 flex-shrink-0" alt="">
+                            <span>${t}</span>
                         </span>
-                    `).join('');
+                    `;
+                    }).join('');
+
+                    const sourceAvatar = (rule.source_id && rule.source_id.startsWith('@'))
+                        ? `https://t.me/i/userpic/320/${rule.source_id.replace('@', '')}.jpg`
+                        : `/api/telegram/avatar/${rule.source_id}`;
 
                     return `
                     <div class="bg-surface-850 border border-slate-800 rounded-2xl p-5 space-y-4 hover:border-slate-700 transition shadow-lg">
@@ -1600,8 +1620,9 @@
                         <div class="space-y-2 bg-slate-950 p-3.5 rounded-xl border border-slate-800 text-xs">
                             <div class="flex items-center space-x-2 rtl:space-x-reverse">
                                 <span class="text-[10px] text-slate-500 font-semibold uppercase">Source:</span>
-                                <span class="px-2.5 py-1 bg-brand-500/10 text-brand-400 font-mono font-semibold rounded-lg truncate max-w-[180px]" title="${rule.source_id}">
-                                    <svg class='w-3 h-3 inline text-brand-400 ml-0.5 rtl:mr-0.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='8 17 12 21 16 17'></polyline><line x1='12' y1='12' x2='12' y2='21'></line></svg> ${rule.source_id}
+                                <span class="px-2.5 py-1 bg-brand-500/10 text-brand-400 font-mono font-semibold rounded-lg truncate max-w-[220px] inline-flex items-center gap-1.5" title="${rule.source_id}">
+                                    <img src="${sourceAvatar}" onerror="this.style.display='none'" class="w-4 h-4 rounded-full object-cover border border-brand-500/40 flex-shrink-0" alt="">
+                                    <span>${rule.source_id}</span>
                                 </span>
                             </div>
                             <div class="flex items-start space-x-2 rtl:space-x-reverse pt-1 border-t border-slate-900">
@@ -1682,43 +1703,88 @@
             if (panel) panel.classList.add('hidden');
         }
 
+        let loadedUserChannels = [];
+
         async function loadMyChannels() {
             const panel = document.getElementById('channels-picker-panel');
             const list = document.getElementById('channels-picker-list');
+            const searchInput = document.getElementById('channels-search-input');
+            const countBadge = document.getElementById('channels-count-badge');
             if (!panel || !list) return;
 
             panel.classList.remove('hidden');
-            list.innerHTML = `<p class="text-xs text-slate-400 py-3 text-center animate-pulse">${currentLang === 'ar' ? 'جاري فحص وتحديث قنوات الحساب من تليجرام...' : 'Fetching your joined Telegram channels...'}</p>`;
+            if (searchInput) searchInput.value = '';
+            list.innerHTML = `<div class="py-6 text-center text-xs text-slate-400"><svg class="animate-spin w-5 h-5 inline text-brand-400 mb-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg><p>${currentLang === 'ar' ? 'جارٍ جلب قنواتك وصورها من تليجرام...' : 'Fetching your channels and avatars...'}</p></div>`;
 
-            const res = await api('/api/channels');
-            const channels = res.channels || [];
+            const res = await api('/api/telegram/dialogs');
+            loadedUserChannels = res.dialogs || res.channels || [];
 
-            if (channels.length === 0) {
-                list.innerHTML = `<div class="p-3 bg-amber-500/10 border border-amber-500/20 rounded-lg text-xs text-amber-300 text-center">
-                    ${currentLang === 'ar' ? 'لم يتم العثور على قنوات منضم إليها الحساب حالياً، أو المحرك قيد الاتصال.' : 'No joined channels found or engine still connecting.'}
+            if (countBadge) countBadge.textContent = loadedUserChannels.length;
+
+            if (loadedUserChannels.length === 0) {
+                list.innerHTML = `<div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300 text-center">
+                    ${currentLang === 'ar' ? 'لم يتم العثور على قنوات، تأكد من ربط حساب التليجرام الخاص بك أولاً.' : 'No channels found. Please connect your Telegram account first.'}
                 </div>`;
                 return;
             }
 
-            list.innerHTML = channels.map(c => `
-                <div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-850 border border-slate-800 hover:border-slate-700 transition">
-                    <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
-                        <span class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0">${c.is_channel ? '<svg class=\'w-3.5 h-3.5 text-indigo-400\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><path d=\'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\'></path></svg>' : '<svg class=\'w-3.5 h-3.5 text-cyan-400\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><path d=\'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\'></path><circle cx=\'9\' cy=\'7\' r=\'4\'></circle><path d=\'M23 21v-2a4 4 0 0 0-3-3.87\'></path><path d=\'M16 3.13a4 4 0 0 1 0 7.75\'></path></svg>'}</span>
+            renderChannelsList(loadedUserChannels);
+        }
+
+        function filterChannelsList() {
+            const query = (document.getElementById('channels-search-input')?.value || '').trim().toLowerCase();
+            if (!query) {
+                renderChannelsList(loadedUserChannels);
+                return;
+            }
+
+            const filtered = loadedUserChannels.filter(c => {
+                const title = (c.title || '').toLowerCase();
+                const username = (c.username || '').toLowerCase();
+                const idStr = String(c.id);
+                return title.includes(query) || username.includes(query) || idStr.includes(query);
+            });
+
+            renderChannelsList(filtered);
+        }
+
+        function renderChannelsList(channels) {
+            const list = document.getElementById('channels-picker-list');
+            if (!list) return;
+
+            if (channels.length === 0) {
+                list.innerHTML = `<div class="p-4 text-center text-xs text-slate-500">${currentLang === 'ar' ? 'لا توجد قنوات تطابق كلمة البحث' : 'No matching channels found'}</div>`;
+                return;
+            }
+
+            list.innerHTML = channels.map(c => {
+                const initial = (c.title || 'C').charAt(0).toUpperCase();
+                const avatarSrc = c.photo_url || `/api/telegram/avatar/${c.id}`;
+                const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 24 24' fill='%231e1b4b'><rect width='24' height='24' rx='12'/><text x='12' y='16' text-anchor='middle' font-size='11' font-weight='bold' fill='%23a5b4fc'>${encodeURIComponent(initial)}</text></svg>`;
+
+                return `
+                <div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-850 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/40 transition">
+                    <div class="flex items-center space-x-3 rtl:space-x-reverse min-w-0">
+                        <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${fallbackSvg}';" class="w-9 h-9 rounded-full object-cover border border-slate-700/80 bg-slate-900 flex-shrink-0 shadow-sm" alt="">
                         <div class="truncate">
-                            <p class="text-xs font-bold text-white truncate max-w-[200px]">${c.title}</p>
-                            <p class="text-[11px] text-slate-400 font-mono">${c.id} ${c.username ? `(${c.username})` : ''}</p>
+                            <p class="text-xs font-bold text-white truncate max-w-[190px] sm:max-w-[240px]">${c.title}</p>
+                            <p class="text-[11px] text-slate-400 font-mono flex items-center gap-1">
+                                <span class="text-slate-400">${c.id}</span>
+                                ${c.username ? `<span class="text-cyan-400 font-medium">(@${c.username})</span>` : ''}
+                            </p>
                         </div>
                     </div>
                     <div class="flex items-center space-x-1.5 rtl:space-x-reverse flex-shrink-0">
-                        <button type="button" onclick="selectQuickChannel('rule-form-source', '${c.id}')" class="px-2.5 py-1.5 text-xs font-semibold bg-brand-600/25 hover:bg-brand-600/45 text-brand-300 border border-brand-500/30 rounded-lg transition">
-                            <svg class='w-3.5 h-3.5 inline ml-1 rtl:mr-1' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='8 17 12 21 16 17'></polyline><line x1='12' y1='12' x2='12' y2='21'></line></svg> كمصدر
+                        <button type="button" onclick="selectQuickChannel('rule-form-source', '${c.id}')" class="px-2.5 py-1.5 text-xs font-semibold bg-brand-600/20 hover:bg-brand-600/40 text-brand-300 border border-brand-500/30 rounded-lg transition flex items-center gap-1">
+                            <svg class='w-3.5 h-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='8 17 12 21 16 17'></polyline><line x1='12' y1='12' x2='12' y2='21'></line></svg> <span>كمصدر</span>
                         </button>
-                        <button type="button" onclick="selectQuickChannel('rule-form-target', '${c.id}')" class="px-2.5 py-1.5 text-xs font-semibold bg-cyan-600/25 hover:bg-cyan-600/45 text-cyan-300 border border-cyan-500/30 rounded-lg transition">
-                            <svg class='w-3.5 h-3.5 inline ml-1 rtl:mr-1' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='16 16 12 12 8 16'></polyline><line x1='12' y1='12' x2='12' y2='21'></line></svg> كهدف
+                        <button type="button" onclick="selectQuickChannel('rule-form-target', '${c.id}')" class="px-2.5 py-1.5 text-xs font-semibold bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg transition flex items-center gap-1">
+                            <svg class='w-3.5 h-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='16 16 12 12 8 16'></polyline><line x1='12' y1='12' x2='12' y2='21'></line></svg> <span>كهدف</span>
                         </button>
                     </div>
                 </div>
-            `).join('');
+            `;
+            }).join('');
         }
 
         function selectQuickChannel(inputId, channelId) {

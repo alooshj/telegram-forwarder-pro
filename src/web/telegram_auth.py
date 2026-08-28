@@ -218,14 +218,17 @@ async def fetch_user_telegram_dialogs(api_id: int, api_hash: str, session_string
             # Focus on channels and groups
             if is_channel or is_group:
                 dialog_type = "channel" if is_channel and not getattr(entity, "megagroup", False) else "group"
+                username = getattr(entity, "username", None) or ""
+                photo_url = f"https://t.me/i/userpic/320/{username}.jpg" if username else f"/api/telegram/avatar/{dialog.id}"
                 dialogs_list.append({
                     "id": dialog.id,
                     "title": dialog.name or "Untitled",
-                    "username": getattr(entity, "username", None) or "",
+                    "username": username,
                     "type": dialog_type,
                     "is_channel": is_channel,
                     "is_group": is_group,
                     "unread_count": dialog.unread_count or 0,
+                    "photo_url": photo_url,
                 })
 
         return {
@@ -238,6 +241,45 @@ async def fetch_user_telegram_dialogs(api_id: int, api_hash: str, session_string
     except Exception as e:
         logger.error(f"Error fetching dialogs: {e}")
         return {"success": False, "error": f"Failed to fetch channels: {str(e)}"}
+    finally:
+        if client:
+            try:
+                await client.disconnect()
+            except Exception:
+                pass
+
+
+_AVATAR_CACHE = {}
+
+
+async def fetch_channel_avatar(api_id: int, api_hash: str, session_string: str, entity_id: int) -> bytes:
+    """Download profile photo bytes for a given channel/group ID with caching."""
+    now = time.time()
+    if entity_id in _AVATAR_CACHE:
+        photo_bytes, cached_time = _AVATAR_CACHE[entity_id]
+        if now - cached_time < 3600:
+            return photo_bytes
+
+    from src.utils.encryption import decrypt_session
+    decrypted_session = decrypt_session(session_string)
+    if not decrypted_session:
+        return None
+
+    client = None
+    try:
+        session = StringSession(decrypted_session)
+        client = TelegramClient(session, api_id, api_hash)
+        await client.connect()
+        if not await client.is_user_authorized():
+            return None
+
+        photo_bytes = await client.download_profile_photo(entity_id, file=bytes, is_big=False)
+        if photo_bytes:
+            _AVATAR_CACHE[entity_id] = (photo_bytes, now)
+        return photo_bytes
+    except Exception as e:
+        logger.debug(f"Could not fetch avatar for {entity_id}: {e}")
+        return None
     finally:
         if client:
             try:
