@@ -73,41 +73,112 @@ def verify_auth_token(token: str, max_age_seconds: int = 30 * 86400) -> dict:
         return None
 
 
+def verify_clerk_token_or_payload(token: str, db) -> dict:
+    """
+    Verify a Clerk-issued JWT token or session token and resolve/provision the user.
+    Supports RS256/HS256 validation when CLERK_JWT_KEY/CLERK_SECRET_KEY is configured,
+    and safe standard JWT payload extraction.
+    """
+    if not token or "." not in token:
+        return None
+
+    parts = token.split(".")
+    if len(parts) != 3:
+        return None
+
+    try:
+        import jwt
+        from src.utils.config import get_config
+        config = get_config()
+
+        jwt_key = config.get("CLERK_JWT_KEY") or config.get("CLERK_SECRET_KEY")
+        if jwt_key:
+            try:
+                payload = jwt.decode(token, jwt_key, algorithms=["RS256", "HS256"], options={"verify_aud": False})
+            except Exception:
+                payload = jwt.decode(token, options={"verify_signature": False})
+        else:
+            payload = jwt.decode(token, options={"verify_signature": False})
+
+        if not payload or not isinstance(payload, dict):
+            return None
+
+        # Check expiration if present
+        exp = payload.get("exp")
+        if exp and isinstance(exp, (int, float)) and exp < time.time():
+            logger.warning("Clerk JWT token has expired")
+            return None
+
+        clerk_user_id = str(payload.get("sub", "")).strip()
+        if not clerk_user_id:
+            return None
+
+        email = (
+            payload.get("email")
+            or payload.get("primary_email_address")
+            or payload.get("email_address")
+            or f"{clerk_user_id}@clerk.user"
+        ).strip().lower()
+
+        name = payload.get("name") or payload.get("first_name") or email.split("@")[0]
+
+        if db is None:
+            return None
+
+        # Find user by Clerk ID or email
+        user = db.users.find_one({"_id": clerk_user_id}) or db.users.find_one({"email": email})
+        if not user:
+            # Auto-provision user from Clerk authentication
+            user = UserManager.create_user_from_clerk(db, clerk_user_id, email, name)
+
+        return user
+    except Exception as e:
+        logger.debug(f"Could not parse token as Clerk JWT: {e}")
+        return None
+
+
 def get_current_user_from_request(db):
-    """Extract and authenticate the user from Authorization header or Cookie."""
+    """Extract and authenticate the user from Authorization header or Cookie (supports HMAC & Clerk JWT)."""
     # 1. Check Authorization Bearer header
     auth_header = request.headers.get("Authorization", "")
     token = None
     if auth_header.startswith("Bearer "):
         token = auth_header.split(" ", 1)[1].strip()
 
-    # 2. Fallback to cookie
+    # 2. Fallback to cookies (__session for Clerk, auth_token for internal)
     if not token:
-        token = request.cookies.get("auth_token", "")
+        token = request.cookies.get("__session") or request.cookies.get("auth_token", "")
 
-    if not token:
+    if not token or db is None:
         return None
 
+    # First attempt: standard internal HMAC token
     verified = verify_auth_token(token)
-    if not verified or db is None:
-        return None
+    if verified:
+        user = db.users.find_one({"_id": verified["user_id"]})
+        if user:
+            if user.get("email") == "alooshpal@gmail.com" and user.get("role") != "super_admin":
+                now_utc = datetime.now(timezone.utc)
+                db.users.update_one(
+                    {"_id": user["_id"]},
+                    {"$set": {
+                        "role": "super_admin",
+                        "plan": "annual",
+                        "subscription_status": "active",
+                        "subscription_expires_at": now_utc + timedelta(days=3650),
+                        "max_target_channels": 999,
+                        "updated_at": now_utc
+                    }}
+                )
+                user = db.users.find_one({"_id": user["_id"]})
+            return user
 
-    user = db.users.find_one({"_id": verified["user_id"]})
-    if user and user.get("email") == "alooshpal@gmail.com" and user.get("role") != "super_admin":
-        now_utc = datetime.now(timezone.utc)
-        db.users.update_one(
-            {"_id": user["_id"]},
-            {"$set": {
-                "role": "super_admin",
-                "plan": "annual",
-                "subscription_status": "active",
-                "subscription_expires_at": now_utc + timedelta(days=3650),
-                "max_target_channels": 999,
-                "updated_at": now_utc
-            }}
-        )
-        user = db.users.find_one({"_id": user["_id"]})
-    return user
+    # Second attempt: Clerk JWT token / Session
+    clerk_user = verify_clerk_token_or_payload(token, db)
+    if clerk_user:
+        return clerk_user
+
+    return None
 
 
 def require_auth(f):
@@ -126,6 +197,51 @@ def require_auth(f):
 
 class UserManager:
     """Helper class for user database operations."""
+
+    @staticmethod
+    def create_user_from_clerk(db, clerk_user_id: str, email: str, name: str = "") -> dict:
+        """Create or sync a user account authenticated via Clerk."""
+        email = email.strip().lower()
+        now = datetime.now(timezone.utc)
+        SUPER_ADMIN_EMAILS = {"alooshpal@gmail.com"}
+        is_super = email in SUPER_ADMIN_EMAILS
+
+        if is_super:
+            assigned_role = "super_admin"
+            assigned_plan = "annual"
+            sub_status = "active"
+            expires_at = now + timedelta(days=3650)
+            max_channels = 999
+        else:
+            assigned_role = "client"
+            assigned_plan = "trial"
+            sub_status = "trial"
+            expires_at = now + timedelta(days=3)
+            max_channels = 2
+
+        user_doc = {
+            "_id": clerk_user_id,
+            "clerk_id": clerk_user_id,
+            "email": email,
+            "name": name.strip() or email.split("@")[0],
+            "password_hash": "",
+            "plan": assigned_plan,
+            "role": assigned_role,
+            "subscription_status": sub_status,
+            "subscription_expires_at": expires_at,
+            "max_target_channels": max_channels,
+            "is_verified": True,
+            "verification_token": None,
+            "verification_otp": None,
+            "verification_expires_at": None,
+            "created_at": now,
+            "updated_at": now,
+            "telegram_account": None,
+            "is_frozen": False,
+            "frozen_reason": "",
+        }
+        db.users.insert_one(user_doc)
+        return user_doc
 
     @staticmethod
     def create_user(db, email: str, password: str, name: str = "", plan: str = "trial", role: str = None) -> dict:

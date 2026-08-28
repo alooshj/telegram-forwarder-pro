@@ -130,6 +130,7 @@ class SQLiteDB:
                     );
                     CREATE TABLE IF NOT EXISTS users (
                         _id TEXT PRIMARY KEY,
+                        clerk_id TEXT,
                         email TEXT UNIQUE,
                         name TEXT,
                         password_hash TEXT,
@@ -192,7 +193,7 @@ class SQLiteDB:
                     except sqlite3.OperationalError:
                         pass
                 # Migrations for users
-                for col in ["subscription_status", "subscription_expires_at", "max_target_channels", "plan", "role", "is_verified", "verification_token", "verification_otp", "verification_expires_at", "is_frozen", "frozen_reason"]:
+                for col in ["clerk_id", "subscription_status", "subscription_expires_at", "max_target_channels", "plan", "role", "is_verified", "verification_token", "verification_otp", "verification_expires_at", "is_frozen", "frozen_reason"]:
                     try:
                         conn.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT;")
                     except sqlite3.OperationalError:

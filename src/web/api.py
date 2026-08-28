@@ -873,6 +873,69 @@ from src.web.telegram_auth import (
 )
 
 
+@app.route("/api/config/clerk", methods=["GET"])
+def api_get_clerk_config():
+    """Get public Clerk publishable key for frontend initialization."""
+    config = get_config()
+    pub_key = config.get("CLERK_PUBLISHABLE_KEY", "")
+    return jsonify({
+        "publishableKey": pub_key,
+        "enabled": bool(pub_key)
+    })
+
+
+@app.route("/api/auth/clerk-sync", methods=["POST"])
+def api_auth_clerk_sync():
+    """Sync or provision a Clerk authenticated user and issue session token."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    data = request.get_json() or {}
+    clerk_id = data.get("clerk_id", "").strip()
+    email = data.get("email", "").strip().lower()
+    name = data.get("name", "").strip()
+
+    if not clerk_id and not email:
+        return jsonify({"success": False, "error": "clerk_id or email is required"}), 400
+
+    try:
+        user = None
+        if clerk_id:
+            user = db.users.find_one({"_id": clerk_id}) or db.users.find_one({"clerk_id": clerk_id})
+        if not user and email:
+            user = db.users.find_one({"email": email})
+
+        if not user:
+            user = UserManager.create_user_from_clerk(db, clerk_id or str(uuid.uuid4()), email, name)
+        elif clerk_id and user.get("clerk_id") != clerk_id:
+            db.users.update_one({"_id": user["_id"]}, {"$set": {"clerk_id": clerk_id, "updated_at": datetime.now(timezone.utc)}})
+
+        user_id = str(user["_id"])
+        token = generate_auth_token(user_id, user["email"])
+        is_super = (user.get("role") == "super_admin" or user.get("email") == "alooshpal@gmail.com")
+
+        resp = jsonify({
+            "success": True,
+            "user": {
+                "id": user_id,
+                "email": user["email"],
+                "name": user.get("name", ""),
+                "plan": "annual" if is_super else user.get("plan", "trial"),
+                "role": "super_admin" if is_super else user.get("role", "client"),
+                "is_verified": True,
+                "telegram_connected": bool(user.get("telegram_account")),
+            },
+            "token": token,
+            "message": "Clerk session synchronized successfully"
+        })
+        resp.set_cookie("auth_token", token, max_age=30 * 86400, httponly=True, samesite="Lax")
+        return resp
+    except Exception as e:
+        logger.error(f"Clerk sync error: {e}")
+        return jsonify({"success": False, "error": f"Clerk sync failed: {str(e)}"}), 500
+
+
 @app.route("/api/auth/register", methods=["POST"])
 def api_auth_register():
     """Register a new customer account and send verification email."""

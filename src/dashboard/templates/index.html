@@ -3014,6 +3014,9 @@
         }
 
         async function handleUserLogout() {
+            if (clerkInstance && clerkInstance.user) {
+                try { await clerkInstance.signOut(); } catch (e) {}
+            }
             await api('/api/auth/logout', 'POST');
             currentUser = null;
             closeAuthModal();
@@ -3021,6 +3024,85 @@
             await checkAuthStatus();
             await fetchStatus();
             await loadRules();
+        }
+
+        // ==================== CLERK AUTH INTEGRATION ====================
+        let clerkInstance = null;
+
+        async function initClerk() {
+            try {
+                if (clerkInstance) return clerkInstance;
+                const configRes = await api('/api/config/clerk');
+                const publishableKey = configRes.publishableKey || window.CLERK_PUBLISHABLE_KEY;
+                if (!publishableKey) return null;
+
+                if (!window.Clerk) {
+                    await new Promise((resolve, reject) => {
+                        const script = document.createElement('script');
+                        script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
+                        script.async = true;
+                        script.crossOrigin = 'anonymous';
+                        script.setAttribute('data-clerk-publishable-key', publishableKey);
+                        script.onload = resolve;
+                        script.onerror = reject;
+                        document.head.appendChild(script);
+                    });
+                }
+
+                if (window.Clerk && !clerkInstance) {
+                    await window.Clerk.load({
+                        appearance: {
+                            layout: { socialButtonsPlacement: 'bottom', socialButtonsVariant: 'blockButton' },
+                            variables: {
+                                colorPrimary: '#06b6d4',
+                                colorBackground: '#0b0f19',
+                                colorInputBackground: '#090d16',
+                                colorText: '#f8fafc',
+                                colorTextSecondary: '#94a3b8',
+                                borderRadius: '1rem',
+                                fontFamily: "'Cairo', 'Segoe UI', system-ui, sans-serif"
+                            },
+                            elements: {
+                                card: { backgroundColor: '#0f172a', border: '1px solid #1e293b', boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.7), 0 0 30px -5px rgba(6, 182, 212, 0.15)' },
+                                formButtonPrimary: { background: 'linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%)', color: '#ffffff', fontWeight: '700' }
+                            }
+                        }
+                    });
+                    clerkInstance = window.Clerk;
+
+                    clerkInstance.addListener(async (emission) => {
+                        if (emission.user) {
+                            const token = clerkInstance.session ? await clerkInstance.session.getToken() : '';
+                            const syncRes = await api('/api/auth/clerk-sync', 'POST', {
+                                clerk_id: emission.user.id,
+                                email: emission.user.primaryEmailAddress?.emailAddress || '',
+                                name: emission.user.fullName || '',
+                                token: token
+                            });
+                            if (syncRes.success) {
+                                currentUser = syncRes.user;
+                                await checkAuthStatus();
+                                await fetchStatus();
+                                await loadRules();
+                            }
+                        }
+                    });
+                }
+                return clerkInstance;
+            } catch (err) {
+                console.warn('Clerk initialization notice:', err);
+                return null;
+            }
+        }
+
+        async function handleClerkSignIn() {
+            const clerk = await initClerk();
+            if (clerk) {
+                closeAuthModal();
+                clerk.openSignIn();
+            } else {
+                showToast(currentLang === 'ar' ? 'يمكنك تهيئة مفتاح CLERK_PUBLISHABLE_KEY في ملف .env للتفعيل السحابي' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
+            }
         }
 
         // ==================== TELEGRAM WEB CONNECT LOGIC ====================
@@ -3901,6 +3983,14 @@
                         تسجيل الدخول
                     </button>
                 </form>
+
+                <!-- Clerk Fast Login Button -->
+                <div class="pt-2 border-t border-slate-800">
+                    <button type="button" onclick="handleClerkSignIn()" class="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 rtl:space-x-reverse shadow-inner">
+                        <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
+                        <span>تسجيل الدخول عبر Clerk (Google / Passkey)</span>
+                    </button>
+                </div>
             </div>
         </div>
     </div>

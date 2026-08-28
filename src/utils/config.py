@@ -72,6 +72,12 @@ def load_config():
         "SMTP_FROM_EMAIL": os.environ.get("SMTP_FROM_EMAIL", "") or os.environ.get("FROM_EMAIL", ""),
         "SMTP_FROM_NAME": os.environ.get("SMTP_FROM_NAME", "TeleTips Pro"),
         "APP_URL": os.environ.get("APP_URL", ""),
+
+        # Clerk Authentication & User Management
+        "CLERK_PUBLISHABLE_KEY": os.environ.get("CLERK_PUBLISHABLE_KEY") or os.environ.get("VITE_CLERK_PUBLISHABLE_KEY") or os.environ.get("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", ""),
+        "CLERK_SECRET_KEY": os.environ.get("CLERK_SECRET_KEY", ""),
+        "CLERK_JWT_KEY": os.environ.get("CLERK_JWT_KEY", ""),
+        "CLERK_ISSUER": os.environ.get("CLERK_ISSUER", ""),
     }
     return config
 
