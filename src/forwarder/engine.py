@@ -591,6 +591,42 @@ class ForwarderEngine:
             "forwarded_at": datetime.now(timezone.utc),
         })
 
+    def _format_telethon_error(self, exc: Exception) -> str:
+        """Extract exact error class name and detailed, user-friendly explanation from Telethon / Telegram RPC errors."""
+        err_type = type(exc).__name__
+        err_msg = getattr(exc, "message", "") or str(exc)
+        username = getattr(self, "username", None) or "Account"
+        user_display = f"@{username}" if not str(username).startswith("@") else str(username)
+
+        detail_map = {
+            "ChatWriteForbiddenError": f"Account {user_display} has no permission to send messages. Make sure the account is an Admin with 'Post Messages' rights in target channel.",
+            "ChatAdminRequiredError": "Administrator privileges required to post in target channel.",
+            "ChannelPrivateError": f"Target channel is private and {user_display} is not a member.",
+            "ChannelInvalidError": "Target channel is invalid or inaccessible.",
+            "UserBannedInChannelError": f"Account {user_display} is banned or restricted in target channel.",
+            "MessageEmptyError": "The message content became empty after text transformation rules.",
+            "MediaEmptyError": "The media file was empty or could not be downloaded/retrieved from Telegram.",
+            "MediaCaptionTooLongError": f"Caption is too long. Telegram limit is 1024 characters.",
+            "PeerIdInvalidError": "Target channel ID or @username is invalid or not accessible by this account.",
+            "FloodWaitError": f"Telegram FloodWait rate limit: auto-paused for {getattr(exc, 'seconds', '?')}s.",
+            "SlowmodeWaitError": f"Channel slowmode active. Wait {getattr(exc, 'seconds', '?')}s before sending.",
+            "MessageNotModifiedError": "Message content was identical to the original message.",
+            "MessageTooLongError": "Message text exceeds Telegram's 4096 character limit.",
+            "FilePartsInvalidError": "File upload parts failed or timed out.",
+            "PhotoInvalidDimensionsError": "Photo dimensions are not supported by Telegram.",
+            "BotResponseTimeoutError": "Target bot did not respond in time.",
+            "BadRequestError": f"Telegram rejected the request: {err_msg}",
+            "RPCError": f"Telegram RPC error: {err_msg}",
+        }
+
+        explanation = detail_map.get(err_type)
+        if explanation:
+            return f"[{err_type}] {explanation}"
+
+        if err_msg and err_msg != "None" and err_msg != "":
+            return f"[{err_type}] {err_msg}"
+        return f"[{err_type}] {str(exc)}"
+
     async def _forward_message(
         self, original_message, target_entity, transformed_text: str,
         media_type: str = "text", source_id=None, target_id=None
@@ -637,49 +673,14 @@ class ForwarderEngine:
                 )
                 return False
 
-        except errors.ChatWriteForbiddenError:
-            self._log_event(
-                "ERROR",
-                f"❌ Failed to forward post #{msg_id} to {tgt_name}: Account @ayg1133 has no permission to send messages. Make sure the account is an Admin with Post Messages rights."
-            )
-            return False
-        except errors.ChatAdminRequiredError:
-            self._log_event(
-                "ERROR",
-                f"❌ Failed to forward post #{msg_id} to {tgt_name}: Admin rights required in target channel."
-            )
-            return False
-        except errors.ChannelPrivateError:
-            self._log_event(
-                "ERROR",
-                f"❌ Failed to forward post #{msg_id} to {tgt_name}: Target channel is private and @ayg1133 is not a member."
-            )
-            return False
-        except errors.UserBannedInChannelError:
-            self._log_event(
-                "ERROR",
-                f"❌ Failed to forward post #{msg_id} to {tgt_name}: Account @ayg1133 is banned or restricted in target channel."
-            )
-            return False
-        except errors.MediaCaptionTooLongError:
-            self._log_event(
-                "ERROR",
-                f"❌ Failed to forward post #{msg_id} to {tgt_name}: Caption is too long ({len(transformed_text)} chars). Limit is 1024."
-            )
-            return False
         except errors.FloodWaitError as e:
             await self._handle_flood_wait(tgt_name, e.seconds)
             return False
-        except errors.RPCError as e:
+        except (errors.RPCError, Exception) as e:
+            detailed_err = self._format_telethon_error(e)
             self._log_event(
                 "ERROR",
-                f"❌ Failed to forward post #{msg_id} to {tgt_name}: {getattr(e, 'message', str(e))}"
-            )
-            return False
-        except Exception as e:
-            self._log_event(
-                "ERROR",
-                f"❌ Error forwarding post #{msg_id} to {tgt_name}: {str(e)}"
+                f"❌ Failed to forward post #{msg_id} to {tgt_name}: {detailed_err}"
             )
             return False
 

@@ -232,6 +232,33 @@ class MultiTargetAndMediaFilterTest(unittest.TestCase):
         self.assertFalse(engine._is_media_allowed(rule, "text"))
 
 
+class DetailedErrorLoggingTest(unittest.TestCase):
+    """Test detailed Telethon / Telegram RPC error message formatting."""
+
+    def test_telethon_error_formatter(self):
+        from telethon import errors as tele_errors
+        engine = make_engine()
+        engine.username = "ayg1133"
+
+        # ChatWriteForbiddenError
+        err1 = tele_errors.ChatWriteForbiddenError(request="test")
+        formatted1 = engine._format_telethon_error(err1)
+        self.assertIn("[ChatWriteForbiddenError]", formatted1)
+        self.assertIn("permission", formatted1)
+
+        # MessageEmptyError
+        err2 = tele_errors.MessageEmptyError(request="test")
+        formatted2 = engine._format_telethon_error(err2)
+        self.assertIn("[MessageEmptyError]", formatted2)
+        self.assertIn("empty", formatted2)
+
+        # ChannelPrivateError
+        err3 = tele_errors.ChannelPrivateError(request="test")
+        formatted3 = engine._format_telethon_error(err3)
+        self.assertIn("[ChannelPrivateError]", formatted3)
+        self.assertIn("private", formatted3)
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)
 
