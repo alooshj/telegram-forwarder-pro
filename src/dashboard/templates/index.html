@@ -97,20 +97,39 @@
     <header class="bg-surface-900/95 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-40 h-16 flex items-center">
         <div class="max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-full">
-                <!-- Right Side (in RTL): Custom TeleTips Brand Logo & Name -->
-                <div class="flex items-center space-x-2.5 rtl:space-x-reverse">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-md shadow-brand-500/25 text-white font-black text-lg flex-shrink-0 relative overflow-hidden group">
-                        <!-- Custom TeleTips Mark: Styled 'T' with Forward Lightning Wing -->
-                        <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                            <path d="M2 17l10 5 10-5"></path>
-                            <path d="M2 12l10 5 10-5"></path>
-                        </svg>
+                <!-- Right Side (in RTL): Custom TeleTips Brand Logo & Top Actions (Plans & Admin) -->
+                <div class="flex items-center space-x-2.5 sm:space-x-3.5 rtl:space-x-reverse">
+                    <!-- Brand Logo -->
+                    <div class="flex items-center space-x-2 rtl:space-x-reverse cursor-pointer" onclick="switchTab('overview')">
+                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-md shadow-brand-500/25 text-white font-black text-lg flex-shrink-0 relative overflow-hidden group">
+                            <!-- Custom TeleTips Mark: Styled 'T' with Forward Lightning Wing -->
+                            <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                                <path d="M2 17l10 5 10-5"></path>
+                                <path d="M2 12l10 5 10-5"></path>
+                            </svg>
+                        </div>
+                        <div class="flex items-center space-x-1.5 rtl:space-x-reverse">
+                            <span class="font-black text-lg text-white tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-300 bg-clip-text text-transparent">TeleTips</span>
+                            <span class="text-[10px] bg-brand-500/20 text-brand-400 font-bold px-1.5 py-0.5 rounded border border-brand-500/30">PRO</span>
+                        </div>
                     </div>
-                    <div class="flex items-center space-x-1.5 rtl:space-x-reverse">
-                        <span class="font-black text-lg text-white tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-300 bg-clip-text text-transparent">TeleTips</span>
-                        <span class="text-[10px] bg-brand-500/20 text-brand-400 font-bold px-1.5 py-0.5 rounded border border-brand-500/30">PRO</span>
-                    </div>
+
+                    <!-- Divider -->
+                    <div class="h-6 w-px bg-slate-800 hidden sm:block"></div>
+
+                    <!-- 1. Header Button: Plans & Subscriptions (الخطط والاشتراكات) -->
+                    <button onclick="switchTab('pricing')" id="header-sub-btn" class="flex items-center space-x-2 rtl:space-x-reverse px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600/90 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/25 border border-indigo-400/30 transition-all active:scale-95 flex-shrink-0">
+                        <svg class="w-3.5 h-3.5 text-amber-300 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                        <span data-i18n="tab_pricing">الخطط والاشتراكات</span>
+                        <span id="tab-sub-status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                    </button>
+
+                    <!-- 2. Header Button: Admin Panel (لوحة الإدارة) - Conditional for Admins -->
+                    <button onclick="switchTab('admin')" id="header-admin-btn" class="hidden flex items-center space-x-1.5 rtl:space-x-reverse px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all active:scale-95 shadow-sm flex-shrink-0">
+                        <svg class="w-3.5 h-3.5 text-rose-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                        <span>لوحة الإدارة</span>
+                    </button>
                 </div>
 
                 <!-- Left Side (in RTL): Engine Status, Minimal Toggle & User Dropdown -->
@@ -193,7 +212,7 @@
     <!-- Main Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
 
-        <!-- Single Segmented Navigation Tabs Bar (No wrapping, Clean Outline Icons) -->
+        <!-- Single Segmented Navigation Tabs Bar (6 Core Tools) -->
         <div class="bg-surface-900/90 backdrop-blur-md border border-slate-800/90 p-1.5 rounded-2xl flex items-center overflow-x-auto no-scrollbar gap-1.5 shadow-sm scroll-smooth">
             <!-- 1. Overview -->
             <button onclick="switchTab('overview')" id="tab-overview-btn" class="tab-btn active flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 whitespace-nowrap">
@@ -227,20 +246,7 @@
                 <span data-i18n="tab_logs">السجلات اللحظية</span>
             </button>
 
-            <!-- 6. Plans & Subscriptions -->
-            <button onclick="switchTab('pricing')" id="tab-pricing-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
-                <svg class="w-4 h-4 text-amber-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                <span data-i18n="tab_pricing">الخطط والاشتراكات</span>
-                <span id="tab-sub-status-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
-            </button>
-
-            <!-- 7. Admin Panel (Conditional for Admins) -->
-            <button onclick="switchTab('admin')" id="tab-admin-btn" class="tab-btn hidden flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all flex-shrink-0 whitespace-nowrap">
-                <svg class="w-4 h-4 text-rose-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                <span>لوحة الإدارة</span>
-            </button>
-
-            <!-- 8. Settings & Diagnostics -->
+            <!-- 6. Settings & Diagnostics -->
             <button onclick="switchTab('settings')" id="tab-settings-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
                 <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 <span data-i18n="tab_settings">الإعدادات</span>
@@ -1848,7 +1854,9 @@
         }
 
         // ==================== TAB NAVIGATION ====================
+        let currentTab = 'overview';
         function switchTab(tabId) {
+            currentTab = tabId;
             document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
             document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
 
@@ -1857,9 +1865,31 @@
             if (targetPane) targetPane.classList.remove('hidden');
             if (targetBtn) targetBtn.classList.add('active');
 
+            // Header action buttons active state
+            const headerSubBtn = document.getElementById('header-sub-btn');
+            const headerAdminBtn = document.getElementById('header-admin-btn');
+            if (headerSubBtn) {
+                if (tabId === 'pricing') {
+                    headerSubBtn.classList.add('ring-2', 'ring-amber-300', 'bg-indigo-700');
+                } else {
+                    headerSubBtn.classList.remove('ring-2', 'ring-amber-300', 'bg-indigo-700');
+                }
+            }
+            if (headerAdminBtn) {
+                if (tabId === 'admin') {
+                    headerAdminBtn.classList.add('ring-2', 'ring-rose-400', 'bg-rose-500/25');
+                } else {
+                    headerAdminBtn.classList.remove('ring-2', 'ring-rose-400', 'bg-rose-500/25');
+                }
+            }
+
             if (tabId === 'forwarding' || tabId === 'text-rules') loadRules();
             if (tabId === 'blacklist') loadBlacklist();
             if (tabId === 'logs') loadLogs();
+            if (tabId === 'admin') {
+                loadAdminUsers();
+                loadAdminKeys();
+            }
         }
 
         function copySnippet(text, btn) {
@@ -3147,13 +3177,12 @@
         let activeAdminModalUserId = null;
 
         function checkAdminVisibility() {
-            const adminTabBtn = document.getElementById('tab-admin-btn');
-            if (!adminTabBtn) return;
+            const headerAdminBtn = document.getElementById('header-admin-btn');
             const isSuper = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com');
             if (isSuper) {
-                adminTabBtn.classList.remove('hidden');
+                if (headerAdminBtn) headerAdminBtn.classList.remove('hidden');
             } else {
-                adminTabBtn.classList.add('hidden');
+                if (headerAdminBtn) headerAdminBtn.classList.add('hidden');
                 if (currentTab === 'admin') switchTab('overview');
             }
         }
