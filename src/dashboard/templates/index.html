@@ -97,6 +97,12 @@
                         <span class="bg-indigo-500/30 text-indigo-300 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold border border-indigo-400/30">DOCS</span>
                     </button>
 
+                    <!-- User Account Button -->
+                    <button id="header-user-btn" onclick="openAuthModal()" class="flex items-center space-x-1.5 rtl:space-x-reverse bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-200 transition">
+                        <svg class="w-3.5 h-3.5 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                        <span id="header-user-label" data-i18n="btn_login_account">Account / Login</span>
+                    </button>
+
                     <!-- Language Switcher -->
                     <button onclick="toggleLanguage()" class="flex items-center space-x-1 rtl:space-x-reverse bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition">
                         <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
@@ -230,6 +236,14 @@
                             <span class="text-slate-400" data-i18n="lbl_last_sync">Last Heartbeat:</span>
                             <span id="overview-last-update" class="font-mono text-xs text-slate-400">Just now</span>
                         </div>
+                    </div>
+
+                    <!-- Connect Telegram Web Button -->
+                    <div class="pt-1">
+                        <button onclick="openTelegramConnectModal()" class="w-full py-2 bg-gradient-to-r from-cyan-600/20 via-blue-600/20 to-cyan-600/20 hover:from-cyan-600/30 hover:to-blue-600/30 border border-cyan-500/40 text-cyan-300 text-xs font-semibold rounded-xl transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse shadow-sm">
+                            <svg class="w-3.5 h-3.5 text-cyan-400 ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                            <span data-i18n="btn_connect_telegram">Connect Telegram Account (Web)</span>
+                        </button>
                     </div>
 
                     <div class="pt-2 border-t border-slate-800 flex gap-2">
@@ -2024,14 +2038,362 @@
             }
         }
 
+        // ==================== SAAS AUTH & TELEGRAM CONNECT LOGIC ====================
+        let currentUser = null;
+        let currentAuthTab = 'login';
+        let pendingTelegramPhone = '';
+
+        async function checkAuthStatus() {
+            try {
+                const res = await api('/api/auth/me');
+                const userBtnLabel = document.getElementById('header-user-label');
+                if (res.authenticated && res.user) {
+                    currentUser = res.user;
+                    if (userBtnLabel) userBtnLabel.textContent = currentUser.name || currentUser.email;
+                    
+                    if (currentUser.telegram_connected && currentUser.telegram_username) {
+                        const accEl = document.getElementById('overview-account-name');
+                        if (accEl) accEl.textContent = '@' + currentUser.telegram_username;
+                    }
+                } else {
+                    currentUser = null;
+                    if (userBtnLabel) userBtnLabel.textContent = currentLang === 'ar' ? 'حسابي / تسجيل الدخول' : 'Account / Login';
+                }
+            } catch (e) {
+                console.warn('Auth status check failed:', e);
+            }
+        }
+
+        function openAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            const loggedInView = document.getElementById('auth-logged-in-view');
+            const formView = document.getElementById('auth-form-view');
+            if (!modal) return;
+
+            if (currentUser) {
+                loggedInView.classList.remove('hidden');
+                formView.classList.add('hidden');
+                document.getElementById('auth-user-email').textContent = currentUser.email;
+                document.getElementById('auth-user-name').textContent = currentUser.name || currentUser.email;
+                document.getElementById('auth-user-plan').textContent = (currentUser.plan || 'Free').toUpperCase();
+            } else {
+                loggedInView.classList.add('hidden');
+                formView.classList.remove('hidden');
+                switchAuthTab('login');
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeAuthModal() {
+            const modal = document.getElementById('auth-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function switchAuthTab(tab) {
+            currentAuthTab = tab;
+            const loginBtn = document.getElementById('auth-tab-login-btn');
+            const regBtn = document.getElementById('auth-tab-reg-btn');
+            const nameField = document.getElementById('auth-name-field');
+            const submitBtn = document.getElementById('auth-submit-btn');
+
+            if (tab === 'register') {
+                regBtn.className = 'flex-1 py-1.5 rounded-lg bg-brand-600 text-white font-bold';
+                loginBtn.className = 'flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800 font-medium';
+                nameField.classList.remove('hidden');
+                submitBtn.textContent = currentLang === 'ar' ? 'إنشاء الحساب' : 'Create Account';
+            } else {
+                loginBtn.className = 'flex-1 py-1.5 rounded-lg bg-brand-600 text-white font-bold';
+                regBtn.className = 'flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800 font-medium';
+                nameField.classList.add('hidden');
+                submitBtn.textContent = currentLang === 'ar' ? 'تسجيل الدخول' : 'Log In';
+            }
+        }
+
+        async function handleAuthSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('auth-input-email').value.trim();
+            const password = document.getElementById('auth-input-password').value;
+            const name = document.getElementById('auth-input-name').value.trim();
+
+            const endpoint = currentAuthTab === 'register' ? '/api/auth/register' : '/api/auth/login';
+            const payload = currentAuthTab === 'register' ? { email, password, name } : { email, password };
+
+            const res = await api(endpoint, 'POST', payload);
+            if (res.success) {
+                showToast(currentLang === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Logged in successfully!', 'success');
+                closeAuthModal();
+                await checkAuthStatus();
+                await loadRules();
+            } else {
+                showToast(res.error || 'Authentication failed', 'error');
+            }
+        }
+
+        async function handleUserLogout() {
+            await api('/api/auth/logout', 'POST');
+            currentUser = null;
+            closeAuthModal();
+            showToast(currentLang === 'ar' ? 'تم تسجيل الخروج بنجاح' : 'Logged out', 'info');
+            await checkAuthStatus();
+        }
+
+        // ==================== TELEGRAM WEB CONNECT LOGIC ====================
+        function openTelegramConnectModal() {
+            const modal = document.getElementById('telegram-connect-modal');
+            if (!modal) return;
+
+            if (currentUser && currentUser.telegram_connected) {
+                document.getElementById('tg-step-1').classList.add('hidden');
+                document.getElementById('tg-step-2').classList.add('hidden');
+                document.getElementById('tg-step-3').classList.remove('hidden');
+                document.getElementById('tg-connected-details').textContent = `@${currentUser.telegram_username || currentUser.telegram_first_name || 'Account'} (${currentUser.telegram_phone || ''})`;
+            } else {
+                resetTelegramConnectWizard();
+            }
+            modal.classList.remove('hidden');
+        }
+
+        function closeTelegramConnectModal() {
+            const modal = document.getElementById('telegram-connect-modal');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        function resetTelegramConnectWizard() {
+            document.getElementById('tg-step-1').classList.remove('hidden');
+            document.getElementById('tg-step-2').classList.add('hidden');
+            document.getElementById('tg-step-3').classList.add('hidden');
+            document.getElementById('tg-2fa-container').classList.add('hidden');
+            document.getElementById('tg-code-input').value = '';
+            document.getElementById('tg-2fa-input').value = '';
+        }
+
+        async function submitTelegramPhone() {
+            const phone = document.getElementById('tg-phone-input').value.trim();
+            if (!phone) {
+                showToast(currentLang === 'ar' ? 'يرجى إدخال رقم الهاتف مع رمز الدولة' : 'Please enter phone number with country code', 'warning');
+                return;
+            }
+
+            pendingTelegramPhone = phone;
+            const btn = document.getElementById('tg-send-code-btn');
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin w-4 h-4 inline ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> <span>${currentLang === 'ar' ? 'جارٍ الاتصال بتليجرام...' : 'Connecting to Telegram...'}</span>`;
+
+            try {
+                const res = await api('/api/auth/telegram/send-code', 'POST', { phone_number: phone });
+                if (res.success) {
+                    showToast(currentLang === 'ar' ? 'تم إرسال كود التأكيد لتطبيق تليجرام!' : 'Code sent to Telegram app!', 'success');
+                    document.getElementById('tg-step-1').classList.add('hidden');
+                    document.getElementById('tg-step-2').classList.remove('hidden');
+                } else {
+                    showToast(res.error || 'Failed to send code', 'error');
+                }
+            } catch (e) {
+                showToast('Error connecting to Telegram API', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>${currentLang === 'ar' ? 'إرسال كود التحقق' : 'Send Verification Code'}</span><svg class="w-3.5 h-3.5 inline ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+            }
+        }
+
+        async function submitTelegramVerifyCode() {
+            const code = document.getElementById('tg-code-input').value.trim();
+            const password = document.getElementById('tg-2fa-input').value;
+            if (!code) {
+                showToast(currentLang === 'ar' ? 'يرجى إدخال كود التحقق' : 'Please enter verification code', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('tg-verify-code-btn');
+            btn.disabled = true;
+            btn.innerHTML = `<svg class="animate-spin w-4 h-4 inline ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> <span>${currentLang === 'ar' ? 'جارٍ التحقق...' : 'Verifying...'}</span>`;
+
+            try {
+                const res = await api('/api/auth/telegram/verify-code', 'POST', {
+                    code: code,
+                    password: password || undefined,
+                    phone_number: pendingTelegramPhone
+                });
+
+                if (res.requires_2fa) {
+                    document.getElementById('tg-2fa-container').classList.remove('hidden');
+                    showToast(res.error || 'Please enter 2FA password', 'warning');
+                } else if (res.success) {
+                    showToast(currentLang === 'ar' ? 'تم ربط حساب تليجرام بنجاح!' : 'Telegram connected successfully!', 'success');
+                    await checkAuthStatus();
+                    await fetchStatus();
+                    openTelegramConnectModal(); // shows step 3
+                } else {
+                    showToast(res.error || 'Verification failed', 'error');
+                }
+            } catch (e) {
+                showToast('Verification request failed', 'error');
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = `<span>${currentLang === 'ar' ? 'تأكيد وتسجيل الدخول' : 'Verify & Connect'}</span><svg class="w-3.5 h-3.5 inline ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>`;
+            }
+        }
+
+        async function disconnectTelegramAccount() {
+            if (!confirm(currentLang === 'ar' ? 'هل أنت متأكد من رغبتك في قطع اتصال حساب التليجرام؟' : 'Are you sure you want to disconnect Telegram account?')) return;
+
+            const res = await api('/api/auth/telegram/disconnect', 'POST');
+            if (res.success) {
+                showToast(currentLang === 'ar' ? 'تم قطع اتصال الحساب' : 'Telegram disconnected', 'info');
+                await checkAuthStatus();
+                resetTelegramConnectWizard();
+                closeTelegramConnectModal();
+            } else {
+                showToast(res.error || 'Failed to disconnect', 'error');
+            }
+        }
+
         // ==================== INIT ====================
         window.addEventListener('DOMContentLoaded', async () => {
             setLanguage(currentLang);
+            await checkAuthStatus();
             await fetchStatus();
             await loadRules();
             logsPollInterval = setInterval(loadLogs, 3500);
             setInterval(fetchStatus, 8000);
         });
     </script>
+
+    <!-- ==================== MODAL: WEB TELEGRAM CONNECT ==================== -->
+    <div id="telegram-connect-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-lg w-full p-6 sm:p-7 space-y-5 shadow-2xl animate-fade-in my-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3.5">
+                <div class="flex items-center space-x-2.5 rtl:space-x-reverse">
+                    <div class="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white text-base" data-i18n="modal_tg_title">Connect Telegram Account</h3>
+                        <p class="text-xs text-slate-400" data-i18n="modal_tg_subtitle">Log in via official Telegram verification code</p>
+                    </div>
+                </div>
+                <button onclick="closeTelegramConnectModal()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <!-- Wizard Step 1: Phone Input -->
+            <div id="tg-step-1" class="space-y-4">
+                <div class="p-3.5 bg-cyan-500/10 border border-cyan-500/20 rounded-xl text-xs space-y-1 text-cyan-300">
+                    <p class="font-bold">أدخل رقم هاتفك المرتبط بحساب تليجرام:</p>
+                    <p class="text-slate-400 text-[11px]">سيصلك كود تحقق رسمي من شركة تليجرام مباشرة داخل تطبيقك.</p>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5" data-i18n="lbl_phone_number">International Phone Number</label>
+                    <input type="text" id="tg-phone-input" placeholder="+966501234567" dir="ltr" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-slate-100 font-mono focus:outline-none focus:border-cyan-500">
+                </div>
+                <button onclick="submitTelegramPhone()" id="tg-send-code-btn" class="w-full py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-xl text-xs font-bold shadow-md shadow-cyan-600/20 transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse">
+                    <span>إرسال كود التحقق</span>
+                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </button>
+            </div>
+
+            <!-- Wizard Step 2: Code & 2FA Input -->
+            <div id="tg-step-2" class="hidden space-y-4">
+                <div class="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-300 flex items-center space-x-2 rtl:space-x-reverse">
+                    <svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    <span>تم إرسال كود التأكيد إلى حسابك في تليجرام!</span>
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1.5">كود التحقق (5 أرقام)</label>
+                    <input type="text" id="tg-code-input" placeholder="12345" dir="ltr" maxlength="10" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-center text-lg tracking-widest text-emerald-400 font-mono focus:outline-none focus:border-emerald-500">
+                </div>
+                <div id="tg-2fa-container" class="hidden">
+                    <label class="block text-xs font-semibold text-amber-400 mb-1.5">كلمة مرور التحقق بخطوتين (2FA Password)</label>
+                    <input type="password" id="tg-2fa-input" placeholder="Two-factor password" class="w-full bg-slate-950 border border-amber-500/50 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none">
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="resetTelegramConnectWizard()" class="py-2.5 px-4 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl text-xs font-medium">رجوع</button>
+                    <button onclick="submitTelegramVerifyCode()" id="tg-verify-code-btn" class="flex-1 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-xs font-bold shadow-md shadow-emerald-600/20 transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse">
+                        <span>تأكيد وتسجيل الدخول</span>
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Wizard Step 3: Connected State -->
+            <div id="tg-step-3" class="hidden space-y-4">
+                <div class="p-4 bg-emerald-500/10 border border-emerald-500/30 rounded-xl text-center space-y-2">
+                    <div class="w-12 h-12 rounded-full bg-emerald-500/20 text-emerald-400 mx-auto flex items-center justify-center">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                    </div>
+                    <h4 class="font-bold text-white text-base">حسابك متصل بنجاح!</h4>
+                    <p id="tg-connected-details" class="text-xs font-mono text-emerald-300">@username (ID: 123456)</p>
+                </div>
+                <button onclick="disconnectTelegramAccount()" class="w-full py-2.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl text-xs font-semibold transition">
+                    قطع اتصال الحساب (Disconnect)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: SAAS USER AUTH ==================== -->
+    <div id="auth-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-md w-full p-6 space-y-5 shadow-2xl animate-fade-in my-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                    <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    </div>
+                    <h3 id="auth-modal-title" class="font-bold text-white text-base">حساب المشترك (User Account)</h3>
+                </div>
+                <button onclick="closeAuthModal()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+
+            <!-- Logged in State -->
+            <div id="auth-logged-in-view" class="hidden space-y-4 text-xs">
+                <div class="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2">
+                    <div class="flex justify-between items-center text-slate-400">
+                        <span>البريد الإلكتروني:</span>
+                        <span id="auth-user-email" class="font-semibold text-slate-200"></span>
+                    </div>
+                    <div class="flex justify-between items-center text-slate-400">
+                        <span>الاسم:</span>
+                        <span id="auth-user-name" class="font-semibold text-slate-200"></span>
+                    </div>
+                    <div class="flex justify-between items-center text-slate-400">
+                        <span>الباقة الحالية:</span>
+                        <span id="auth-user-plan" class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold uppercase">PRO</span>
+                    </div>
+                </div>
+                <button onclick="handleUserLogout()" class="w-full py-2.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl font-bold transition">
+                    تسجيل الخروج (Log Out)
+                </button>
+            </div>
+
+            <!-- Login / Register Form View -->
+            <div id="auth-form-view" class="space-y-4">
+                <div class="flex border-b border-slate-800 pb-2 gap-2 text-xs font-semibold">
+                    <button type="button" id="auth-tab-login-btn" onclick="switchAuthTab('login')" class="flex-1 py-1.5 rounded-lg bg-brand-600 text-white">تسجيل الدخول</button>
+                    <button type="button" id="auth-tab-reg-btn" onclick="switchAuthTab('register')" class="flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800">إنشاء حساب جديد</button>
+                </div>
+                <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
+                    <div id="auth-name-field" class="hidden">
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">الاسم الكامل</label>
+                        <input type="text" id="auth-input-name" placeholder="John Doe" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-xs text-slate-100 focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">البريد الإلكتروني</label>
+                        <input type="email" id="auth-input-email" required placeholder="client@example.com" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-xs text-slate-100 focus:outline-none focus:border-brand-500">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1">كلمة المرور</label>
+                        <input type="password" id="auth-input-password" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-xs text-slate-100 focus:outline-none focus:border-brand-500">
+                    </div>
+                    <button type="submit" id="auth-submit-btn" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-600/20 transition">
+                        تسجيل الدخول
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
 </body>
 </html>

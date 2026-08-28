@@ -58,14 +58,27 @@ class SQLiteDB:
 
     def __init__(self, db_path: str = "data/forwarder.db"):
         self.db_path = db_path
-        os.makedirs(os.path.dirname(db_path), exist_ok=True)
+        self._mem_conn = None
+        if db_path == ":memory:":
+            self._mem_conn = sqlite3.connect(":memory:", check_same_thread=False)
+            self._mem_conn.row_factory = sqlite3.Row
+        else:
+            dirname = os.path.dirname(db_path)
+            if dirname:
+                os.makedirs(dirname, exist_ok=True)
         self._init_schema()
         logger.info(f"SQLite database initialized at {db_path}")
 
     def _get_conn(self):
+        if self._mem_conn is not None:
+            return self._mem_conn
         conn = sqlite3.connect(self.db_path, check_same_thread=False)
         conn.row_factory = sqlite3.Row
         return conn
+
+    def _close_conn(self, conn):
+        if self._mem_conn is None and conn:
+            conn.close()
 
     def _init_schema(self):
         with self._lock:
@@ -104,18 +117,33 @@ class SQLiteDB:
                         level TEXT,
                         message TEXT
                     );
+                    CREATE TABLE IF NOT EXISTS users (
+                        _id TEXT PRIMARY KEY,
+                        email TEXT UNIQUE,
+                        name TEXT,
+                        password_hash TEXT,
+                        plan TEXT DEFAULT 'free',
+                        role TEXT DEFAULT 'user',
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        telegram_account TEXT,
+                        updated_at TIMESTAMP
+                    );
                 """)
                 # Migrations for existing databases
-                for col in ["target_ids", "media_types"]:
+                for col in ["target_ids", "media_types", "user_id"]:
                     try:
                         conn.execute(f"ALTER TABLE forwarding_rules ADD COLUMN {col} TEXT;")
                     except sqlite3.OperationalError:
                         pass
                 conn.commit()
             finally:
-                conn.close()
+                self._close_conn(conn)
 
-    # --- Forwarding Rules ---
+    # --- Forwarding Rules & Auth ---
+    @property
+    def users(self):
+        return _SQLiteCollection(self, "users")
+
     @property
     def rules(self):
         return _SQLiteCollection(self, "forwarding_rules")
@@ -256,8 +284,8 @@ class _SQLiteCollection:
                 results = []
                 for row in rows:
                     d = dict(row)
-                    for col in ["target_ids", "media_types"]:
-                        if col in d and isinstance(d[col], str) and d[col].startswith("["):
+                    for col in ["target_ids", "media_types", "telegram_account"]:
+                        if col in d and isinstance(d[col], str) and (d[col].startswith("[") or d[col].startswith("{")):
                             try:
                                 d[col] = json.loads(d[col])
                             except Exception:
@@ -265,7 +293,7 @@ class _SQLiteCollection:
                     results.append(d)
                 return results
             finally:
-                conn.close()
+                self.db._close_conn(conn)
 
     def find_one(self, filter=None, **kwargs):
         """Find a single document."""
@@ -308,7 +336,7 @@ class _SQLiteCollection:
                 # Update instead of duplicate
                 pass
             finally:
-                conn.close()
+                self.db._close_conn(conn)
 
         # Return mock InsertResult
         class _InsertedId:
@@ -375,7 +403,7 @@ class _SQLiteCollection:
                 )
                 conn.commit()
             finally:
-                conn.close()
+                self.db._close_conn(conn)
 
     def count_documents(self, filter=None):
         """Count documents matching filter."""
@@ -392,7 +420,7 @@ class _SQLiteCollection:
                 cursor = conn.execute(query, params)
                 return cursor.fetchone()["count"]
             finally:
-                conn.close()
+                self.db._close_conn(conn)
 
     def create_index(self, field, **kwargs):
         """No-op for SQLite — indexes handled by schema."""
@@ -446,7 +474,7 @@ class _SQLiteCollection:
             except sqlite3.IntegrityError:
                 pass
             finally:
-                conn.close()
+                self.db._close_conn(conn)
 
     def sort(self, key, direction):
         """Mongo-style sort."""

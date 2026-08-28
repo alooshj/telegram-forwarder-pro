@@ -604,6 +604,210 @@ def api_stop_forwarder():
     return jsonify({"success": True, "message": "Forwarder stopped"})
 
 
+# ==================== SAAS AUTHENTICATION & MULTI-USER ROUTES ====================
+from src.web.auth import (
+    UserManager,
+    generate_auth_token,
+    verify_auth_token,
+    get_current_user_from_request,
+    require_auth,
+)
+from src.web.telegram_auth import (
+    send_telegram_login_code,
+    verify_telegram_login_code,
+)
+
+
+@app.route("/api/auth/register", methods=["POST"])
+def api_auth_register():
+    """Register a new customer account."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    data = request.get_json() or {}
+    email = data.get("email", "").strip()
+    password = data.get("password", "").strip()
+    name = data.get("name", "").strip()
+
+    if not email or not password:
+        return jsonify({"success": False, "error": "Email and password are required"}), 400
+
+    try:
+        user = UserManager.create_user(db, email, password, name)
+        token = generate_auth_token(str(user["_id"]), user["email"])
+        resp = jsonify({
+            "success": True,
+            "user": {
+                "id": str(user["_id"]),
+                "email": user["email"],
+                "name": user.get("name", ""),
+                "plan": user.get("plan", "free"),
+                "role": user.get("role", "user"),
+                "telegram_connected": bool(user.get("telegram_account")),
+            },
+            "token": token,
+            "message": "Account created successfully"
+        })
+        resp.set_cookie("auth_token", token, max_age=30 * 86400, httponly=True, samesite="Lax")
+        return resp
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Registration error: {e}")
+        return jsonify({"success": False, "error": "Registration failed"}), 500
+
+
+@app.route("/api/auth/login", methods=["POST"])
+def api_auth_login():
+    """Log in to user account."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    data = request.get_json() or {}
+    email = data.get("email", "").strip()
+    password = data.get("password", "").strip()
+
+    user = UserManager.authenticate_user(db, email, password)
+    if not user:
+        return jsonify({"success": False, "error": "Invalid email or password"}), 401
+
+    token = generate_auth_token(str(user["_id"]), user["email"])
+    resp = jsonify({
+        "success": True,
+        "user": {
+            "id": str(user["_id"]),
+            "email": user["email"],
+            "name": user.get("name", ""),
+            "plan": user.get("plan", "free"),
+            "role": user.get("role", "user"),
+            "telegram_connected": bool(user.get("telegram_account")),
+            "telegram_account": {
+                "username": user.get("telegram_account", {}).get("username", "") if user.get("telegram_account") else "",
+                "first_name": user.get("telegram_account", {}).get("first_name", "") if user.get("telegram_account") else "",
+            } if user.get("telegram_account") else None
+        },
+        "token": token,
+        "message": "Logged in successfully"
+    })
+    resp.set_cookie("auth_token", token, max_age=30 * 86400, httponly=True, samesite="Lax")
+    return resp
+
+
+@app.route("/api/auth/logout", methods=["POST"])
+def api_auth_logout():
+    """Log out and clear session."""
+    resp = jsonify({"success": True, "message": "Logged out successfully"})
+    resp.delete_cookie("auth_token")
+    return resp
+
+
+@app.route("/api/auth/me", methods=["GET"])
+def api_auth_me():
+    """Get current authenticated user profile and connected Telegram account status."""
+    db = get_db()
+    if not db:
+        return jsonify({"authenticated": False}), 200
+
+    user = get_current_user_from_request(db)
+    if not user:
+        # Check if environment session exists (default admin mode)
+        cfg = load_config()
+        env_session = cfg.get("TELEGRAM_STRING_SESSION")
+        return jsonify({
+            "authenticated": False,
+            "default_mode": bool(env_session),
+            "admin_account": "@ayg1133" if env_session else None
+        })
+
+    tg_account = user.get("telegram_account") or {}
+    return jsonify({
+        "authenticated": True,
+        "user": {
+            "id": str(user["_id"]),
+            "email": user.get("email", ""),
+            "name": user.get("name", ""),
+            "plan": user.get("plan", "free"),
+            "role": user.get("role", "user"),
+            "telegram_connected": bool(tg_account),
+            "telegram_username": tg_account.get("username", ""),
+            "telegram_first_name": tg_account.get("first_name", ""),
+            "telegram_phone": tg_account.get("phone", ""),
+        }
+    })
+
+
+@app.route("/api/auth/telegram/send-code", methods=["POST"])
+def api_telegram_send_code():
+    """Step 1: Send Telegram MTProto verification code to phone."""
+    db = get_db()
+    config = load_config()
+    api_id = int(config.get("TELEGRAM_API_ID", 0))
+    api_hash = config.get("TELEGRAM_API_HASH", "")
+
+    if not api_id or not api_hash:
+        return jsonify({"success": False, "error": "Telegram API credentials not configured on server"}), 500
+
+    data = request.get_json() or {}
+    phone_number = data.get("phone_number", "").strip()
+    if not phone_number:
+        return jsonify({"success": False, "error": "Phone number is required"}), 400
+
+    user = get_current_user_from_request(db)
+    user_id = str(user["_id"]) if user else f"guest_{phone_number}"
+
+    result = asyncio.run(send_telegram_login_code(api_id, api_hash, phone_number, user_id))
+    return jsonify(result)
+
+
+@app.route("/api/auth/telegram/verify-code", methods=["POST"])
+def api_telegram_verify_code():
+    """Step 2: Verify Telegram MTProto login code and save session."""
+    db = get_db()
+    config = load_config()
+    api_id = int(config.get("TELEGRAM_API_ID", 0))
+    api_hash = config.get("TELEGRAM_API_HASH", "")
+
+    if not api_id or not api_hash:
+        return jsonify({"success": False, "error": "Telegram API credentials not configured on server"}), 500
+
+    data = request.get_json() or {}
+    code = data.get("code", "").strip()
+    password = data.get("password", "")
+    phone_number = data.get("phone_number", "").strip()
+
+    if not code:
+        return jsonify({"success": False, "error": "Verification code is required"}), 400
+
+    user = get_current_user_from_request(db)
+    user_id = str(user["_id"]) if user else f"guest_{phone_number}"
+
+    result = asyncio.run(verify_telegram_login_code(api_id, api_hash, user_id, code, password))
+
+    if result.get("success") and user and db:
+        # Save session to user profile
+        tg_data = result.get("telegram_account", {})
+        UserManager.update_telegram_account(db, str(user["_id"]), tg_data)
+
+    return jsonify(result)
+
+
+@app.route("/api/auth/telegram/disconnect", methods=["POST"])
+def api_telegram_disconnect():
+    """Disconnect user's Telegram account."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    user = get_current_user_from_request(db)
+    if not user:
+        return jsonify({"success": False, "error": "Not authenticated"}), 401
+
+    UserManager.disconnect_telegram_account(db, str(user["_id"]))
+    return jsonify({"success": True, "message": "Telegram account disconnected successfully."})
+
+
 @app.errorhandler(404)
 def not_found(error):
     """Handle 404 errors with JSON response."""
