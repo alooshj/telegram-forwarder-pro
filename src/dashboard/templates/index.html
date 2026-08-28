@@ -3564,16 +3564,16 @@
 
     <!-- ==================== MODAL: CHECKOUT & AUTOMATED PAYMENT ==================== -->
     <div id="checkout-modal" class="fixed inset-0 z-50 bg-black/85 backdrop-blur-xl hidden flex items-center justify-center p-4 overflow-y-auto">
-        <div class="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-slate-700/80 rounded-3xl max-w-lg w-full p-6 sm:p-7 space-y-5 shadow-2xl shadow-cyan-950/50 animate-fade-in my-6 relative overflow-hidden">
+        <div class="bg-gradient-to-b from-slate-900 via-slate-900 to-slate-950 border border-slate-700/80 rounded-3xl max-w-lg w-full p-6 sm:p-7 space-y-4.5 shadow-2xl shadow-cyan-950/50 animate-fade-in my-6 relative overflow-hidden">
             <!-- Ambient Cyber Glow -->
             <div class="absolute -top-16 -right-16 w-56 h-56 bg-emerald-500/15 rounded-full blur-3xl pointer-events-none"></div>
             <div class="absolute -bottom-16 -left-16 w-56 h-56 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none"></div>
 
             <!-- Modal Header -->
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-4 relative z-10">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3.5 relative z-10">
                 <div class="flex items-center space-x-3 rtl:space-x-reverse">
-                    <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-cyan-500/20 to-indigo-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/10">
-                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
+                    <div class="w-10 h-10 rounded-2xl bg-gradient-to-br from-emerald-500/20 via-cyan-500/20 to-indigo-500/20 border border-emerald-500/40 text-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/10">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"></path></svg>
                     </div>
                     <div>
                         <div class="flex items-center space-x-2 rtl:space-x-reverse">
@@ -3598,8 +3598,8 @@
             </div>
 
             <!-- View 2: Waiting for Webhook Payment -->
-            <div id="checkout-waiting-view" class="hidden space-y-4.5 text-xs relative z-10">
-                <!-- Order Summary Card -->
+            <div id="checkout-waiting-view" class="hidden space-y-4 text-xs relative z-10">
+                <!-- 1. Order Summary Card -->
                 <div class="bg-gradient-to-r from-slate-950 via-slate-900 to-slate-950 border border-slate-800 rounded-2xl p-4 space-y-3 shadow-inner">
                     <div class="flex justify-between items-center text-slate-400 border-b border-slate-800/80 pb-2.5">
                         <span class="text-slate-400">الخطة المختارة:</span>
@@ -3617,97 +3617,122 @@
                     </div>
                 </div>
 
-                <!-- Primary Action Button: Open NOWPayments Hosted Invoice -->
-                <div class="space-y-1.5">
-                    <a id="btn-nowpayments-pay" href="#" target="_blank" rel="noopener noreferrer" class="group relative w-full py-3.5 px-4 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-sm rounded-2xl shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-200 flex items-center justify-center space-x-2 rtl:space-x-reverse hover:scale-[1.02] active:scale-95 text-center overflow-hidden">
-                        <span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-none"></span>
-                        <span class="text-lg">💎</span>
-                        <span>المتابعة إلى صفحة الدفع بالعملات المشفرة</span>
-                        <svg class="w-4 h-4 rtl:rotate-180 text-slate-950 font-bold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
-                    </a>
-                    <p class="text-[10px] text-center text-slate-400">ستفتح لك صفحة آمنة تتيح لك اختيار عملتك ومسح كود QR أو نسخ المحفظة</p>
-                </div>
-
-                <!-- Supported Cryptocurrency Grid with Authentic Badges -->
-                <div class="bg-slate-950/80 border border-slate-800 rounded-2xl p-3.5 space-y-2.5">
+                <!-- 2. Supported Cryptocurrency Grid with Official Brand Logos -->
+                <div class="bg-slate-950/80 border border-slate-800/90 rounded-2xl p-3.5 space-y-2.5">
                     <div class="flex items-center justify-between text-slate-300 font-bold text-[11px]">
                         <div class="flex items-center space-x-1.5 rtl:space-x-reverse text-cyan-400">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M12 6v12M6 12h12"></path></svg>
-                            <span>العملات والشبكات الأكثر استخداماً:</span>
+                            <span>العملات والشبكات المدعومة مباشرة:</span>
                         </div>
                         <span class="text-[10px] font-mono text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">+300 Coins</span>
                     </div>
 
                     <div class="grid grid-cols-3 gap-2 text-[11px]">
-                        <!-- USDT -->
-                        <div class="p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/25 flex items-center space-x-2 rtl:space-x-reverse">
-                            <div class="w-6 h-6 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0">₮</div>
-                            <div>
+                        <!-- Tether USDT (Official Green Icon) -->
+                        <div class="p-2 rounded-xl bg-slate-900/90 border border-emerald-500/30 flex items-center space-x-2 rtl:space-x-reverse hover:border-emerald-400 transition">
+                            <svg class="w-7 h-7 flex-shrink-0" viewBox="0 0 32 32">
+                                <circle cx="16" cy="16" r="16" fill="#26A17B"/>
+                                <path fill="#FFF" d="M17.922 17.383v-.002c-.11.008-.677.035-1.922.035-1.045 0-1.745-.027-1.922-.035v3.66c0 .5.257.813.684.813h.98v6.07c0 .317-.257.575-.575.575h-1.04c-.317 0-.575-.258-.575-.575v-6.07h.98c.427 0 .684-.313.684-.813v-3.66c-.177.008-.877.035-1.922.035-1.245 0-1.812-.027-1.922-.035-4.48-.328-7.854-1.588-7.854-3.097 0-1.51 3.374-2.77 7.854-3.098.11-.008.677-.035 1.922-.035 1.045 0 1.745.027 1.922.035 4.48.328 7.854 1.588 7.854 3.098 0 1.509-3.374 2.769-7.854 3.097zm-3.844-3.618c-3.64.267-6.365 1.2-6.365 2.327 0 1.127 2.725 2.06 6.365 2.327v-4.654zm3.844 0v4.654c3.64-.267 6.365-1.2 6.365-2.327 0-1.127-2.725-2.06-6.365-2.327zM7.5 8.5h17v3.2h-17z"/>
+                            </svg>
+                            <div class="overflow-hidden">
                                 <span class="font-bold text-emerald-300 block leading-tight">USDT</span>
-                                <span class="text-[9px] text-slate-400 block font-mono">TRC20 / BEP20</span>
+                                <span class="text-[9px] text-slate-400 block font-mono">TRC20/BEP20</span>
                             </div>
                         </div>
-                        <!-- BTC -->
-                        <div class="p-2 rounded-xl bg-amber-500/10 border border-amber-500/25 flex items-center space-x-2 rtl:space-x-reverse">
-                            <div class="w-6 h-6 rounded-full bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0">₿</div>
-                            <div>
+
+                        <!-- Bitcoin BTC (Official Orange Icon) -->
+                        <div class="p-2 rounded-xl bg-slate-900/90 border border-amber-500/30 flex items-center space-x-2 rtl:space-x-reverse hover:border-amber-400 transition">
+                            <svg class="w-7 h-7 flex-shrink-0" viewBox="0 0 32 32">
+                                <circle cx="16" cy="16" r="16" fill="#F7931A"/>
+                                <path fill="#FFF" d="M23.189 14.02c.314-2.096-1.283-3.223-3.465-3.975l.708-2.84-1.728-.43-.69 2.765c-.454-.114-.921-.22-1.385-.326l.695-2.783L15.596 6l-.708 2.839c-.376-.086-.746-.17-1.104-.26l.002-.009-2.384-.595-.46 1.846s1.283.294 1.256.312c.7.175.826.638.805 1.006l-.806 3.235c.048.012.11.03.18.057l-.183-.045-1.13 4.532c-.086.212-.303.531-.793.41.018.025-1.256-.313-1.256-.313l-.858 1.978 2.25.561c.418.105.828.215 1.231.318l-.715 2.872 1.727.43.708-2.84c.472.127.93.245 1.378.357l-.706 2.828 1.728.43.715-2.866c2.948.558 5.164.333 6.097-2.333.752-2.146-.037-3.385-1.588-4.192 1.13-.26 1.98-1.003 2.207-2.538zm-3.95 5.538c-.535 2.147-4.148.987-5.32.695l.95-3.805c1.17.292 4.928.872 4.37 3.11zm.535-5.568c-.488 1.954-3.495.962-4.47.718l.86-3.45c.976.244 4.118.7 3.61 2.732z"/>
+                            </svg>
+                            <div class="overflow-hidden">
                                 <span class="font-bold text-amber-300 block leading-tight">Bitcoin</span>
                                 <span class="text-[9px] text-slate-400 block font-mono">BTC</span>
                             </div>
                         </div>
-                        <!-- ETH -->
-                        <div class="p-2 rounded-xl bg-indigo-500/10 border border-indigo-500/25 flex items-center space-x-2 rtl:space-x-reverse">
-                            <div class="w-6 h-6 rounded-full bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0">Ξ</div>
-                            <div>
+
+                        <!-- Ethereum ETH (Official Faceted Icon) -->
+                        <div class="p-2 rounded-xl bg-slate-900/90 border border-indigo-500/30 flex items-center space-x-2 rtl:space-x-reverse hover:border-indigo-400 transition">
+                            <svg class="w-7 h-7 flex-shrink-0" viewBox="0 0 32 32">
+                                <circle cx="16" cy="16" r="16" fill="#627EEA"/>
+                                <g fill="#FFF" fill-rule="nonzero">
+                                    <path fill-opacity=".6" d="M16.498 4v8.87l7.497 3.35z"/>
+                                    <path d="M16.498 4L9 16.22l7.498-3.35z"/>
+                                    <path fill-opacity=".6" d="M16.498 21.968v6.027L24 17.616z"/>
+                                    <path d="M16.498 27.995v-6.028L9 17.616z"/>
+                                    <path fill-opacity=".2" d="M16.498 20.573l7.497-4.353-7.497-3.348z"/>
+                                    <path fill-opacity=".6" d="M9 16.22l7.498 4.353v-7.701z"/>
+                                </g>
+                            </svg>
+                            <div class="overflow-hidden">
                                 <span class="font-bold text-indigo-300 block leading-tight">Ethereum</span>
-                                <span class="text-[9px] text-slate-400 block font-mono">ERC20</span>
+                                <span class="text-[9px] text-slate-400 block font-mono">ETH / ERC20</span>
                             </div>
                         </div>
-                        <!-- TRX -->
-                        <div class="p-2 rounded-xl bg-rose-500/10 border border-rose-500/25 flex items-center space-x-2 rtl:space-x-reverse">
-                            <div class="w-6 h-6 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0">◈</div>
-                            <div>
-                                <span class="font-bold text-rose-300 block leading-tight">TRON</span>
-                                <span class="text-[9px] text-slate-400 block font-mono">TRX</span>
+
+                        <!-- Binance Coin BNB (Official Yellow Icon) -->
+                        <div class="p-2 rounded-xl bg-slate-900/90 border border-yellow-500/30 flex items-center space-x-2 rtl:space-x-reverse hover:border-yellow-400 transition">
+                            <svg class="w-7 h-7 flex-shrink-0" viewBox="0 0 32 32">
+                                <circle cx="16" cy="16" r="16" fill="#F3BA2F"/>
+                                <path fill="#FFF" d="M12.115 13.987l3.885-3.885 3.886 3.886 2.261-2.26-6.147-6.148-6.146 6.147 2.261 2.26zm-6.147 2.013l2.26-2.261 2.261 2.26-2.26 2.262-2.261-2.261zm6.147 2.013l3.885 3.886 3.886-3.886 2.261 2.261-6.147 6.146-6.146-6.146 2.261-2.261zm13.774-2.013l-2.261-2.261 2.261-2.26 2.261 2.26-2.261 2.261zm-7.627 0l2.26-2.26 2.261 2.26-2.26 2.261-2.261-2.261z"/>
+                            </svg>
+                            <div class="overflow-hidden">
+                                <span class="font-bold text-yellow-300 block leading-tight">BNB</span>
+                                <span class="text-[9px] text-slate-400 block font-mono">BEP20 / BSC</span>
                             </div>
                         </div>
-                        <!-- SOL -->
-                        <div class="p-2 rounded-xl bg-purple-500/10 border border-purple-500/25 flex items-center space-x-2 rtl:space-x-reverse">
-                            <div class="w-6 h-6 rounded-full bg-purple-500/20 text-purple-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0">◎</div>
-                            <div>
+
+                        <!-- Solana SOL (Official Gradient Wave Icon) -->
+                        <div class="p-2 rounded-xl bg-slate-900/90 border border-purple-500/30 flex items-center space-x-2 rtl:space-x-reverse hover:border-purple-400 transition">
+                            <svg class="w-7 h-7 flex-shrink-0" viewBox="0 0 32 32">
+                                <circle cx="16" cy="16" r="16" fill="#000000"/>
+                                <defs>
+                                    <linearGradient id="solGradModal" x1="0%" y1="0%" x2="100%" y2="100%">
+                                        <stop offset="0%" stop-color="#00FFA3"/>
+                                        <stop offset="100%" stop-color="#DC1FFF"/>
+                                    </linearGradient>
+                                </defs>
+                                <path fill="url(#solGradModal)" d="M8.2 20.8h13.7c.4 0 .7.2.9.5l2.4 2.4c.4.4.1 1-.4 1H11.1c-.4 0-.7-.2-.9-.5l-2.4-2.4c-.4-.4-.1-1 .4-1zm15.6-7.8H10.1c-.4 0-.7.2-.9.5l-2.4 2.4c-.4.4-.1 1 .4 1h13.7c.4 0 .7-.2.9-.5l2.4-2.4c.4-.4.1-1-.4-1zm-15.6-7.8h13.7c.4 0 .7.2.9.5l2.4 2.4c.4.4.1 1-.4 1H11.1c-.4 0-.7-.2-.9-.5L7.8 6.2c-.4-.4-.1-1 .4-1z"/>
+                            </svg>
+                            <div class="overflow-hidden">
                                 <span class="font-bold text-purple-300 block leading-tight">Solana</span>
                                 <span class="text-[9px] text-slate-400 block font-mono">SOL</span>
                             </div>
                         </div>
-                        <!-- LTC & Others -->
-                        <div class="p-2 rounded-xl bg-cyan-500/10 border border-cyan-500/25 flex items-center space-x-2 rtl:space-x-reverse">
-                            <div class="w-6 h-6 rounded-full bg-cyan-500/20 text-cyan-400 flex items-center justify-center font-bold text-[10px] flex-shrink-0">Ł</div>
-                            <div>
-                                <span class="font-bold text-cyan-300 block leading-tight">Litecoin</span>
-                                <span class="text-[9px] text-slate-400 block font-mono">LTC / BNB</span>
+
+                        <!-- TRON TRX (Official Red Icon) -->
+                        <div class="p-2 rounded-xl bg-slate-900/90 border border-rose-500/30 flex items-center space-x-2 rtl:space-x-reverse hover:border-rose-400 transition">
+                            <svg class="w-7 h-7 flex-shrink-0" viewBox="0 0 32 32">
+                                <circle cx="16" cy="16" r="16" fill="#EF0027"/>
+                                <path fill="#FFF" d="M7 8.5l17.8 3.2-12.7 12.8L7 8.5zm1.8 1.4l4.2 11.2 8.7-8.8-12.9-2.4zm14.4 2.6l-8.4 8.5 7.6-5.8.8-2.7zm-14.8-1.5l16.8 3-7.5 5.7-9.3-8.7z"/>
+                            </svg>
+                            <div class="overflow-hidden">
+                                <span class="font-bold text-rose-300 block leading-tight">TRON</span>
+                                <span class="text-[9px] text-slate-400 block font-mono">TRX / TRC20</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- 3 Quick Step Guide -->
+                <!-- 3. Quick 3-Step Guide -->
                 <div class="grid grid-cols-3 gap-2 text-[10px] text-slate-400 text-center">
-                    <div class="p-2 rounded-xl bg-slate-900 border border-slate-800">
-                        <span class="text-amber-400 font-bold block mb-0.5">1. اضغط للمتابعة</span>
+                    <div class="p-2 rounded-xl bg-slate-900/90 border border-slate-800">
+                        <span class="text-amber-400 font-bold block mb-0.5">1. اضغط ادفع الآن</span>
                         <span>اختر عملتك وشبكتك المفضلة</span>
                     </div>
-                    <div class="p-2 rounded-xl bg-slate-900 border border-slate-800">
+                    <div class="p-2 rounded-xl bg-slate-900/90 border border-slate-800">
                         <span class="text-cyan-400 font-bold block mb-0.5">2. أرسل التحويل</span>
                         <span>امسح الـ QR أو انسخ المحفظة</span>
                     </div>
-                    <div class="p-2 rounded-xl bg-slate-900 border border-slate-800">
+                    <div class="p-2 rounded-xl bg-slate-900/90 border border-slate-800">
                         <span class="text-emerald-400 font-bold block mb-0.5">3. تفعيل لحظي</span>
                         <span>يتفعل الحساب فور تأكيد الشبكة</span>
                     </div>
                 </div>
 
-                <!-- Live Blockchain Radar Listener -->
-                <div class="p-3.5 bg-slate-950 border border-emerald-500/30 rounded-2xl flex items-center space-x-3 rtl:space-x-reverse">
+                <!-- 4. Live Blockchain Radar Listener -->
+                <div class="p-3 bg-slate-950 border border-emerald-500/30 rounded-2xl flex items-center space-x-3 rtl:space-x-reverse">
                     <div class="relative flex items-center justify-center flex-shrink-0 w-4 h-4">
                         <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                         <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
@@ -3716,6 +3741,16 @@
                         <p class="font-bold text-emerald-300 text-xs">رادار مراقبة تأكيدات البلوكتشين نشط (Live Blockchain IPN)</p>
                         <p class="text-[10px] text-slate-400">لا داعي لإرسال إيصالات؛ يتم التحقق والتمديد تلقائياً عبر NOWPayments IPN Webhook.</p>
                     </div>
+                </div>
+
+                <!-- 5. Primary Action Button at the Bottom: Pay Now -->
+                <div class="pt-2 border-t border-slate-800/80">
+                    <a id="btn-nowpayments-pay" href="#" target="_blank" rel="noopener noreferrer" class="group relative w-full py-4 px-6 bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 hover:from-emerald-400 hover:to-cyan-400 text-slate-950 font-black text-base rounded-2xl shadow-xl shadow-emerald-500/25 hover:shadow-emerald-500/40 transition-all duration-200 flex items-center justify-center space-x-2.5 rtl:space-x-reverse hover:scale-[1.02] active:scale-95 text-center overflow-hidden">
+                        <span class="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300 pointer-events-none"></span>
+                        <span class="text-xl">⚡</span>
+                        <span class="text-base tracking-wide">ادفع الآن (Pay Now)</span>
+                        <svg class="w-5 h-5 rtl:rotate-180 text-slate-950 font-bold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg>
+                    </a>
                 </div>
             </div>
 
