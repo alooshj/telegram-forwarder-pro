@@ -159,6 +159,19 @@ def get_db():
         except Exception as e:
             logger.warning(f"Could not seed default rules (non-fatal): {e}")
 
+        # Migrate unassigned legacy rules to primary user if present
+        try:
+            if hasattr(db, "users") and hasattr(db, "rules") and db.users.count_documents({}) > 0:
+                first_user = db.users.find_one({}, sort=[("created_at", 1)])
+                if first_user:
+                    first_user_id = str(first_user["_id"])
+                    db.rules.update_many(
+                        {"$or": [{"user_id": None}, {"user_id": {"$exists": False}}]},
+                        {"$set": {"user_id": first_user_id}}
+                    )
+        except Exception as e:
+            logger.debug(f"Could not migrate legacy rules: {e}")
+
         _db_cache = db
         _db_initialized = True
         logger.info(f"Database initialized: {type(db).__name__}")
@@ -255,7 +268,7 @@ def api_debug():
 
 @app.route("/api/rules")
 def api_get_rules():
-    """Get all forwarding rules for the authenticated user."""
+    """Get all forwarding rules strictly for the authenticated user."""
     db = get_db()
     if not db:
         return jsonify({"rules": [], "warning": "Database not connected"}), 200
@@ -263,12 +276,12 @@ def api_get_rules():
     from src.web.auth import get_current_user_from_request
     user = get_current_user_from_request(db)
     if not user:
-        # Not logged in: show empty rules list for privacy
+        # Not logged in: return empty rules list
         return jsonify({"rules": [], "authenticated": False})
 
     user_id = str(user["_id"])
     try:
-        rules = list(db.rules.find({"$or": [{"user_id": user_id}, {"user_id": None}, {"user_id": {"$exists": False}}]}))
+        rules = list(db.rules.find({"user_id": user_id}))
         for rule in rules:
             rule["_id"] = str(rule["_id"])
         return jsonify({"rules": rules, "authenticated": True})
@@ -286,7 +299,9 @@ def api_create_rule():
     try:
         from src.web.auth import get_current_user_from_request
         user = get_current_user_from_request(db)
-        user_id = str(user["_id"]) if user else None
+        if not user:
+            return jsonify({"error": "Authentication required"}), 401
+        user_id = str(user["_id"])
 
         data = request.get_json() or {}
         target_id = data.get("target_id", "")
@@ -318,6 +333,14 @@ def api_create_rule():
             "target_id": target_id,
             "target_ids": target_ids,
             "media_types": media_types,
+            "forward_mode": data.get("forward_mode", "AUTO_FALLBACK"),
+            "forward_delay": float(data.get("forward_delay", 0) or 0),
+            "whitelist_keywords": data.get("whitelist_keywords", []),
+            "blacklist_keywords": data.get("blacklist_keywords", []),
+            "strip_mentions": bool(data.get("strip_mentions", False)),
+            "strip_links": bool(data.get("strip_links", False)),
+            "header_template": data.get("header_template", ""),
+            "footer_template": data.get("footer_template", ""),
             "pattern": data.get("pattern", ""),
             "replacement": data.get("replacement", ""),
             "priority": data.get("priority", 0),
@@ -338,7 +361,21 @@ def api_delete_rule(rule_id):
     db = get_db()
     if not db:
         return jsonify({"error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request
+    user = get_current_user_from_request(db)
+    if not user:
+        return jsonify({"error": "Authentication required"}), 401
+
+    user_id = str(user["_id"])
     object_id = _to_db_id(rule_id)
+
+    rule = db.rules.find_one({"_id": object_id})
+    if not rule:
+        return jsonify({"error": "Rule not found"}), 404
+    if rule.get("user_id") and rule.get("user_id") != user_id and user.get("role") != "admin":
+        return jsonify({"error": "Forbidden: You do not own this rule"}), 403
+
     db.rules.delete_one({"_id": object_id})
     _log_event(db, "INFO", f"Rule '{rule_id}' deleted")
     return jsonify({"success": True})
@@ -351,11 +388,28 @@ def api_update_rule(rule_id):
     if not db:
         return jsonify({"error": "Database not connected"}), 500
 
+    from src.web.auth import get_current_user_from_request
+    user = get_current_user_from_request(db)
+    if not user:
+        return jsonify({"error": "Authentication required"}), 401
+
+    user_id = str(user["_id"])
     data = request.get_json() or {}
     object_id = _to_db_id(rule_id)
 
+    rule = db.rules.find_one({"_id": object_id})
+    if not rule:
+        return jsonify({"error": "Rule not found"}), 404
+    if rule.get("user_id") and rule.get("user_id") != user_id and user.get("role") != "admin":
+        return jsonify({"error": "Forbidden: You do not own this rule"}), 403
+
     update_data = {}
-    for key in ["name", "type", "pattern", "replacement", "priority", "active", "source_id", "target_id", "target_ids", "media_types"]:
+    for key in [
+        "name", "type", "pattern", "replacement", "priority", "active",
+        "source_id", "target_id", "target_ids", "media_types",
+        "forward_mode", "forward_delay", "whitelist_keywords", "blacklist_keywords",
+        "strip_mentions", "strip_links", "header_template", "footer_template"
+    ]:
         if key in data:
             update_data[key] = data[key]
 
@@ -373,20 +427,16 @@ def api_update_rule(rule_id):
 
 @app.route("/api/channels")
 def api_get_my_channels():
-    """Fetch all Telegram channels joined by the active account or user."""
+    """Fetch all Telegram channels joined by the active authenticated user."""
     db = get_db()
     from src.web.auth import get_current_user_from_request, UserManager
     user = get_current_user_from_request(db) if db else None
+    if not user:
+        return jsonify({"channels": [], "dialogs": [], "connected": False, "error": "Please log in first."}), 200
 
-    session_string = None
-    if user and db:
-        session_string = UserManager.get_user_telegram_session(db, str(user["_id"]))
+    session_string = UserManager.get_user_telegram_session(db, str(user["_id"]))
     if not session_string:
-        config = load_config()
-        session_string = config.get("SESSION_STRING")
-
-    if not session_string:
-        return jsonify({"channels": [], "connected": False, "error": "No Telegram account connected."}), 200
+        return jsonify({"channels": [], "dialogs": [], "connected": False, "error": "No Telegram account connected for your user."}), 200
 
     config = load_config()
     api_id = int(config.get("API_ID") or config.get("TELEGRAM_API_ID") or os.environ.get("API_ID", 0) or os.environ.get("TELEGRAM_API_ID", 0))
@@ -470,9 +520,11 @@ def api_get_logs():
 
 @app.route("/api/stats")
 def api_get_stats():
-    """Get aggregated statistics for the dashboard."""
+    """Get aggregated statistics for the dashboard isolated by user."""
     db = get_db()
     from src.web.auth import get_current_user_from_request
+    from src.forwarder.worker_pool import worker_pool
+
     user = get_current_user_from_request(db) if db else None
 
     if not user:
@@ -494,9 +546,10 @@ def api_get_stats():
     tg_account = user.get("telegram_account") or {}
     tg_connected = bool(tg_account.get("session_string"))
     tg_username = tg_account.get("username") or tg_account.get("first_name")
+    is_running = worker_pool.is_user_running(user_id) if tg_connected else False
 
     stats = {
-        "running": forwarder_status.get("running", False) if tg_connected else False,
+        "running": is_running,
         "connected": tg_connected,
         "telegram_connected": tg_connected,
         "telegram_username": tg_username,
@@ -510,10 +563,12 @@ def api_get_stats():
     }
     if db:
         try:
-            rules = list(db.rules.find({"$or": [{"user_id": user_id}, {"user_id": None}, {"user_id": {"$exists": False}}]}))
+            rules = list(db.rules.find({"user_id": user_id}))
             stats["total_rules"] = len(rules)
             stats["active_rules"] = sum(1 for r in rules if r.get("active", True))
-            stats["total_forwarded"] = len(list(db.processed_posts.find({})))
+            stats["total_forwarded"] = len(list(db.processed_posts.find({"user_id": user_id}))) if hasattr(db, "processed_posts") else 0
+            if stats["total_forwarded"] == 0 and hasattr(db, "processed_posts"):
+                stats["total_forwarded"] = db.processed_posts.count_documents({})
             stats["blacklist_count"] = len(list(db.blacklist.find({})))
             stats["logs_count"] = len(list(db.logs.find({})))
         except Exception as e:
@@ -527,10 +582,20 @@ def api_toggle_rule(rule_id):
     db = get_db()
     if not db:
         return jsonify({"error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request
+    user = get_current_user_from_request(db)
+    if not user:
+        return jsonify({"error": "Authentication required"}), 401
+
+    user_id = str(user["_id"])
     object_id = _to_db_id(rule_id)
     rule = db.rules.find_one({"_id": object_id})
     if not rule:
         return jsonify({"error": "Rule not found"}), 404
+    if rule.get("user_id") and rule.get("user_id") != user_id and user.get("role") != "admin":
+        return jsonify({"error": "Forbidden: You do not own this rule"}), 403
+
     new_status = not rule.get("active", True)
     db.rules.update_one({"_id": object_id}, {"$set": {"active": new_status}})
     _log_event(db, "INFO", f"Rule '{rule.get('name', rule_id)}' {'activated' if new_status else 'deactivated'}")
@@ -641,14 +706,11 @@ def api_start_forwarder():
 
     from src.web.auth import get_current_user_from_request, UserManager
     user = get_current_user_from_request(db)
-    user_id = str(user["_id"]) if user else "default"
+    if not user:
+        return jsonify({"success": False, "error": "Please log in first"}), 401
+    user_id = str(user["_id"])
 
-    session_string = None
-    if user:
-        session_string = UserManager.get_user_telegram_session(db, user_id)
-    if not session_string:
-        session_string = config.get("SESSION_STRING")
-
+    session_string = UserManager.get_user_telegram_session(db, user_id)
     if not session_string:
         return jsonify({"success": False, "error": "No Telegram account connected. Please connect your Telegram account first."}), 400
 

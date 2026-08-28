@@ -18,6 +18,22 @@ class FlaskApiTestCase(unittest.TestCase):
         app.config["TESTING"] = True
         cls.client = app.test_client()
 
+    def setUp(self):
+        db = get_db()
+        if db and hasattr(db, "users"):
+            from src.web.auth import UserManager, generate_auth_token
+            user = db.users.find_one({"email": "test_api_user@example.com"})
+            if not user:
+                user = UserManager.create_user(db, "test_api_user@example.com", "password123", "API Tester")
+            token = generate_auth_token(str(user["_id"]), user["email"])
+            self.auth_headers = {"Authorization": f"Bearer {token}"}
+            UserManager.update_telegram_account(db, str(user["_id"]), {
+                "session_string": "1BJWap1wBu872198_test_session_str",
+                "username": "tester_tg"
+            })
+        else:
+            self.auth_headers = {}
+
     def test_app_exists(self):
         self.assertIsNotNone(app)
 
@@ -79,25 +95,25 @@ class FlaskApiTestCase(unittest.TestCase):
 
     def test_start_stop_forwarder(self):
         # Start
-        resp = self.client.post("/api/forward/start")
+        resp = self.client.post("/api/forward/start", headers=self.auth_headers)
         self.assertEqual(resp.status_code, 200)
         data = resp.get_json()
         self.assertTrue(data["success"])
 
         # Stop
-        resp = self.client.post("/api/forward/stop")
+        resp = self.client.post("/api/forward/stop", headers=self.auth_headers)
         self.assertEqual(resp.status_code, 200)
         data = resp.get_json()
         self.assertTrue(data["success"])
 
         # Check status shows stopped
-        resp = self.client.get("/api/status")
+        resp = self.client.get("/api/status", headers=self.auth_headers)
         data = resp.get_json()
         self.assertFalse(data["running"])
 
 
     def test_forwarder_status_endpoint(self):
-        resp = self.client.get("/api/forwarder/status")
+        resp = self.client.get("/api/forwarder/status", headers=self.auth_headers)
         self.assertEqual(resp.status_code, 200)
         data = resp.get_json()
         self.assertIn("active_forwarding_rules", data)
@@ -105,7 +121,7 @@ class FlaskApiTestCase(unittest.TestCase):
 
     def test_rule_crud_with_custom_id_and_delete(self):
         # Create rule
-        resp = self.client.post("/api/rules", json={
+        resp = self.client.post("/api/rules", headers=self.auth_headers, json={
             "name": "Custom Test Rule",
             "source_id": "-1001234567890",
             "target_id": "-1009876543210",
@@ -121,16 +137,16 @@ class FlaskApiTestCase(unittest.TestCase):
         rule_id = rule_data["rule"]["_id"]
 
         # Update rule
-        resp = self.client.put(f"/api/rules/{rule_id}", json={"name": "Updated Test Rule"})
+        resp = self.client.put(f"/api/rules/{rule_id}", headers=self.auth_headers, json={"name": "Updated Test Rule"})
         self.assertEqual(resp.status_code, 200)
 
         # Delete rule
-        resp = self.client.delete(f"/api/rules/{rule_id}")
+        resp = self.client.delete(f"/api/rules/{rule_id}", headers=self.auth_headers)
         self.assertEqual(resp.status_code, 200)
         self.assertTrue(resp.get_json()["success"])
 
     def test_create_rule_with_multiple_targets_and_media_types(self):
-        resp = self.client.post("/api/rules", json={
+        resp = self.client.post("/api/rules", headers=self.auth_headers, json={
             "name": "1-to-Many Rule",
             "source_id": "@source_news",
             "target_id": "@chan1, @chan2, -10012345",
@@ -153,7 +169,7 @@ class FlaskApiTestCase(unittest.TestCase):
         self.assertTrue(resp.get_json()["success"])
 
     def test_stats_endpoint(self):
-        resp = self.client.get("/api/stats")
+        resp = self.client.get("/api/stats", headers=self.auth_headers)
         self.assertEqual(resp.status_code, 200)
         data = resp.get_json()
         self.assertIn("total_rules", data)
@@ -164,7 +180,7 @@ class FlaskApiTestCase(unittest.TestCase):
 
     def test_rule_toggle_endpoint(self):
         # Create a rule first
-        resp = self.client.post("/api/rules", json={
+        resp = self.client.post("/api/rules", headers=self.auth_headers, json={
             "name": "Toggle Test",
             "source_id": "-100111",
             "target_id": "-100222",
@@ -174,21 +190,21 @@ class FlaskApiTestCase(unittest.TestCase):
         rule_id = resp.get_json()["rule"]["_id"]
 
         # Toggle to false
-        resp = self.client.post(f"/api/rules/{rule_id}/toggle")
+        resp = self.client.post(f"/api/rules/{rule_id}/toggle", headers=self.auth_headers)
         self.assertEqual(resp.status_code, 200)
         data = resp.get_json()
         self.assertTrue(data["success"])
         self.assertFalse(data["active"])
 
         # Toggle back to true
-        resp = self.client.post(f"/api/rules/{rule_id}/toggle")
+        resp = self.client.post(f"/api/rules/{rule_id}/toggle", headers=self.auth_headers)
         self.assertEqual(resp.status_code, 200)
         data = resp.get_json()
         self.assertTrue(data["active"])
 
     def test_rules_test_endpoint(self):
         # Create a replace rule
-        self.client.post("/api/rules", json={
+        self.client.post("/api/rules", headers=self.auth_headers, json={
             "name": "Test Replace",
             "type": "replace",
             "pattern": "Apple",

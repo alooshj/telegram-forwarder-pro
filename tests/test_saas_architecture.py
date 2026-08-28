@@ -142,6 +142,49 @@ class SaaSArchitectureTestCase(unittest.TestCase):
             self.assertEqual(res.mimetype, "image/jpeg")
             self.assertEqual(res.data, b"\xff\xd8\xff\xe0\x00\x10JFIF")
 
+    def test_multi_tenant_isolation_rules_and_channels(self):
+        """Verify that User B cannot see User A's rules or connected channels."""
+        # Create User A with a rule
+        user_a = UserManager.create_user(self.db, "user_a@test.com", "passA123")
+        token_a = generate_auth_token(user_a["_id"], user_a["email"])
+        UserManager.update_telegram_account(self.db, user_a["_id"], {
+            "telegram_user_id": 111,
+            "username": "usera_tg",
+            "session_string": "1BJWNxSessionA=="
+        })
+
+        # Create User B with NO connected telegram account
+        user_b = UserManager.create_user(self.db, "user_b@test.com", "passB123")
+        token_b = generate_auth_token(user_b["_id"], user_b["email"])
+
+        with patch("src.web.api.get_db", return_value=self.db):
+            # User A creates a rule
+            res_create = self.client.post(
+                "/api/rules",
+                headers={"Authorization": f"Bearer {token_a}"},
+                json={"name": "User A Private Rule", "source_id": "-100111", "target_id": "-100222"}
+            )
+            self.assertEqual(res_create.status_code, 200)
+            rule_id = res_create.get_json()["rule"]["_id"]
+
+            # User A sees 1 rule
+            res_a = self.client.get("/api/rules", headers={"Authorization": f"Bearer {token_a}"})
+            self.assertEqual(len(res_a.get_json()["rules"]), 1)
+
+            # User B sees 0 rules (isolated!)
+            res_b = self.client.get("/api/rules", headers={"Authorization": f"Bearer {token_b}"})
+            self.assertEqual(len(res_b.get_json()["rules"]), 0)
+
+            # User B cannot delete or update User A's rule (403 Forbidden)
+            res_del = self.client.delete(f"/api/rules/{rule_id}", headers={"Authorization": f"Bearer {token_b}"})
+            self.assertEqual(res_del.status_code, 403)
+
+            # User B cannot see channels when they haven't connected their own Telegram account
+            res_chan = self.client.get("/api/channels", headers={"Authorization": f"Bearer {token_b}"})
+            self.assertEqual(res_chan.get_json()["channels"], [])
+            self.assertFalse(res_chan.get_json()["connected"])
+
 
 if __name__ == "__main__":
     unittest.main()
+

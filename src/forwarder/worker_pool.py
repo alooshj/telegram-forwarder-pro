@@ -46,7 +46,7 @@ class UserWorker:
             self.loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self.loop)
             try:
-                self.engine = ForwarderEngine(self.config, self.db)
+                self.engine = ForwarderEngine(self.config, self.db, user_id=self.user_id)
                 self.is_running = True
                 self.started_at = time.time()
                 logger.info(f"Worker started for user {self.user_id}")

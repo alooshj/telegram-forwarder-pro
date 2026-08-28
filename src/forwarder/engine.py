@@ -28,9 +28,10 @@ logger = logging.getLogger(__name__)
 class ForwarderEngine:
     """Enterprise-grade Telegram post forwarder with transformation, album buffering, and rate-limit handling."""
 
-    def __init__(self, config: dict, db):
+    def __init__(self, config: dict, db, user_id: str = None):
         self.config = config
         self.db = db
+        self.user_id = str(user_id) if user_id else (str(config.get("USER_ID")) if config.get("USER_ID") else None)
         self.rules_engine = RulesEngine(db)
         self.album_collector = MediaGroupCollector(debounce_seconds=1.2)
 
@@ -135,6 +136,15 @@ class ForwarderEngine:
             if self._running:
                 await self.auto_reconnect()
 
+    def _get_active_rules(self) -> list:
+        """Fetch active forwarding rules strictly for this user/tenant."""
+        if not self.db or not hasattr(self.db, "rules"):
+            return []
+        query = {"active": True}
+        if self.user_id:
+            query["user_id"] = self.user_id
+        return list(self.db.rules.find(query))
+
     def _setup_event_handlers(self):
         """Register real-time push listener so incoming messages and albums are forwarded instantly (< 1s)."""
         if not self.client or getattr(self, "_event_handlers_registered", False):
@@ -147,7 +157,7 @@ class ForwarderEngine:
 
             try:
                 chat_id = event.chat_id
-                rules = list(self.db.rules.find({"active": True}))
+                rules = self._get_active_rules()
                 for rule in rules:
                     source_id = rule.get("source_id")
                     if not source_id:
@@ -389,7 +399,7 @@ class ForwarderEngine:
         """Main background polling loop."""
         while self._running:
             try:
-                forwarding_rules = list(self.db.rules.find({"active": True}))
+                forwarding_rules = self._get_active_rules()
 
                 for rule in forwarding_rules:
                     if not self._running:

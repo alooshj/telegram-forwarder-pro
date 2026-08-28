@@ -87,12 +87,21 @@ class SQLiteDB:
                 conn.executescript("""
                     CREATE TABLE IF NOT EXISTS forwarding_rules (
                         _id TEXT PRIMARY KEY,
+                        user_id TEXT,
                         name TEXT,
                         type TEXT,
                         source_id TEXT,
                         target_id TEXT,
                         target_ids TEXT,
                         media_types TEXT,
+                        forward_mode TEXT,
+                        forward_delay REAL DEFAULT 0,
+                        whitelist_keywords TEXT,
+                        blacklist_keywords TEXT,
+                        strip_mentions BOOLEAN DEFAULT 0,
+                        strip_links BOOLEAN DEFAULT 0,
+                        header_template TEXT,
+                        footer_template TEXT,
                         pattern TEXT,
                         replacement TEXT,
                         priority INTEGER DEFAULT 0,
@@ -106,6 +115,7 @@ class SQLiteDB:
                     );
                     CREATE TABLE IF NOT EXISTS processed_posts (
                         _id TEXT PRIMARY KEY,
+                        user_id TEXT,
                         message_id INTEGER,
                         source_id INTEGER,
                         target_id INTEGER,
@@ -113,6 +123,7 @@ class SQLiteDB:
                     );
                     CREATE TABLE IF NOT EXISTS forwarding_logs (
                         _id TEXT PRIMARY KEY,
+                        user_id TEXT,
                         timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         level TEXT,
                         message TEXT
@@ -137,7 +148,7 @@ class SQLiteDB:
                     );
                 """)
                 # Migrations for existing databases
-                for col in ["target_ids", "media_types", "user_id"]:
+                for col in ["target_ids", "media_types", "user_id", "forward_mode", "forward_delay", "whitelist_keywords", "blacklist_keywords", "strip_mentions", "strip_links", "header_template", "footer_template"]:
                     try:
                         conn.execute(f"ALTER TABLE forwarding_rules ADD COLUMN {col} TEXT;")
                     except sqlite3.OperationalError:
@@ -295,7 +306,7 @@ class _SQLiteCollection:
                 results = []
                 for row in rows:
                     d = dict(row)
-                    for col in ["target_ids", "media_types", "telegram_account"]:
+                    for col in ["target_ids", "media_types", "telegram_account", "whitelist_keywords", "blacklist_keywords"]:
                         if col in d and isinstance(d[col], str) and (d[col].startswith("[") or d[col].startswith("{")):
                             try:
                                 d[col] = json.loads(d[col])
