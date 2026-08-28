@@ -373,17 +373,30 @@ def api_update_rule(rule_id):
 
 @app.route("/api/channels")
 def api_get_my_channels():
-    """Fetch all Telegram channels joined by the account."""
-    global _engine_instance
-    if not _engine_instance or not _engine_instance.client:
-        return jsonify({"channels": [], "connected": False}), 200
+    """Fetch all Telegram channels joined by the active account or user."""
+    db = get_db()
+    from src.web.auth import get_current_user_from_request, UserManager
+    user = get_current_user_from_request(db) if db else None
 
-    try:
-        channels = asyncio.run(_engine_instance.get_my_channels())
-        return jsonify({"channels": channels, "connected": True})
-    except Exception as e:
-        logger.error(f"Failed to fetch channels: {e}")
-        return jsonify({"channels": [], "error": str(e)}), 200
+    session_string = None
+    if user and db:
+        session_string = UserManager.get_user_telegram_session(db, str(user["_id"]))
+    if not session_string:
+        config = load_config()
+        session_string = config.get("SESSION_STRING")
+
+    if not session_string:
+        return jsonify({"channels": [], "connected": False, "error": "No Telegram account connected."}), 200
+
+    config = load_config()
+    api_id = int(config.get("API_ID") or config.get("TELEGRAM_API_ID") or os.environ.get("API_ID", 0) or os.environ.get("TELEGRAM_API_ID", 0))
+    api_hash = config.get("API_HASH") or config.get("TELEGRAM_API_HASH") or os.environ.get("API_HASH", "") or os.environ.get("TELEGRAM_API_HASH", "")
+
+    from src.web.telegram_auth import fetch_user_telegram_dialogs
+    result = asyncio.run(fetch_user_telegram_dialogs(api_id, api_hash, session_string))
+    if result.get("success"):
+        return jsonify({"channels": result.get("dialogs", []), "dialogs": result.get("dialogs", []), "connected": True})
+    return jsonify({"channels": [], "error": result.get("error")}), 200
 
 
 @app.route("/api/blacklist")
@@ -619,42 +632,52 @@ def api_test_mongo():
 
 @app.route("/api/forward/start", methods=["POST"])
 def api_start_forwarder():
-    """Start the forwarder engine."""
+    """Start the forwarder engine for the active user."""
     from src.utils.config import load_config as lc
     config = lc()
     db = get_db()
     if not db:
         return jsonify({"error": "Database not connected"}), 500
 
-    from src.web.auth import get_current_user_from_request
+    from src.web.auth import get_current_user_from_request, UserManager
     user = get_current_user_from_request(db)
+    user_id = str(user["_id"]) if user else "default"
+
     session_string = None
-    if user and user.get("telegram_account") and user["telegram_account"].get("session_string"):
-        session_string = user["telegram_account"]["session_string"]
-    elif config.get("SESSION_STRING"):
+    if user:
+        session_string = UserManager.get_user_telegram_session(db, user_id)
+    if not session_string:
         session_string = config.get("SESSION_STRING")
 
     if not session_string:
         return jsonify({"success": False, "error": "No Telegram account connected. Please connect your Telegram account first."}), 400
 
-    config["SESSION_STRING"] = session_string
-
-    if forwarder_status["running"] and _engine_instance and getattr(_engine_instance, "_running", False):
-        return jsonify({"success": True, "message": "Forwarder already running"})
-
-    started = _start_forwarder_engine(config, db)
+    from src.forwarder.worker_pool import worker_pool
+    started = worker_pool.start_user_worker(user_id, session_string, config, db)
     if started:
         forwarder_status["running"] = True
         forwarder_status["connected"] = True
-        return jsonify({"success": True, "message": "Forwarder started"})
-    return jsonify({"error": "Could not start forwarder"}), 500
+        forwarder_status["last_update"] = datetime.now(timezone.utc).isoformat()
+        return jsonify({"success": True, "message": "Forwarder worker started"})
+    return jsonify({"error": "Could not start forwarder worker"}), 500
 
 
 @app.route("/api/forward/stop", methods=["POST"])
 def api_stop_forwarder():
-    """Stop the forwarder engine."""
+    """Stop the forwarder engine for the active user."""
+    db = get_db()
+    from src.web.auth import get_current_user_from_request
+    user = get_current_user_from_request(db) if db else None
+    user_id = str(user["_id"]) if user else "default"
+
+    from src.forwarder.worker_pool import worker_pool
+    worker_pool.stop_user_worker(user_id)
     _stop_forwarder_engine()
-    return jsonify({"success": True, "message": "Forwarder stopped"})
+
+    forwarder_status["running"] = False
+    forwarder_status["connected"] = False
+    forwarder_status["last_update"] = datetime.now(timezone.utc).isoformat()
+    return jsonify({"success": True, "message": "Forwarder worker stopped"})
 
 
 # ==================== SAAS AUTHENTICATION & MULTI-USER ROUTES ====================
@@ -846,13 +869,13 @@ def api_telegram_verify_code():
             # Save session to user profile
             UserManager.update_telegram_account(db, str(user["_id"]), tg_data)
 
-        # Automatically start or update engine with newly connected session
+        # Automatically start or update worker pool with newly connected session
         session_str = tg_data.get("session_string")
         if session_str and db:
-            _stop_forwarder_engine()
+            from src.forwarder.worker_pool import worker_pool
+            user_id = str(user["_id"]) if user else "default"
             cfg = load_config()
-            cfg["SESSION_STRING"] = session_str
-            _start_forwarder_engine(cfg, db)
+            worker_pool.start_user_worker(user_id, session_str, cfg, db)
 
         forwarder_status["connected"] = True
         forwarder_status["running"] = True
@@ -861,13 +884,41 @@ def api_telegram_verify_code():
     return jsonify(result)
 
 
+@app.route("/api/telegram/dialogs", methods=["GET"])
+def api_telegram_dialogs():
+    """Fetch list of user's Telegram channels and groups."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request, UserManager
+    user = get_current_user_from_request(db)
+    if not user:
+        return jsonify({"success": False, "error": "Please log in first"}), 401
+
+    session_string = UserManager.get_user_telegram_session(db, str(user["_id"]))
+    if not session_string:
+        return jsonify({"success": False, "error": "No Telegram account connected. Please connect your account first."}), 400
+
+    config = load_config()
+    api_id = int(config.get("API_ID") or config.get("TELEGRAM_API_ID") or os.environ.get("API_ID", 0) or os.environ.get("TELEGRAM_API_ID", 0))
+    api_hash = config.get("API_HASH") or config.get("TELEGRAM_API_HASH") or os.environ.get("API_HASH", "") or os.environ.get("TELEGRAM_API_HASH", "")
+
+    from src.web.telegram_auth import fetch_user_telegram_dialogs
+    result = asyncio.run(fetch_user_telegram_dialogs(api_id, api_hash, session_string))
+    return jsonify(result)
+
+
 @app.route("/api/auth/telegram/disconnect", methods=["POST"])
 def api_telegram_disconnect():
     """Disconnect user's Telegram account and terminate active engine."""
     db = get_db()
     user = get_current_user_from_request(db) if db else None
+    user_id = str(user["_id"]) if user else "default"
 
-    # Stop active engine completely
+    # Stop active engine & worker completely
+    from src.forwarder.worker_pool import worker_pool
+    worker_pool.stop_user_worker(user_id)
     _stop_forwarder_engine()
 
     if user and db:

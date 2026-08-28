@@ -188,3 +188,59 @@ async def verify_telegram_login_code(
                 await client.disconnect()
             except Exception:
                 pass
+
+
+async def fetch_user_telegram_dialogs(api_id: int, api_hash: str, session_string: str, limit: int = 100) -> dict:
+    """
+    Fetch all user's channels, supergroups, and groups.
+    """
+    if not session_string:
+        return {"success": False, "error": "No Telegram account connected. Please connect your account first."}
+
+    from src.utils.encryption import decrypt_session
+    decrypted_session = decrypt_session(session_string)
+
+    client = None
+    try:
+        session = StringSession(decrypted_session)
+        client = TelegramClient(session, api_id, api_hash)
+        await client.connect()
+
+        if not await client.is_user_authorized():
+            return {"success": False, "error": "Telegram session is invalid or has expired."}
+
+        dialogs_list = []
+        async for dialog in client.iter_dialogs(limit=limit):
+            entity = dialog.entity
+            is_channel = getattr(dialog, "is_channel", False)
+            is_group = getattr(dialog, "is_group", False)
+
+            # Focus on channels and groups
+            if is_channel or is_group:
+                dialog_type = "channel" if is_channel and not getattr(entity, "megagroup", False) else "group"
+                dialogs_list.append({
+                    "id": dialog.id,
+                    "title": dialog.name or "Untitled",
+                    "username": getattr(entity, "username", None) or "",
+                    "type": dialog_type,
+                    "is_channel": is_channel,
+                    "is_group": is_group,
+                    "unread_count": dialog.unread_count or 0,
+                })
+
+        return {
+            "success": True,
+            "count": len(dialogs_list),
+            "dialogs": dialogs_list
+        }
+    except FloodWaitError as e:
+        return {"success": False, "error": f"Telegram rate limit: please wait {e.seconds} seconds."}
+    except Exception as e:
+        logger.error(f"Error fetching dialogs: {e}")
+        return {"success": False, "error": f"Failed to fetch channels: {str(e)}"}
+    finally:
+        if client:
+            try:
+                await client.disconnect()
+            except Exception:
+                pass

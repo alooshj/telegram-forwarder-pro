@@ -164,15 +164,29 @@ class UserManager:
 
     @staticmethod
     def update_telegram_account(db, user_id: str, telegram_data: dict) -> bool:
-        """Store or update connected Telegram userbot session for a user."""
+        """Store or update connected Telegram userbot session for a user (encrypted with AES)."""
         if not db or not user_id:
             return False
+
+        if telegram_data and "session_string" in telegram_data:
+            from src.utils.encryption import encrypt_session
+            telegram_data = dict(telegram_data)
+            telegram_data["session_string"] = encrypt_session(telegram_data["session_string"])
 
         db.users.update_one(
             {"_id": user_id},
             {"$set": {"telegram_account": telegram_data, "updated_at": datetime.now(timezone.utc)}}
         )
         return True
+
+    @staticmethod
+    def get_user_telegram_session(db, user_id: str) -> str:
+        """Fetch and decrypt the user's active Telegram session string."""
+        user = UserManager.get_user_by_id(db, user_id)
+        if not user or not user.get("telegram_account"):
+            return ""
+        from src.utils.encryption import decrypt_session
+        return decrypt_session(user["telegram_account"].get("session_string", ""))
 
     @staticmethod
     def disconnect_telegram_account(db, user_id: str) -> bool:
