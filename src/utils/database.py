@@ -532,6 +532,10 @@ class MongoDB:
 
     # --- Collections ---
     @property
+    def users(self):
+        return self.db.users
+
+    @property
     def rules(self):
         return self.db.forwarding_rules
 

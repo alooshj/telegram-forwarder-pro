@@ -655,7 +655,7 @@ def api_auth_register():
         return jsonify({"success": False, "error": str(e)}), 400
     except Exception as e:
         logger.error(f"Registration error: {e}")
-        return jsonify({"success": False, "error": "Registration failed"}), 500
+        return jsonify({"success": False, "error": f"Registration failed: {str(e)}"}), 500
 
 
 @app.route("/api/auth/login", methods=["POST"])
@@ -669,30 +669,34 @@ def api_auth_login():
     email = data.get("email", "").strip()
     password = data.get("password", "").strip()
 
-    user = UserManager.authenticate_user(db, email, password)
-    if not user:
-        return jsonify({"success": False, "error": "Invalid email or password"}), 401
+    try:
+        user = UserManager.authenticate_user(db, email, password)
+        if not user:
+            return jsonify({"success": False, "error": "Invalid email or password"}), 401
 
-    token = generate_auth_token(str(user["_id"]), user["email"])
-    resp = jsonify({
-        "success": True,
-        "user": {
-            "id": str(user["_id"]),
-            "email": user["email"],
-            "name": user.get("name", ""),
-            "plan": user.get("plan", "free"),
-            "role": user.get("role", "user"),
-            "telegram_connected": bool(user.get("telegram_account")),
-            "telegram_account": {
-                "username": user.get("telegram_account", {}).get("username", "") if user.get("telegram_account") else "",
-                "first_name": user.get("telegram_account", {}).get("first_name", "") if user.get("telegram_account") else "",
-            } if user.get("telegram_account") else None
-        },
-        "token": token,
-        "message": "Logged in successfully"
-    })
-    resp.set_cookie("auth_token", token, max_age=30 * 86400, httponly=True, samesite="Lax")
-    return resp
+        token = generate_auth_token(str(user["_id"]), user["email"])
+        resp = jsonify({
+            "success": True,
+            "user": {
+                "id": str(user["_id"]),
+                "email": user["email"],
+                "name": user.get("name", ""),
+                "plan": user.get("plan", "free"),
+                "role": user.get("role", "user"),
+                "telegram_connected": bool(user.get("telegram_account")),
+                "telegram_account": {
+                    "username": user.get("telegram_account", {}).get("username", "") if user.get("telegram_account") else "",
+                    "first_name": user.get("telegram_account", {}).get("first_name", "") if user.get("telegram_account") else "",
+                } if user.get("telegram_account") else None
+            },
+            "token": token,
+            "message": "Logged in successfully"
+        })
+        resp.set_cookie("auth_token", token, max_age=30 * 86400, httponly=True, samesite="Lax")
+        return resp
+    except Exception as e:
+        logger.error(f"Login error: {e}")
+        return jsonify({"success": False, "error": f"Login failed: {str(e)}"}), 500
 
 
 @app.route("/api/auth/logout", methods=["POST"])
