@@ -118,6 +118,10 @@
                 <span>✍️</span>
                 <span data-i18n="tab_text_rules">Text Transformation</span>
             </button>
+            <button onclick="switchTab('guide')" id="tab-guide-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+                <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                <span data-i18n="tab_guide">User Guide</span>
+            </button>
             <button onclick="switchTab('blacklist')" id="tab-blacklist-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
                 <span>🚫</span>
                 <span data-i18n="tab_blacklist">Blacklist</span>
@@ -314,6 +318,398 @@
                 <!-- Transformation Rules List -->
                 <div id="transform-rules-list" class="space-y-3">
                     <div class="py-8 text-center text-slate-500">Loading text transformation rules...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ==================== TAB: USER GUIDE & DOCUMENTATION ==================== -->
+        <div id="tab-content-guide" class="tab-pane hidden space-y-6 animate-fade-in">
+            <!-- Header Banner -->
+            <div class="relative overflow-hidden rounded-2xl bg-gradient-to-br from-surface-900 via-surface-850 to-surface-900 border border-slate-700/80 p-6 sm:p-7 shadow-xl">
+                <div class="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="space-y-2">
+                        <div class="inline-flex items-center space-x-2 rtl:space-x-reverse px-3 py-1 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 text-xs font-semibold">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                            <span data-i18n="guide_badge">دليل الاستخدام والتوثيق البرمجي</span>
+                        </div>
+                        <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight" data-i18n="guide_main_title">
+                            دليل تشغيل وإدارة Telegram Forwarder Pro
+                        </h1>
+                        <p class="text-sm text-slate-400 max-w-2xl leading-relaxed" data-i18n="guide_main_desc">
+                            مرجع شامل يوضح كيفية ضبط مسارات التوجيه اللحظي، تخصيص القواعد لكل قناة، واستخدام التعبيرات النمطية (Regex) لمعالجة النصوص بدقة.
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <div class="px-4 py-2.5 rounded-xl bg-slate-800/80 border border-slate-700 text-xs font-mono text-emerald-400 flex items-center gap-2">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                            <span data-i18n="guide_latency_badge">البث اللحظي: &lt; 1 ثانية</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 1. Quick Start Guide Section -->
+            <div class="rounded-2xl bg-surface-900 border border-slate-800 p-6 space-y-6 shadow-sm">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div class="flex items-center space-x-3 rtl:space-x-reverse">
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-white" data-i18n="guide_sec1_title">البداية السريعة (Quick Start Guide)</h2>
+                            <p class="text-xs text-slate-400" data-i18n="guide_sec1_desc">خطوات متسلسلة لربط القنوات وضمان سرعة التوجيه اللحظي</p>
+                        </div>
+                    </div>
+                    <span class="text-xs font-mono px-2.5 py-1 rounded-lg bg-slate-800 text-slate-400" data-i18n="guide_sec1_badge">3 خطوات</span>
+                </div>
+
+                <!-- 3 Step Cards Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <!-- Step 1 -->
+                    <div class="relative p-5 rounded-xl bg-surface-850 border border-slate-800 hover:border-slate-700 transition space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="w-7 h-7 rounded-lg bg-indigo-600/20 text-indigo-400 border border-indigo-500/30 flex items-center justify-center text-xs font-bold font-mono">01</span>
+                            <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                        </div>
+                        <h3 class="text-sm font-bold text-white" data-i18n="guide_step1_title">تحديد القناة المصدر</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed" data-i18n="guide_step1_desc">
+                            تأكد من انضمام حساب التوجيه (<code class="text-indigo-300 font-mono">@ayg1133</code>) إلى القناة المصدر، ثم انسخ معرف الـ ID الرقمي (مثل <code class="text-slate-300 font-mono">-1001234567890</code>).
+                        </p>
+                    </div>
+
+                    <!-- Step 2 -->
+                    <div class="relative p-5 rounded-xl bg-surface-850 border border-slate-800 hover:border-slate-700 transition space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="w-7 h-7 rounded-lg bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center text-xs font-bold font-mono">02</span>
+                            <svg class="w-4 h-4 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path><path d="m9 12 2 2 4-4"></path></svg>
+                        </div>
+                        <h3 class="text-sm font-bold text-white" data-i18n="guide_step2_title">ترقية الحساب لمشرف في الهدف</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed" data-i18n="guide_step2_desc">
+                            أضف حساب التوجيه كمشرف (Admin) في كافة القنوات الهدف، مع تفعيل صلاحية <strong class="text-emerald-300 font-medium">"نشر الرسائل (Post Messages)"</strong>.
+                        </p>
+                    </div>
+
+                    <!-- Step 3 -->
+                    <div class="relative p-5 rounded-xl bg-surface-850 border border-slate-800 hover:border-slate-700 transition space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="w-7 h-7 rounded-lg bg-cyan-600/20 text-cyan-400 border border-cyan-500/30 flex items-center justify-center text-xs font-bold font-mono">03</span>
+                            <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </div>
+                        <h3 class="text-sm font-bold text-white" data-i18n="guide_step3_title">إنشاء مسار التوجيه</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed" data-i18n="guide_step3_desc">
+                            اضغط على "إضافة مسار جديد"، حدد المصدر والأهداف المرجوة واختر أنواع الوسائط المراد نقلها ثم اضغط حفظ.
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Admin Permission Alert Banner -->
+                <div class="p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-start space-x-3 rtl:space-x-reverse">
+                    <svg class="w-5 h-5 text-amber-400 flex-shrink-0 mt-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    <div class="space-y-1 text-xs text-slate-300 leading-relaxed">
+                        <span class="font-bold text-amber-300 block" data-i18n="guide_alert_title">تنبيه هام حول روابط الدعوة المؤقتة (Invite Links):</span>
+                        <p data-i18n="guide_alert_desc">
+                            يُفضل دائماً استخدام <strong>معرف القناة ID الرقمي</strong> (مثل <code class="text-amber-200 font-mono bg-slate-900 px-1 py-0.5 rounded">-1001234567890</code>) أو اسم المستخدم (<code class="text-amber-200 font-mono bg-slate-900 px-1 py-0.5 rounded">@channel</code>) بدلاً من روابط الدعوة الخاصة (<code class="text-amber-400 font-mono">t.me/+...</code>)، لتفادي قيود فترات الانتظار (FloodWait) التي يفرضها تليجرام على فحص الروابط.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 2. Scope Control Section -->
+            <div class="rounded-2xl bg-surface-900 border border-slate-800 p-6 space-y-6 shadow-sm">
+                <div class="flex items-center space-x-3 rtl:space-x-reverse border-b border-slate-800 pb-4">
+                    <div class="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white" data-i18n="guide_sec2_title">نطاق تطبيق القواعد (Scope Control)</h2>
+                        <p class="text-xs text-slate-400" data-i18n="guide_sec2_desc">التحكم في تخصيص التعديلات لكل قناة بشكل مستقل أو عام</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <!-- Global Rules -->
+                    <div class="p-5 rounded-xl bg-surface-850 border border-slate-800 space-y-3">
+                        <div class="inline-flex items-center space-x-1.5 rtl:space-x-reverse px-2.5 py-1 rounded-md bg-purple-500/10 border border-purple-500/20 text-purple-300 text-xs font-semibold">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 2 7 12 12 22 7 12 2"></polygon><polyline points="2 17 12 22 22 17"></polyline><polyline points="2 12 12 17 22 12"></polyline></svg>
+                            <span data-i18n="guide_global_badge">القواعد العامة (Global Rules)</span>
+                        </div>
+                        <h3 class="text-sm font-bold text-white" data-i18n="guide_global_title">تطبيق التعديل على جميع القنوات</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed" data-i18n="guide_global_desc">
+                            عند ترك خانة <strong class="text-slate-200">"نطاق تطبيق القاعدة (القناة الهدف)"</strong> فارغة، سيقوم المحرك بتنفيذ قاعدة التعديل (مثل حذف الروابط أو استبدال اسم) على <strong>جميع الرسائل المنقولة لأي قناة هدف</strong> تلقائياً.
+                        </p>
+                        <div class="p-3 bg-slate-900/90 rounded-lg border border-slate-800 text-[11px] font-mono text-slate-400">
+                            Target Channel Scope: <span class="text-emerald-400 font-bold">null (All Targets)</span>
+                        </div>
+                    </div>
+
+                    <!-- Target Specific Rules -->
+                    <div class="p-5 rounded-xl bg-surface-850 border border-slate-800 space-y-3">
+                        <div class="inline-flex items-center space-x-1.5 rtl:space-x-reverse px-2.5 py-1 rounded-md bg-cyan-500/10 border border-cyan-500/20 text-cyan-300 text-xs font-semibold">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg>
+                            <span data-i18n="guide_target_badge">قواعد مخصصة (Channel-Specific)</span>
+                        </div>
+                        <h3 class="text-sm font-bold text-white" data-i18n="guide_target_title">تخصيص تذييل أو استبدال لقناة معينة</h3>
+                        <p class="text-xs text-slate-400 leading-relaxed" data-i18n="guide_target_desc">
+                            عند وضع معرّف قناة محددة في خانة النطاق، سيتم تفعيل التعديل <strong>فقط وحصرياً عند الإرسال لتلك القناة</strong>. يمكنك مثلاً وضع تذييل خاص بالقناة A، وتذييل مختلف تماماً لقناة VIP B من نفس القناة المصدر.
+                        </p>
+                        <div class="p-3 bg-slate-900/90 rounded-lg border border-slate-800 text-[11px] font-mono text-slate-400">
+                            Target Channel Scope: <span class="text-cyan-400 font-bold">-1002233445566</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 3. Transformations Guide Section -->
+            <div class="rounded-2xl bg-surface-900 border border-slate-800 p-6 space-y-6 shadow-sm">
+                <div class="flex items-center space-x-3 rtl:space-x-reverse border-b border-slate-800 pb-4">
+                    <div class="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"></path></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white" data-i18n="guide_sec3_title">أنواع تحويل النصوص (Transformations Guide)</h2>
+                        <p class="text-xs text-slate-400" data-i18n="guide_sec3_desc">شرح تفصيلي للخيارات الـ 5 المتاحة في القائمة المنسدلة لمعالجة المحتوى</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <!-- 1. Replace -->
+                    <div class="p-4 rounded-xl bg-surface-850 border border-slate-800 hover:border-slate-700 transition space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-0.5 text-xs font-bold rounded bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">Replace</span>
+                            <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+                        </div>
+                        <h4 class="text-sm font-bold text-white" data-i18n="guide_type_replace_title">استبدال نص مباشر (Direct Text Replace)</h4>
+                        <p class="text-xs text-slate-400 leading-relaxed" data-i18n="guide_type_replace_desc">
+                            استبدال كلمة أو رابط محدد بنص بديل بدقة تامة.
+                        </p>
+                        <div class="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-slate-300">
+                            <span class="text-rose-400">@old_channel</span> ➔ <span class="text-emerald-400 font-bold">@new_channel</span>
+                        </div>
+                    </div>
+
+                    <!-- 2. Regex -->
+                    <div class="p-4 rounded-xl bg-surface-850 border border-slate-800 hover:border-slate-700 transition space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-0.5 text-xs font-bold rounded bg-purple-500/10 text-purple-400 border border-purple-500/20 font-mono">Regex</span>
+                            <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"></polyline><polyline points="8 6 2 12 8 18"></polyline></svg>
+                        </div>
+                        <h4 class="text-sm font-bold text-white" data-i18n="guide_type_regex_title">تعبير نمطي متقدم (Regular Expression)</h4>
+                        <p class="text-xs text-slate-400 leading-relaxed" data-i18n="guide_type_regex_desc">
+                            معالجة الأنماط المتغيرة مثل حذف جميع الروابط أو أي معرف يبدأ بـ @.
+                        </p>
+                        <div class="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-slate-300">
+                            Pattern: <span class="text-cyan-400 font-bold">@[a-zA-Z0-9_]+</span>
+                        </div>
+                    </div>
+
+                    <!-- 3. Strip -->
+                    <div class="p-4 rounded-xl bg-surface-850 border border-slate-800 hover:border-slate-700 transition space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-0.5 text-xs font-bold rounded bg-rose-500/10 text-rose-400 border border-rose-500/20 font-mono">Strip</span>
+                            <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"></circle><circle cx="6" cy="18" r="3"></circle><line x1="20" y1="4" x2="8.12" y2="15.88"></line><line x1="14.47" y1="14.48" x2="20" y2="20"></line><line x1="8.12" y1="8.12" x2="12" y2="12"></line></svg>
+                        </div>
+                        <h4 class="text-sm font-bold text-white" data-i18n="guide_type_strip_title">حذف وإزالة (Strip Pattern / Remove)</h4>
+                        <p class="text-xs text-slate-400 leading-relaxed" data-i18n="guide_type_strip_desc">
+                            مسح وحذف عبارات الإعلانات والروابط المزعجة من الرسالة دون ترك أثر.
+                        </p>
+                        <div class="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-slate-300">
+                            Target: <span class="text-rose-400">"اشترك في القناة"</span> ➔ <span class="text-slate-500">(حذف)</span>
+                        </div>
+                    </div>
+
+                    <!-- 4. Footer -->
+                    <div class="p-4 rounded-xl bg-surface-850 border border-slate-800 hover:border-slate-700 transition space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-0.5 text-xs font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">Footer</span>
+                            <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="16"></line><line x1="8" y1="12" x2="16" y2="12"></line></svg>
+                        </div>
+                        <h4 class="text-sm font-bold text-white" data-i18n="guide_type_footer_title">إضافة تذييل (Append Custom Footer)</h4>
+                        <p class="text-xs text-slate-400 leading-relaxed" data-i18n="guide_type_footer_desc">
+                            إضافة توقيع وقنوات التواصل في نهاية كل منشور مع سطرين فارغين تلقائياً.
+                        </p>
+                        <div class="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-emerald-400">
+                            \n\n📢 تابعنا: @my_channel
+                        </div>
+                    </div>
+
+                    <!-- 5. Prefix -->
+                    <div class="p-4 rounded-xl bg-surface-850 border border-slate-800 hover:border-slate-700 transition space-y-2.5">
+                        <div class="flex items-center justify-between">
+                            <span class="px-2.5 py-0.5 text-xs font-bold rounded bg-amber-500/10 text-amber-400 border border-amber-500/20 font-mono">Prefix</span>
+                            <svg class="w-4 h-4 text-slate-500" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12h8"></path><path d="M4 18V6"></path><path d="M12 18V6"></path></svg>
+                        </div>
+                        <h4 class="text-sm font-bold text-white" data-i18n="guide_type_prefix_title">إضافة ترويسة (Prepend Custom Prefix)</h4>
+                        <p class="text-xs text-slate-400 leading-relaxed" data-i18n="guide_type_prefix_desc">
+                            وضع كلمة ترويجية أو عنوان رئيسي في السطر الأول أعلى المنشور.
+                        </p>
+                        <div class="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-amber-300">
+                            ⚡ عاجل | \n(نص الخبر)
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 4. Regex & Common Rules Cheat Sheet Section -->
+            <div class="rounded-2xl bg-surface-900 border border-slate-800 p-6 space-y-6 shadow-sm">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-4">
+                    <div class="flex items-center space-x-3 rtl:space-x-reverse">
+                        <div class="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 17 10 11 4 5"></polyline><line x1="12" y1="19" x2="20" y2="19"></line></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-lg font-bold text-white" data-i18n="guide_sec4_title">جدول الأكواد الجاهزة (Regex & Common Cheat Sheet)</h2>
+                            <p class="text-xs text-slate-400" data-i18n="guide_sec4_desc">أكثر الأكواد استخداماً لحذف الروابط وتعديل المنشورات مع إمكانية النسخ الفوري</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Cheat Sheet Table -->
+                <div class="overflow-x-auto rounded-xl border border-slate-800 bg-surface-850">
+                    <table class="w-full text-right text-xs">
+                        <thead class="bg-slate-900/80 text-slate-400 border-b border-slate-800 font-semibold">
+                            <tr>
+                                <th class="py-3 px-4" data-i18n="th_guide_target">الوظيفة والهدف</th>
+                                <th class="py-3 px-4" data-i18n="th_guide_type">النوع (Type)</th>
+                                <th class="py-3 px-4" data-i18n="th_guide_pattern">كود النمط (Pattern)</th>
+                                <th class="py-3 px-4" data-i18n="th_guide_replacement">القيمة البديلة (Replacement)</th>
+                                <th class="py-3 px-4 text-center" data-i18n="th_guide_action">نسخ الكود</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800 text-slate-300">
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="py-3.5 px-4">
+                                    <p class="font-bold text-white">حذف جميع المعرفات واليوزرات (@username)</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">يمسح أي اسم مستخدم أو منشن يبدأ بـ @ في الرسالة</p>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">Regex</span>
+                                </td>
+                                <td class="py-3.5 px-4 font-mono font-bold text-cyan-300 text-[11px]">
+                                    @[a-zA-Z0-9_]+
+                                </td>
+                                <td class="py-3.5 px-4 font-mono text-slate-400 text-[11px]">
+                                    (اتركه فارغاً للحذف)
+                                </td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <button onclick="copySnippet('@[a-zA-Z0-9_]+', this)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition inline-flex items-center gap-1 text-xs">
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        <span>نسخ</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="py-3.5 px-4">
+                                    <p class="font-bold text-white">حذف جميع روابط المواقع والتليجرام</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">يحذف أي رابط يبدأ بـ http أو https أو روابط t.me</p>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">Regex</span>
+                                </td>
+                                <td class="py-3.5 px-4 font-mono font-bold text-cyan-300 text-[11px]">
+                                    https?:\/\/\S+|t\.me\/\S+
+                                </td>
+                                <td class="py-3.5 px-4 font-mono text-slate-400 text-[11px]">
+                                    (اتركه فارغاً للحذف)
+                                </td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <button onclick="copySnippet('https?:\\/\\/\\S+|t\\.me\\/\\S+', this)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition inline-flex items-center gap-1 text-xs">
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        <span>نسخ</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="py-3.5 px-4">
+                                    <p class="font-bold text-white">حذف الهاشتاجات (#هاشتاج)</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">يزيل الهاشتاجات العربية والإنجليزية من المنشور</p>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">Regex</span>
+                                </td>
+                                <td class="py-3.5 px-4 font-mono font-bold text-cyan-300 text-[11px]">
+                                    #[a-zA-Z0-9_\u0600-\u06FF]+
+                                </td>
+                                <td class="py-3.5 px-4 font-mono text-slate-400 text-[11px]">
+                                    (اتركه فارغاً للحذف)
+                                </td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <button onclick="copySnippet('#[a-zA-Z0-9_\\u0600-\\u06FF]+', this)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition inline-flex items-center gap-1 text-xs">
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        <span>نسخ</span>
+                                    </button>
+                                </td>
+                            </tr>
+                            <tr class="hover:bg-slate-800/40 transition">
+                                <td class="py-3.5 px-4">
+                                    <p class="font-bold text-white">إضافة تذييل وحقوق القناة الرسمية</p>
+                                    <p class="text-[11px] text-slate-400 mt-0.5">يضيف حقوق قناتك في نهاية المنشور بعد سطرين فاصلين</p>
+                                </td>
+                                <td class="py-3.5 px-4">
+                                    <span class="px-2 py-0.5 text-[10px] font-mono font-bold rounded bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Footer</span>
+                                </td>
+                                <td class="py-3.5 px-4 font-mono text-slate-400 text-[11px]">
+                                    (اتركه فارغاً للتطبيق على الكل)
+                                </td>
+                                <td class="py-3.5 px-4 font-mono font-bold text-emerald-400 text-[11px]">
+                                    قناتنا الرسمية: https://t.me/your_channel
+                                </td>
+                                <td class="py-3.5 px-4 text-center">
+                                    <button onclick="copySnippet('قناتنا الرسمية: https://t.me/your_channel', this)" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white border border-slate-700 transition inline-flex items-center gap-1 text-xs">
+                                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                        <span>نسخ</span>
+                                    </button>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- 5. Troubleshooting & Priorities Section -->
+            <div class="rounded-2xl bg-surface-900 border border-slate-800 p-6 space-y-6 shadow-sm">
+                <div class="flex items-center space-x-3 rtl:space-x-reverse border-b border-slate-800 pb-4">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-bold text-white" data-i18n="guide_sec5_title">الأسئلة الشائعة وتصحيح الأخطاء (Troubleshooting)</h2>
+                        <p class="text-xs text-slate-400" data-i18n="guide_sec5_desc">إرشادات حل المشاكل وفهم نظام أولوية القواعد (Priority Precedence)</p>
+                    </div>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- FAQ 1 -->
+                    <div class="p-4 rounded-xl bg-surface-850 border border-slate-800 space-y-2">
+                        <div class="flex items-center space-x-2 rtl:space-x-reverse font-bold text-sm text-white">
+                            <svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <h4 data-i18n="faq_priority_title">كيف يعمل نظام الأولوية (Priority) عند وجود أكثر من قاعدة؟</h4>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed pr-6 rtl:pr-6" data-i18n="faq_priority_desc">
+                            يتم تنفيذ القواعد بترتيب تصاعدي حسب رقم الأولوية (<strong class="text-slate-200">الرقم 1 ينفذ أولاً</strong>، ثم الرقم 2، ثم الرقم 3). احرص على وضع قواعد الحذف أو الاستبدال العام بالأولوية 1، وقواعد إضافة التذييل (Footer) بأولوية أعلى (مثل 10) حتى لا يتم مسح التذييل بقواعد الحذف السابقة.
+                        </p>
+                    </div>
+
+                    <!-- FAQ 2 -->
+                    <div class="p-4 rounded-xl bg-surface-850 border border-slate-800 space-y-2">
+                        <div class="flex items-center space-x-2 rtl:space-x-reverse font-bold text-sm text-white">
+                            <svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <h4 data-i18n="faq_perm_title">لماذا تظهر رسالة خطأ "Account has no permission to send messages"؟</h4>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed pr-6 rtl:pr-6" data-i18n="faq_perm_desc">
+                            هذا يعني أن حساب التوجيه (<code class="text-indigo-300 font-mono">@ayg1133</code>) ليس مشرفاً في القناة الهدف أو أن صلاحية "نشر الرسائل" معطلة عنه في إعدادات القناة. قم بالدخول إلى إدارة القناة وتفعيل كامل الصلاحيات للمشرف.
+                        </p>
+                    </div>
+
+                    <!-- FAQ 3 -->
+                    <div class="p-4 rounded-xl bg-surface-850 border border-slate-800 space-y-2">
+                        <div class="flex items-center space-x-2 rtl:space-x-reverse font-bold text-sm text-white">
+                            <svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+                            <h4 data-i18n="faq_caption_title">ما هو الحد الأقصى لأحرف الرسالة عند توجيه الصور أو الفيديوهات؟</h4>
+                        </div>
+                        <p class="text-xs text-slate-400 leading-relaxed pr-6 rtl:pr-6" data-i18n="faq_caption_desc">
+                            يفرض تليجرام حداً أقصى قدره <strong class="text-amber-300">1024 حرفاً</strong> للنصوص المرفقة مع الصور والفيديوهات (Caption). إذا كان التذييل طويلاً جداً وتجاوز الحد، سيسجل المحرك خطأ <code class="text-rose-400 font-mono">MediaCaptionTooLongError</code> ولن يرسل المنشور. احرص على إبقاء التذييل موجزاً.
+                        </p>
+                    </div>
                 </div>
             </div>
         </div>
@@ -709,6 +1105,7 @@
                 tab_overview: "نظرة عامة",
                 tab_forwarding: "قواعد التوجيه",
                 tab_text_rules: "تحويل النصوص",
+                tab_guide: "دليل الاستخدام",
                 tab_blacklist: "القائمة السوداء",
                 tab_logs: "السجلات اللحظية",
                 tab_settings: "الإعدادات والتشخيص",
@@ -794,6 +1191,7 @@
                 tab_overview: "Overview",
                 tab_forwarding: "Forwarding Rules",
                 tab_text_rules: "Text Transformation",
+                tab_guide: "User Guide",
                 tab_blacklist: "Blacklist",
                 tab_logs: "Real-Time Logs",
                 tab_settings: "Diagnostics & Settings",
@@ -936,6 +1334,14 @@
             if (tabId === 'forwarding' || tabId === 'text-rules') loadRules();
             if (tabId === 'blacklist') loadBlacklist();
             if (tabId === 'logs') loadLogs();
+        }
+
+        function copySnippet(text, btn) {
+            navigator.clipboard.writeText(text);
+            const origHTML = btn.innerHTML;
+            btn.innerHTML = `<svg class="w-3.5 h-3.5 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg><span class="text-emerald-400 font-semibold">${currentLang === 'ar' ? 'تم النسخ' : 'Copied'}</span>`;
+            setTimeout(() => { btn.innerHTML = origHTML; }, 2000);
+            showToast(currentLang === 'ar' ? 'تم نسخ الكود للحافظة' : 'Code copied to clipboard', 'info');
         }
 
         // ==================== API HELPERS ====================
