@@ -26,11 +26,16 @@ class LicenseKeyManager:
 
     @staticmethod
     def _get_col(db, col_name: str):
+        if db is None:
+            return None
         if hasattr(db, col_name):
-            return getattr(db, col_name)
-        if hasattr(db, "db"):
-            if hasattr(db.db, col_name):
-                return getattr(db.db, col_name)
+            try:
+                col = getattr(db, col_name)
+                if col is not None:
+                    return col
+            except Exception:
+                pass
+        if hasattr(db, "db") and db.db is not None:
             try:
                 return db.db[col_name]
             except Exception:

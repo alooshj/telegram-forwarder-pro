@@ -599,43 +599,41 @@ class MongoDB:
     # --- Collections ---
     @property
     def users(self):
-        return self.db.users
+        return self.db["users"]
 
     @property
     def pending_auth(self):
-        return self.db.pending_auth
+        return self.db["pending_auth"]
 
     @property
     def rules(self):
-        return self.db.forwarding_rules
+        return self.db["forwarding_rules"]
 
     @property
     def sessions(self):
-        return self.db.sessions
+        return self.db["sessions"]
 
     @property
     def processed_posts(self):
-        return self.db.processed_posts
+        return self.db["processed_posts"]
 
     @property
     def blacklist(self):
-        return self.db.blacklist
+        return self.db["blacklist"]
 
     @property
     def logs(self):
-        return self.db.forwarding_logs
+        return self.db["forwarding_logs"]
 
     @property
     def transactions(self):
-        return getattr(self.db, "transactions", None) or self.db["transactions"]
+        return self.db["transactions"]
 
     @property
     def license_keys(self):
-        return getattr(self.db, "license_keys", None) or self.db["license_keys"]
+        return self.db["license_keys"]
 
     def __getattr__(self, name):
-        if hasattr(self.db, name):
-            return getattr(self.db, name)
         return self.db[name]
 
 
