@@ -1917,10 +1917,14 @@
         async function api(url, method = 'GET', body = null) {
             try {
                 const headers = { 'Content-Type': 'application/json' };
+                const localToken = localStorage.getItem('teletips_auth_token');
+                if (localToken) {
+                    headers['Authorization'] = `Bearer ${localToken}`;
+                }
                 if (window.Clerk && window.Clerk.session) {
                     try {
-                        const token = await window.Clerk.session.getToken();
-                        if (token) headers['Authorization'] = `Bearer ${token}`;
+                        const clerkToken = await window.Clerk.session.getToken();
+                        if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`;
                     } catch (e) {}
                 }
                 const opts = { method, headers };
@@ -2891,6 +2895,7 @@
             if (clerkInstance && clerkInstance.user) {
                 try { await clerkInstance.signOut(); } catch (e) {}
             }
+            localStorage.removeItem('teletips_auth_token');
             await api('/api/auth/logout', 'POST');
             currentUser = null;
             closeAuthModal();
@@ -2915,9 +2920,39 @@
             return 'oriented-mullet-5681.clerk.accounts.dev';
         }
 
+        async function syncClerkUser(user) {
+            if (!user) return;
+            try {
+                const token = clerkInstance && clerkInstance.session ? await clerkInstance.session.getToken() : '';
+                const syncRes = await api('/api/auth/clerk-sync', 'POST', {
+                    clerk_id: user.id,
+                    email: user.primaryEmailAddress?.emailAddress || '',
+                    name: user.fullName || (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : ''),
+                    token: token
+                });
+                if (syncRes && syncRes.success && syncRes.user) {
+                    currentUser = syncRes.user;
+                    if (syncRes.token) {
+                        localStorage.setItem('teletips_auth_token', syncRes.token);
+                    }
+                    await checkAuthStatus();
+                    await fetchStatus();
+                    await loadRules();
+                    await loadUserSubscription();
+                }
+            } catch (err) {
+                console.warn('Clerk sync error:', err);
+            }
+        }
+
         async function initClerk() {
             try {
-                if (clerkInstance) return clerkInstance;
+                if (clerkInstance) {
+                    if (clerkInstance.user && !currentUser) {
+                        await syncClerkUser(clerkInstance.user);
+                    }
+                    return clerkInstance;
+                }
                 const configRes = await api('/api/config/clerk');
                 const publishableKey = configRes.publishableKey || window.CLERK_PUBLISHABLE_KEY || 'pk_test_b3JpZW50ZWQtbXVsbGV0LTU2ODEuY2xlcmsuYWNjb3VudHMuZGV2JA';
                 if (!publishableKey) return null;
@@ -2958,22 +2993,18 @@
                     });
                     clerkInstance = window.Clerk;
 
+                    // Immediately sync if user is already logged in (e.g. returning from OAuth redirect)
+                    if (clerkInstance.user) {
+                        await syncClerkUser(clerkInstance.user);
+                    }
+
                     clerkInstance.addListener(async (emission) => {
                         if (emission.user) {
-                            const token = clerkInstance.session ? await clerkInstance.session.getToken() : '';
-                            const syncRes = await api('/api/auth/clerk-sync', 'POST', {
-                                clerk_id: emission.user.id,
-                                email: emission.user.primaryEmailAddress?.emailAddress || '',
-                                name: emission.user.fullName || '',
-                                token: token
-                            });
-                            if (syncRes.success) {
-                                currentUser = syncRes.user;
-                                await checkAuthStatus();
-                                await fetchStatus();
-                                await loadRules();
-                                await loadUserSubscription();
-                            }
+                            await syncClerkUser(emission.user);
+                        } else if (!emission.user && currentUser) {
+                            currentUser = null;
+                            localStorage.removeItem('teletips_auth_token');
+                            await checkAuthStatus();
                         }
                     });
                 }
@@ -3719,8 +3750,8 @@
         // ==================== INIT ====================
         window.addEventListener('DOMContentLoaded', async () => {
             setLanguage(currentLang);
+            await initClerk();
             await checkAuthStatus();
-            initClerk();
             checkAdminVisibility();
             await loadUserSubscription();
             await fetchStatus();
