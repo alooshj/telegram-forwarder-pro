@@ -761,7 +761,7 @@ def api_telegram_send_code():
     user = get_current_user_from_request(db)
     user_id = str(user["_id"]) if user else f"guest_{phone_number}"
 
-    result = asyncio.run(send_telegram_login_code(api_id, api_hash, phone_number, user_id))
+    result = asyncio.run(send_telegram_login_code(db, api_id, api_hash, phone_number, user_id))
     return jsonify(result)
 
 
@@ -787,7 +787,7 @@ def api_telegram_verify_code():
     user = get_current_user_from_request(db)
     user_id = str(user["_id"]) if user else f"guest_{phone_number}"
 
-    result = asyncio.run(verify_telegram_login_code(api_id, api_hash, user_id, code, password))
+    result = asyncio.run(verify_telegram_login_code(db, api_id, api_hash, user_id, code, password, phone_number))
 
     if result.get("success") and user and db:
         # Save session to user profile

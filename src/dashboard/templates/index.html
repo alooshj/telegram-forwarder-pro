@@ -2199,6 +2199,7 @@
         async function submitTelegramVerifyCode() {
             const code = document.getElementById('tg-code-input').value.trim();
             const password = document.getElementById('tg-2fa-input').value;
+            const phone = (pendingTelegramPhone || document.getElementById('tg-phone-input').value).trim();
             if (!code) {
                 showToast(currentLang === 'ar' ? 'يرجى إدخال كود التحقق' : 'Please enter verification code', 'warning');
                 return;
@@ -2212,7 +2213,7 @@
                 const res = await api('/api/auth/telegram/verify-code', 'POST', {
                     code: code,
                     password: password || undefined,
-                    phone_number: pendingTelegramPhone
+                    phone_number: phone
                 });
 
                 if (res.requires_2fa) {

@@ -128,6 +128,13 @@ class SQLiteDB:
                         telegram_account TEXT,
                         updated_at TIMESTAMP
                     );
+                    CREATE TABLE IF NOT EXISTS pending_auth (
+                        _id TEXT PRIMARY KEY,
+                        phone TEXT,
+                        phone_code_hash TEXT,
+                        temp_session TEXT,
+                        created_at REAL
+                    );
                 """)
                 # Migrations for existing databases
                 for col in ["target_ids", "media_types", "user_id"]:
@@ -143,6 +150,10 @@ class SQLiteDB:
     @property
     def users(self):
         return _SQLiteCollection(self, "users")
+
+    @property
+    def pending_auth(self):
+        return _SQLiteCollection(self, "pending_auth")
 
     @property
     def rules(self):
@@ -534,6 +545,10 @@ class MongoDB:
     @property
     def users(self):
         return self.db.users
+
+    @property
+    def pending_auth(self):
+        return self.db.pending_auth
 
     @property
     def rules(self):
