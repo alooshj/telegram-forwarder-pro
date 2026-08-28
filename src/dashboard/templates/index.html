@@ -4,6 +4,33 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Telegram Forwarder Pro — لوحة التحكم</title>
+    <script>
+        // Suppress third-party Chrome Extension promise rejections (e.g., 200.js)
+        window.addEventListener('unhandledrejection', function(e) {
+            const s = (e.reason && (e.reason.stack || e.reason.message)) || String(e.reason || '');
+            if (s.includes('200.js') || s.includes('M_ID') || s.includes('chrome-extension')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        }, true);
+
+        window.addEventListener('error', function(e) {
+            const s = (e.filename || '') + ' ' + (e.message || '');
+            if (s.includes('200.js') || s.includes('M_ID') || s.includes('chrome-extension')) {
+                e.preventDefault();
+                e.stopImmediatePropagation();
+            }
+        }, true);
+
+        (function() {
+            const _err = console.error;
+            console.error = function(...args) {
+                const txt = args.map(a => (a && a.stack ? a.stack : String(a))).join(' ');
+                if (txt.includes('200.js') || txt.includes('M_ID')) return;
+                _err.apply(console, args);
+            };
+        })();
+    </script>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
