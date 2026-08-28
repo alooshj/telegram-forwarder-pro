@@ -991,16 +991,46 @@ def api_telegram_avatar(entity_id):
     return resp
 
 
+@app.errorhandler(400)
+def bad_request(error):
+    return jsonify({"success": False, "error": "Bad request", "detail": str(error)}), 400
+
+
+@app.errorhandler(401)
+def unauthorized(error):
+    return jsonify({"success": False, "error": "Unauthorized", "detail": str(error)}), 401
+
+
+@app.errorhandler(403)
+def forbidden(error):
+    return jsonify({"success": False, "error": "Forbidden", "detail": str(error)}), 403
+
+
 @app.errorhandler(404)
 def not_found(error):
-    """Handle 404 errors with JSON response."""
-    return jsonify({"error": "Not found"}), 404
+    return jsonify({"success": False, "error": "Endpoint not found"}), 404
 
 
 @app.errorhandler(500)
 def internal_error(error):
-    """Handle 500 errors with JSON response."""
-    return jsonify({"error": "Internal server error"}), 500
+    logger.error(f"Internal server error: {error}", exc_info=True)
+    return jsonify({"success": False, "error": "Internal server error", "detail": str(error)}), 500
+
+
+@app.errorhandler(502)
+def bad_gateway(error):
+    return jsonify({"success": False, "error": "Bad gateway", "detail": str(error)}), 502
+
+
+@app.errorhandler(503)
+def service_unavailable(error):
+    return jsonify({"success": False, "error": "Service temporarily unavailable", "detail": str(error)}), 503
+
+
+@app.errorhandler(Exception)
+def handle_unexpected_error(error):
+    logger.error(f"Unhandled exception in request: {error}", exc_info=True)
+    return jsonify({"success": False, "error": "Unexpected server error", "detail": str(error)}), 500
 
 
 @app.route("/<path:catch_all>", methods=["GET", "POST"])

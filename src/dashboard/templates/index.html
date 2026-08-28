@@ -1125,6 +1125,26 @@
 
     <!-- JavaScript Application Logic -->
     <script>
+        // ==================== DEFENSIVE GUARDS & ERROR SHIELDS ====================
+        try {
+            window.M_ID = window.M_ID || {};
+            if (typeof Object.prototype.M_ID === 'undefined') {
+                Object.defineProperty(Object.prototype, 'M_ID', {
+                    value: undefined,
+                    writable: true,
+                    configurable: true
+                });
+            }
+        } catch (e) {}
+
+        // Global uncaught error listener to suppress external browser extension noise
+        window.addEventListener('error', function(event) {
+            if (event.filename && (event.filename.includes('200.js') || event.filename.includes('chrome-extension'))) {
+                event.preventDefault();
+                return true;
+            }
+        });
+
         // ==================== I18N DICTIONARY ====================
         const i18n = {
             ar: {
@@ -1387,10 +1407,31 @@
                 const opts = { method, headers: { 'Content-Type': 'application/json' } };
                 if (body) opts.body = JSON.stringify(body);
                 const res = await fetch(url, opts);
-                return await res.json();
+                const contentType = res.headers.get('content-type') || '';
+
+                if (contentType.includes('application/json')) {
+                    const data = await res.json();
+                    if (!res.ok && !data.error) {
+                        data.error = `HTTP ${res.status}: ${res.statusText || 'Error'}`;
+                    }
+                    return data;
+                } else {
+                    const text = await res.text();
+                    if (!res.ok) {
+                        const errorMsg = res.status === 502
+                            ? (currentLang === 'ar' ? 'تعذر الاتصال بالسيرفر مؤقتاً (502 Bad Gateway)' : 'Server temporarily unavailable (502 Bad Gateway)')
+                            : `HTTP ${res.status}: ${res.statusText || 'Server Error'}`;
+                        return { success: false, error: errorMsg, status: res.status };
+                    }
+                    return { success: true, text };
+                }
             } catch (err) {
-                console.error(`API Error on ${url}:`, err);
-                return { error: err.message };
+                console.warn(`Network/API issue on ${url}:`, err);
+                return {
+                    success: false,
+                    error: currentLang === 'ar' ? 'تعذر الاتصال بالسيرفر، يرجى التحقق من اتصالك' : 'Connection failed. Please check network.',
+                    network_error: true
+                };
             }
         }
 
