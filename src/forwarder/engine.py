@@ -1,41 +1,44 @@
 """
 Forwarder Engine
 ----------------
-Core forwarding logic using Telethon. Handles:
-- Fetching posts from source channels
-- Applying rules via RulesEngine
-- Forwarding to target channels
-- Duplicate prevention via MongoDB post history
-- FLOOD_WAIT rate limit handling
-- Auto-reconnect on connection loss
+Enterprise-Grade Telegram post forwarder using Telethon:
+- Smart Forwarding Modes: FORWARD (official), COPY (clean stealth), AUTO_FALLBACK (auto in-memory copy on restricted channels)
+- MediaGroupCollector (Debounce album buffering & multi-media batching)
+- Advanced Transformation Pipeline: Whitelist/Blacklist keywords, media filters, mention/link stripping, dynamic templating
+- Performance Protection: forward_delay (0-30s) and non-blocking per-target FloodWait scheduling
+- Zero disk footprint in-memory ByteIO buffers
 """
 
 import asyncio
+import io
 import logging
 import time
 from datetime import datetime, timezone
+from typing import Any, Dict, List, Optional
 
 from telethon import TelegramClient, errors, events
 from telethon.sessions import StringSession
 
+from src.forwarder.album_collector import MediaGroupCollector
 from src.rules.engine import RulesEngine
-from src.utils.database import MongoDB
 
 logger = logging.getLogger(__name__)
 
 
 class ForwarderEngine:
-    """Telegram post forwarder with transformation, media support, and rate-limit handling."""
+    """Enterprise-grade Telegram post forwarder with transformation, album buffering, and rate-limit handling."""
 
     def __init__(self, config: dict, db):
         self.config = config
         self.db = db
         self.rules_engine = RulesEngine(db)
+        self.album_collector = MediaGroupCollector(debounce_seconds=1.2)
 
         self._running = False
-        self._last_flood_wait = {}  # channel_id -> timestamp
-        self._pending_flood = []    # queued messages during flood wait
-        self._entity_cache = {}     # channel_id/invite -> Telegram Entity
+        self._last_flood_wait: Dict[Any, float] = {}  # target_id -> timestamp until available
+        self._pending_flood = []
+        self._entity_cache: Dict[Any, Any] = {}       # channel_id/invite -> Telegram Entity
+        self.username = None
 
         # Initialize Telethon client with error handling
         try:
@@ -99,8 +102,8 @@ class ForwarderEngine:
         try:
             await self.client.start()
             me = await self.client.get_me()
-            username = getattr(me, 'username', None) or getattr(me, 'id', 'user')
-            self._log_event("INFO", f"Telegram Forwarder engine connected as @{username}")
+            self.username = getattr(me, 'username', None) or getattr(me, 'id', 'user')
+            self._log_event("INFO", f"Telegram Forwarder engine connected as @{self.username}")
 
             self._running = True
 
@@ -114,7 +117,7 @@ class ForwarderEngine:
                 forwarder_status["connected"] = True
                 forwarder_status["last_update"] = datetime.now(timezone.utc).isoformat()
             except Exception:
-                pass  # Flask app may not be running
+                pass
 
             await self._run_forwarding_loop()
 
@@ -122,7 +125,7 @@ class ForwarderEngine:
             self._log_event("WARNING", f"FLOOD_WAIT on startup: {e.seconds}s")
             await asyncio.sleep(e.seconds)
             if self._running:
-                await self.start()  # Retry after flood wait
+                await self.start()
         except (errors.RPCError, ConnectionError, OSError) as e:
             self._log_event("ERROR", f"Connection error during forwarder start: {e}")
             if self._running:
@@ -133,7 +136,7 @@ class ForwarderEngine:
                 await self.auto_reconnect()
 
     def _setup_event_handlers(self):
-        """Register real-time push listener so incoming messages are forwarded instantly (< 1s)."""
+        """Register real-time push listener so incoming messages and albums are forwarded instantly (< 1s)."""
         if not self.client or getattr(self, "_event_handlers_registered", False):
             return
 
@@ -170,7 +173,13 @@ class ForwarderEngine:
                     if matches:
                         targets = self._get_rule_targets(rule)
                         if targets:
-                            await self._forward_event_message(event.message, source_id, targets, rule)
+                            # If message is part of an album / media group, buffer it
+                            if self.album_collector.is_grouped(event.message):
+                                await self.album_collector.add_message(
+                                    event.message, source_id, targets, rule, self._process_album_group
+                                )
+                            else:
+                                await self._forward_event_message(event.message, source_id, targets, rule)
             except Exception as e:
                 logger.debug(f"Error in real-time message handler: {e}")
 
@@ -178,7 +187,7 @@ class ForwarderEngine:
         self._log_event("INFO", "⚡ Instant Real-Time Push Forwarding is active (< 1s latency)")
 
     async def _forward_event_message(self, message, source_id, targets: list, rule: dict):
-        """Instantly process and forward a new incoming post in real-time."""
+        """Instantly process and forward a single incoming post in real-time."""
         try:
             has_text = bool(getattr(message, "message", None))
             has_media = bool(getattr(message, "media", None))
@@ -209,9 +218,18 @@ class ForwarderEngine:
                 if not target_entity:
                     continue
 
-                transformed_text = self.rules_engine.apply_rules(
-                    raw_text, source_id, norm_tgt
-                ) if raw_text else ""
+                context = {
+                    "source_id": source_id,
+                    "target_id": norm_tgt,
+                    "msg_id": message.id,
+                }
+
+                is_allowed, transformed_text, skip_reason = self.rules_engine.validate_and_transform(
+                    raw_text, rule, source_id, norm_tgt, context
+                )
+                if not is_allowed:
+                    self._log_event("INFO", f"⏩ Skipped post #{message.id} from {source_id}: {skip_reason}")
+                    continue
 
                 success = await self._forward_message(
                     message,
@@ -219,7 +237,8 @@ class ForwarderEngine:
                     transformed_text,
                     media_type=media_type,
                     source_id=source_id,
-                    target_id=norm_tgt
+                    target_id=norm_tgt,
+                    rule=rule,
                 )
                 if success:
                     self._mark_processed(post_key, message.id, source_id, norm_tgt)
@@ -227,9 +246,131 @@ class ForwarderEngine:
         except Exception as e:
             self._log_event("ERROR", f"Error in real-time forwarding for post #{getattr(message, 'id', '?')}: {e}")
 
+    async def _process_album_group(self, group_data: dict):
+        """Process and dispatch an assembled album / media group."""
+        messages = group_data.get("messages", [])
+        if not messages:
+            return
+
+        source_id = group_data.get("source_id")
+        targets = group_data.get("targets", [])
+        rule = group_data.get("rule", {})
+        grouped_id = group_data.get("grouped_id")
+
+        # Find first non-empty caption / text
+        raw_caption = ""
+        for m in messages:
+            if getattr(m, "message", None):
+                raw_caption = m.message
+                break
+
+        msg_ids = [getattr(m, "id", "?") for m in messages]
+        first_msg = messages[0]
+
+        # Process each target
+        for tgt in targets:
+            norm_tgt = self._normalize_entity_id(tgt)
+            if self.rules_engine.is_blacklisted(norm_tgt) or self._is_flood_waited(norm_tgt):
+                continue
+
+            target_entity = await self._get_entity_safe(norm_tgt)
+            if not target_entity:
+                continue
+
+            # Check if all items in album were already forwarded to this target
+            all_dups = all(
+                self._is_duplicate(f"{source_id}:{mid}:{norm_tgt}", source_id, mid)
+                for mid in msg_ids
+            )
+            if all_dups:
+                continue
+
+            context = {
+                "source_id": source_id,
+                "target_id": norm_tgt,
+                "msg_id": msg_ids[0],
+            }
+
+            is_allowed, transformed_caption, skip_reason = self.rules_engine.validate_and_transform(
+                raw_caption, rule, source_id, norm_tgt, context
+            )
+            if not is_allowed:
+                self._log_event("INFO", f"⏩ Skipped album #{grouped_id} from {source_id}: {skip_reason}")
+                continue
+
+            # Forward delay throttling
+            delay = min(30.0, max(0.0, float(rule.get("forward_delay", 0) or 0)))
+            if delay > 0:
+                await asyncio.sleep(delay)
+
+            success = await self._send_album_to_target(
+                messages, target_entity, transformed_caption, source_id, norm_tgt, rule
+            )
+            if success:
+                for mid in msg_ids:
+                    post_key = f"{source_id}:{mid}:{norm_tgt}"
+                    self._mark_processed(post_key, mid, source_id, norm_tgt)
+
+    async def _send_album_to_target(
+        self, messages: list, target_entity, caption: str, source_id, target_id, rule: dict
+    ) -> bool:
+        """Send bundled album messages to target."""
+        mode = str(rule.get("forward_mode", "AUTO_FALLBACK")).upper().strip()
+        grouped_id = getattr(messages[0], "grouped_id", "album")
+
+        # 1. Official forward mode
+        if mode == "FORWARD":
+            try:
+                await self.client.forward_messages(target_entity, messages)
+                self._log_event("INFO", f"✅ Forwarded Album #{grouped_id} [{len(messages)} items] [FORWARD] from {source_id} ➔ {target_id}")
+                return True
+            except errors.ChatForwardsRestrictedError:
+                if mode == "FORWARD":
+                    self._log_event("ERROR", f"❌ Failed to forward album #{grouped_id} to {target_id}: [ChatForwardsRestrictedError] Source channel restricts forwarding.")
+                    return False
+            except Exception as e:
+                self._log_event("ERROR", f"❌ Failed to forward album #{grouped_id} to {target_id}: {self._format_telethon_error(e)}")
+                return False
+
+        # 2. In-Memory Copy Mode (or AUTO_FALLBACK)
+        try:
+            # Download all media items in memory
+            file_buffers = []
+            for m in messages:
+                if getattr(m, "media", None):
+                    buf = io.BytesIO()
+                    dl = await self.client.download_media(m, file=buf)
+                    if dl:
+                        buf.seek(0)
+                        fn = getattr(getattr(m, "file", None), "name", None)
+                        ext = getattr(getattr(m, "file", None), "ext", "") or ".jpg"
+                        buf.name = fn or f"album_{getattr(m, 'id', 'item')}{ext}"
+                        file_buffers.append(buf)
+
+            if file_buffers:
+                await self.client.send_file(
+                    target_entity,
+                    file_buffers,
+                    caption=caption or "",
+                )
+                self._log_event("INFO", f"✅ Forwarded Album #{grouped_id} [{len(file_buffers)} items] [COPY] from {source_id} ➔ {target_id}")
+                return True
+            elif caption:
+                await self.client.send_message(target_entity, caption)
+                return True
+            return False
+
+        except errors.FloodWaitError as e:
+            await self._handle_flood_wait(target_id, e.seconds)
+            return False
+        except Exception as e:
+            self._log_event("ERROR", f"❌ Failed to send album #{grouped_id} to {target_id}: {self._format_telethon_error(e)}")
+            return False
+
     async def stop(self):
         """Stop the forwarder gracefully."""
         self._running = False
+        await self.album_collector.clear()
         if self.client:
             try:
                 await self.client.disconnect()
@@ -245,10 +386,9 @@ class ForwarderEngine:
         self._log_event("INFO", "Telegram Forwarder engine stopped")
 
     async def _run_forwarding_loop(self):
-        """Main loop: fetch source rules, process messages."""
+        """Main background polling loop."""
         while self._running:
             try:
-                # Get all forwarding rules from DB
                 forwarding_rules = list(self.db.rules.find({"active": True}))
 
                 for rule in forwarding_rules:
@@ -263,13 +403,7 @@ class ForwarderEngine:
 
                     norm_source = self._normalize_entity_id(source_id)
 
-                    # Check blacklist on source
-                    if self.rules_engine.is_blacklisted(norm_source):
-                        logger.info(f"Skipping blacklisted source channel: {norm_source}")
-                        continue
-
-                    # Check flood wait on source
-                    if self._is_flood_waited(norm_source):
+                    if self.rules_engine.is_blacklisted(norm_source) or self._is_flood_waited(norm_source):
                         continue
 
                     await self._process_channel_multi(norm_source, targets, rule)
@@ -337,7 +471,7 @@ class ForwarderEngine:
             return True
         return media_type in allowed
 
-    def _extract_invite_hash(self, entity_id) -> str:
+    def _extract_invite_hash(self, entity_id) -> Optional[str]:
         """Extract invite hash from private channel link if present (e.g. t.me/+hash or +hash)."""
         if not isinstance(entity_id, str):
             return None
@@ -348,13 +482,13 @@ class ForwarderEngine:
         return None
 
     def _is_flood_waited(self, channel_id) -> bool:
-        """Check if channel is still in flood wait."""
+        """Non-blocking check if channel is still in flood wait."""
         wait_until = self._last_flood_wait.get(channel_id, 0)
         return time.time() < wait_until
 
     async def _handle_flood_wait(self, channel_id, seconds: int):
-        """Handle FLOOD_WAIT by recording timestamp and pausing."""
-        self._last_flood_wait[channel_id] = time.time() + seconds + 5  # extra 5s buffer
+        """Handle FLOOD_WAIT per target."""
+        self._last_flood_wait[channel_id] = time.time() + seconds + 5
         self._log_event("WARNING", f"⏳ Telegram FloodWait on channel ({channel_id}): rate limited for {seconds}s (auto-paused).")
         await asyncio.sleep(seconds)
 
@@ -363,22 +497,17 @@ class ForwarderEngine:
         if not entity_id:
             return None
 
-        # Check in-memory cache
         if entity_id in self._entity_cache:
             return self._entity_cache[entity_id]
 
-        # Check flood wait
         if self._is_flood_waited(entity_id):
             return None
 
         invite_hash = self._extract_invite_hash(str(entity_id))
 
         if invite_hash:
-            # Handle private invite links
             try:
-                # 1. Try to join private channel via invite hash
-                from telethon.tl.functions.messages import ImportChatInviteRequest, CheckChatInviteRequest
-                from telethon.tl.types import ChatInviteAlready
+                from telethon.tl.functions.messages import ImportChatInviteRequest
                 updates = await self.client(ImportChatInviteRequest(invite_hash))
                 if hasattr(updates, 'chats') and updates.chats:
                     chat = updates.chats[0]
@@ -386,24 +515,15 @@ class ForwarderEngine:
                     self._log_event("INFO", f"🔗 Joined and resolved private channel: {entity_id}")
                     return chat
             except errors.UserAlreadyParticipantError:
-                # Account is already in the channel! Resolve chat from CheckChatInviteRequest or dialogs
                 try:
                     from telethon.tl.functions.messages import CheckChatInviteRequest
                     from telethon.tl.types import ChatInviteAlready
                     res = await self.client(CheckChatInviteRequest(invite_hash))
                     if isinstance(res, ChatInviteAlready) and res.chat:
                         self._entity_cache[entity_id] = res.chat
-                        self._log_event("INFO", f"🔗 Resolved private channel: {getattr(res.chat, 'title', entity_id)}")
                         return res.chat
                 except Exception:
-                    try:
-                        dialogs = await self.client.get_dialogs(limit=100)
-                        for dialog in dialogs:
-                            if getattr(dialog.entity, 'username', None) == entity_id:
-                                self._entity_cache[entity_id] = dialog.entity
-                                return dialog.entity
-                    except Exception:
-                        pass
+                    pass
             except errors.FloodWaitError as e:
                 await self._handle_flood_wait(entity_id, e.seconds)
                 return None
@@ -414,27 +534,22 @@ class ForwarderEngine:
             except Exception as e:
                 logger.debug(f"Invite import attempt: {e}")
 
-        # Check if entity_id matches any joined dialog's title, username, or ID
         try:
             dialogs = await self.client.get_dialogs(limit=100)
             clean_lookup = str(entity_id).strip().lower().lstrip('@')
             for d in dialogs:
-                # 1. Match title
                 if str(d.title or d.name or "").strip().lower() == clean_lookup:
                     self._entity_cache[entity_id] = d.entity
                     return d.entity
-                # 2. Match username
                 if getattr(d.entity, 'username', None) and d.entity.username.lower() == clean_lookup:
                     self._entity_cache[entity_id] = d.entity
                     return d.entity
-                # 3. Match ID
                 if str(d.id) == str(entity_id) or str(getattr(d.entity, 'id', '')) == str(entity_id):
                     self._entity_cache[entity_id] = d.entity
                     return d.entity
         except Exception:
             pass
 
-        # Regular entity resolution (username, integer ID, etc.)
         try:
             entity = await self.client.get_entity(entity_id)
             if entity:
@@ -443,23 +558,8 @@ class ForwarderEngine:
         except errors.FloodWaitError as e:
             await self._handle_flood_wait(entity_id, e.seconds)
             return None
-        except (ValueError, errors.RPCError):
-            try:
-                # Refresh cache by loading recent dialogs
-                await self.client.get_dialogs(limit=100)
-                entity = await self.client.get_entity(entity_id)
-                if entity:
-                    self._entity_cache[entity_id] = entity
-                    return entity
-            except errors.FloodWaitError as e:
-                await self._handle_flood_wait(entity_id, e.seconds)
-                return None
-            except Exception:
-                return None
         except Exception:
             return None
-
-        return None
 
     async def get_my_channels(self):
         """Fetch all channels and groups joined by the userbot account."""
@@ -490,45 +590,35 @@ class ForwarderEngine:
             logger.error(f"Error fetching user channels: {e}")
             return []
 
-    async def _process_channel(self, source_id, target_id, rule: dict):
-        """Backward-compatible single-target channel processing."""
-        await self._process_channel_multi(source_id, [target_id], rule)
-
     async def _process_channel_multi(self, source_id, targets: list, rule: dict):
-        """Fetch new messages (text and media) from a source channel and forward to multiple targets."""
+        """Fetch recent messages from source and dispatch to targets."""
         source_entity = await self._get_entity_safe(source_id)
         if not source_entity:
-            if not self._is_flood_waited(source_id):
-                self._log_event("WARNING", f"⚠️ Cannot access source channel ({source_id}). Ensure @ayg1133 is a member or check channel ID.")
             return
 
-        # Prepare and validate target entities
         valid_targets = []
         for tgt in targets:
             norm_tgt = self._normalize_entity_id(tgt)
-            if self.rules_engine.is_blacklisted(norm_tgt):
-                self._log_event("INFO", f"🚫 Skipping blacklisted target channel: {norm_tgt}")
+            if self.rules_engine.is_blacklisted(norm_tgt) or self._is_flood_waited(norm_tgt):
                 continue
-            if self._is_flood_waited(norm_tgt):
-                continue
-
             entity = await self._get_entity_safe(norm_tgt)
             if entity:
                 valid_targets.append((norm_tgt, entity))
-            else:
-                if not self._is_flood_waited(norm_tgt):
-                    self._log_event("WARNING", f"⚠️ Cannot access target channel ({tgt}). Ensure @ayg1133 is an admin with post permissions.")
 
         if not valid_targets:
             return
 
-        # Fetch recent messages from source
         try:
-            async for message in self.client.iter_messages(
-                source_entity, limit=50, reverse=True
-            ):
+            async for message in self.client.iter_messages(source_entity, limit=50, reverse=True):
                 if not self._running:
                     break
+
+                # If message is part of an album, pass to album collector
+                if self.album_collector.is_grouped(message):
+                    await self.album_collector.add_message(
+                        message, source_id, targets, rule, self._process_album_group
+                    )
+                    continue
 
                 has_text = bool(getattr(message, "message", None))
                 has_media = bool(getattr(message, "media", None))
@@ -536,22 +626,28 @@ class ForwarderEngine:
                 if not has_text and not has_media:
                     continue
 
-                # Filter by media type
                 media_type = self._detect_media_type(message)
                 if not self._is_media_allowed(rule, media_type):
                     continue
 
                 raw_text = message.message or ""
 
-                # Forward to each target channel independently
                 for norm_tgt, target_entity in valid_targets:
                     post_key = f"{source_id}:{message.id}:{norm_tgt}"
                     if self._is_duplicate(post_key, source_id, message.id):
                         continue
 
-                    transformed_text = self.rules_engine.apply_rules(
-                        raw_text, source_id, norm_tgt
-                    ) if raw_text else ""
+                    context = {
+                        "source_id": source_id,
+                        "target_id": norm_tgt,
+                        "msg_id": message.id,
+                    }
+
+                    is_allowed, transformed_text, skip_reason = self.rules_engine.validate_and_transform(
+                        raw_text, rule, source_id, norm_tgt, context
+                    )
+                    if not is_allowed:
+                        continue
 
                     success = await self._forward_message(
                         message,
@@ -559,7 +655,8 @@ class ForwarderEngine:
                         transformed_text,
                         media_type=media_type,
                         source_id=source_id,
-                        target_id=norm_tgt
+                        target_id=norm_tgt,
+                        rule=rule,
                     )
                     if success:
                         self._mark_processed(post_key, message.id, source_id, norm_tgt)
@@ -640,7 +737,6 @@ class ForwarderEngine:
         try:
             has_media = bool(getattr(original_message, "media", None))
             if has_media:
-                import io
                 buffer = io.BytesIO()
                 downloaded = await self.client.download_media(original_message, file=buffer)
                 if downloaded:
@@ -692,15 +788,54 @@ class ForwarderEngine:
 
     async def _forward_message(
         self, original_message, target_entity, transformed_text: str,
-        media_type: str = "text", source_id=None, target_id=None
+        media_type: str = "text", source_id=None, target_id=None, rule: dict = None
     ) -> bool:
-        """Forward a message (supporting media, photos, documents, and text) to the target.
-        Returns True if sent successfully, False otherwise.
+        """
+        Forward a single message adhering to forward_mode (FORWARD, COPY, AUTO_FALLBACK)
+        and applying forward_delay throttling.
         """
         src_name = source_id or getattr(original_message, 'chat_id', 'source')
         tgt_name = target_id or getattr(target_entity, 'id', target_entity)
         msg_id = getattr(original_message, 'id', '?')
+        rule = rule or {}
 
+        # 1. Forward Delay Throttling
+        delay = min(30.0, max(0.0, float(rule.get("forward_delay", 0) or 0)))
+        if delay > 0:
+            await asyncio.sleep(delay)
+
+        mode = str(rule.get("forward_mode", "AUTO_FALLBACK")).upper().strip()
+
+        # 2. Direct Official FORWARD Mode
+        if mode == "FORWARD":
+            try:
+                await self.client.forward_messages(target_entity, original_message)
+                self._log_event(
+                    "INFO",
+                    f"✅ Forwarded post #{msg_id} [FORWARD] from {src_name} ➔ {tgt_name}"
+                )
+                return True
+            except errors.ChatForwardsRestrictedError:
+                self._log_event(
+                    "ERROR",
+                    f"❌ Failed to forward post #{msg_id} to {tgt_name}: [ChatForwardsRestrictedError] Source channel restricts forwarding."
+                )
+                return False
+            except Exception as e:
+                self._log_event(
+                    "ERROR",
+                    f"❌ Failed to forward post #{msg_id} to {tgt_name}: {self._format_telethon_error(e)}"
+                )
+                return False
+
+        # 3. Clean Stealth COPY Mode
+        if mode == "COPY":
+            return await self._forward_via_memory_copy(
+                original_message, target_entity, transformed_text,
+                media_type=media_type, src_name=src_name, tgt_name=tgt_name, msg_id=msg_id
+            )
+
+        # 4. AUTO_FALLBACK Mode (Default)
         try:
             has_media = bool(getattr(original_message, "media", None))
 

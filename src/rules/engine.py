@@ -9,6 +9,8 @@ Supports: username replacement, link replacement, text stripping, and footer bra
 import re
 import logging
 
+from src.rules.pipeline import TransformationPipeline
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,6 +19,7 @@ class RulesEngine:
 
     def __init__(self, db=None):
         self.db = db
+        self.pipeline = TransformationPipeline()
 
     def load_rules(self, source_id=None, target_id=None) -> list:
         """Load active rules matching global rules and channel-specific rules."""
@@ -57,7 +60,33 @@ class RulesEngine:
 
         return matching_rules
 
-    def apply_rules(self, text: str, source_id=None, target_id=None) -> str:
+    def validate_and_transform(
+        self,
+        text: str,
+        rule: dict = None,
+        source_id=None,
+        target_id=None,
+        context: dict = None
+    ) -> tuple[bool, str, str]:
+        """
+        Validate keyword whitelists/blacklists and apply all transformation rules and templates.
+        Returns (is_allowed: bool, transformed_text: str, skip_reason: str).
+        """
+        if text is None:
+            text = ""
+
+        # 1. Pipeline keyword checks and global stripping for the specific routing rule
+        if rule:
+            is_allowed, text, reason = self.pipeline.process(text, rule, context)
+            if not is_allowed:
+                return False, text, reason
+
+        # 2. Apply granular text transformation rules from database
+        transformed_text = self.apply_rules(text, source_id, target_id, context)
+
+        return True, transformed_text, ""
+
+    def apply_rules(self, text: str, source_id=None, target_id=None, context: dict = None) -> str:
         """Apply all matching rules to the text in priority order."""
         if not text:
             return text
@@ -71,11 +100,11 @@ class RulesEngine:
 
         result = text
         for rule in rules:
-            result = self._apply_single_rule(result, rule)
+            result = self._apply_single_rule(result, rule, context)
 
         return result
 
-    def _apply_single_rule(self, text: str, rule: dict) -> str:
+    def _apply_single_rule(self, text: str, rule: dict, context: dict = None) -> str:
         """Apply a single transformation rule."""
         rule_type = rule.get("type", "replace")
         active = rule.get("active", True)
@@ -85,13 +114,11 @@ class RulesEngine:
 
         try:
             if rule_type == "replace":
-                # Replace specific text patterns
                 pattern = rule.get("pattern", "")
                 replacement = rule.get("replacement", "")
                 result = text.replace(pattern, replacement) if pattern else text
 
             elif rule_type == "regex":
-                # Apply regex replacement
                 pattern = rule.get("pattern", "")
                 replacement = rule.get("replacement", "")
                 if pattern:
@@ -100,7 +127,6 @@ class RulesEngine:
                     result = text
 
             elif rule_type == "strip":
-                # Strip unwanted text patterns
                 pattern = rule.get("pattern", "")
                 if pattern:
                     result = re.sub(pattern, "", text)
@@ -108,18 +134,18 @@ class RulesEngine:
                     result = text
 
             elif rule_type == "footer":
-                # Append branding footer
                 footer = rule.get("replacement", "")
                 if footer:
-                    result = text + "\n\n" + footer
+                    filled_footer = self.pipeline.apply_templating("", "", footer, context)
+                    result = text + "\n\n" + (filled_footer or footer)
                 else:
                     result = text
 
             elif rule_type == "prefix":
-                # Prepend text
                 prefix = rule.get("replacement", "")
                 if prefix:
-                    result = prefix + "\n" + text
+                    filled_prefix = self.pipeline.apply_templating("", prefix, "", context)
+                    result = (filled_prefix or prefix) + "\n" + text
                 else:
                     result = text
 
