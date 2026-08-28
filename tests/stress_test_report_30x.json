@@ -1,0 +1,249 @@
+{
+  "timestamp": "2026-08-28T21:38:06.348289+00:00",
+  "total_iterations": 30,
+  "all_passed": true,
+  "total_tests_executed": 3420,
+  "total_duration_seconds": 167.14,
+  "iterations": [
+    {
+      "iteration": 1,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.774
+    },
+    {
+      "iteration": 2,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.393
+    },
+    {
+      "iteration": 3,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 6.035
+    },
+    {
+      "iteration": 4,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.529
+    },
+    {
+      "iteration": 5,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.313
+    },
+    {
+      "iteration": 6,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.589
+    },
+    {
+      "iteration": 7,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.483
+    },
+    {
+      "iteration": 8,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.595
+    },
+    {
+      "iteration": 9,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.302
+    },
+    {
+      "iteration": 10,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.256
+    },
+    {
+      "iteration": 11,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.404
+    },
+    {
+      "iteration": 12,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.549
+    },
+    {
+      "iteration": 13,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.766
+    },
+    {
+      "iteration": 14,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.892
+    },
+    {
+      "iteration": 15,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.35
+    },
+    {
+      "iteration": 16,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.543
+    },
+    {
+      "iteration": 17,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.375
+    },
+    {
+      "iteration": 18,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.6
+    },
+    {
+      "iteration": 19,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.646
+    },
+    {
+      "iteration": 20,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.47
+    },
+    {
+      "iteration": 21,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.275
+    },
+    {
+      "iteration": 22,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.611
+    },
+    {
+      "iteration": 23,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.388
+    },
+    {
+      "iteration": 24,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.728
+    },
+    {
+      "iteration": 25,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.789
+    },
+    {
+      "iteration": 26,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.685
+    },
+    {
+      "iteration": 27,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.943
+    },
+    {
+      "iteration": 28,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.795
+    },
+    {
+      "iteration": 29,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.579
+    },
+    {
+      "iteration": 30,
+      "passed": true,
+      "tests_run": 113,
+      "errors": 0,
+      "failures": 0,
+      "elapsed_sec": 5.478
+    }
+  ]
+}
