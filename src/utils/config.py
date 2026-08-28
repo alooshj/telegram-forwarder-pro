@@ -74,10 +74,10 @@ def load_config():
         "APP_URL": os.environ.get("APP_URL", ""),
 
         # Clerk Authentication & User Management
-        "CLERK_PUBLISHABLE_KEY": os.environ.get("CLERK_PUBLISHABLE_KEY") or os.environ.get("VITE_CLERK_PUBLISHABLE_KEY") or os.environ.get("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", ""),
-        "CLERK_SECRET_KEY": os.environ.get("CLERK_SECRET_KEY", ""),
+        "CLERK_PUBLISHABLE_KEY": os.environ.get("CLERK_PUBLISHABLE_KEY") or os.environ.get("VITE_CLERK_PUBLISHABLE_KEY") or os.environ.get("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY") or "pk_test_b3JpZW50ZWQtbXVsbGV0LTU2ODEuY2xlcmsuYWNjb3VudHMuZGV2JA",
+        "CLERK_SECRET_KEY": os.environ.get("CLERK_SECRET_KEY") or "sk_test_UMdKlbF1HSgkZJzAmk3D1bBYsoqMwtXuBoPP5uYb2o",
         "CLERK_JWT_KEY": os.environ.get("CLERK_JWT_KEY", ""),
-        "CLERK_ISSUER": os.environ.get("CLERK_ISSUER", ""),
+        "CLERK_ISSUER": os.environ.get("CLERK_ISSUER") or "https://oriented-mullet-5681.clerk.accounts.dev",
     }
     return config
 

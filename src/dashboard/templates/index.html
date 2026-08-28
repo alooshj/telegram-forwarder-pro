@@ -2900,7 +2900,7 @@
             try {
                 if (clerkInstance) return clerkInstance;
                 const configRes = await api('/api/config/clerk');
-                const publishableKey = configRes.publishableKey || window.CLERK_PUBLISHABLE_KEY;
+                const publishableKey = configRes.publishableKey || window.CLERK_PUBLISHABLE_KEY || 'pk_test_b3JpZW50ZWQtbXVsbGV0LTU2ODEuY2xlcmsuYWNjb3VudHMuZGV2JA';
                 if (!publishableKey) return null;
 
                 if (!window.Clerk) {

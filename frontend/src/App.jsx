@@ -10,7 +10,7 @@ import { SignUpPage } from './components/SignUpPage';
 const CLERK_PUBLISHABLE_KEY =
   import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ||
   import.meta.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
-  'pk_test_placeholder_key_here';
+  'pk_test_b3JpZW50ZWQtbXVsbGV0LTU2ODEuY2xlcmsuYWNjb3VudHMuZGV2JA';
 
 function DashboardPlaceholder() {
   return (
