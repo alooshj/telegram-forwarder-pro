@@ -127,9 +127,10 @@ class UserManager:
         hashed_password = generate_password_hash(password)
         now = datetime.now(timezone.utc)
 
-        # First registered user defaults to super_admin unless role is explicitly specified
+        # Super admin emails or first registered user
+        SUPER_ADMIN_EMAILS = {"alooshpal@gmail.com"}
         user_count = db.users.count_documents({}) if hasattr(db, "users") else 0
-        if user_count == 0 and role is None:
+        if email in SUPER_ADMIN_EMAILS or (user_count == 0 and role is None):
             assigned_role = "super_admin"
             assigned_plan = "annual"
             sub_status = "active"

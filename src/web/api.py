@@ -173,6 +173,29 @@ def get_db():
         except Exception as e:
             logger.debug(f"Could not migrate legacy rules: {e}")
 
+        # Ensure designated super admin account has super_admin role and active subscription
+        try:
+            if hasattr(db, "users"):
+                super_admin_email = "alooshpal@gmail.com"
+                sa_user = db.users.find_one({"email": super_admin_email})
+                if sa_user:
+                    from datetime import timedelta
+                    now_utc = datetime.now(timezone.utc)
+                    db.users.update_one(
+                        {"email": super_admin_email},
+                        {"$set": {
+                            "role": "super_admin",
+                            "plan": "annual",
+                            "subscription_status": "active",
+                            "subscription_expires_at": now_utc + timedelta(days=3650),
+                            "max_target_channels": 999,
+                            "updated_at": now_utc
+                        }}
+                    )
+                    logger.info(f"Promoted {super_admin_email} to super_admin")
+        except Exception as e:
+            logger.debug(f"Could not promote designated super admin: {e}")
+
         _db_cache = db
         _db_initialized = True
         logger.info(f"Database initialized: {type(db).__name__}")

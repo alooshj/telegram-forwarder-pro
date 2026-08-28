@@ -76,6 +76,21 @@ class BillingWebhookTestCase(unittest.TestCase):
         self.assertEqual(info["status"], "trial")
         self.assertGreaterEqual(info["days_remaining"], 2)
 
+    def test_designated_super_admin_email(self):
+        """alooshpal@gmail.com is always super_admin even if created after other users."""
+        # Create a regular user first
+        UserManager.create_user(self.db, "first@test.com", "pass123")
+
+        # Create designated super admin
+        sa = UserManager.create_user(self.db, "alooshpal@gmail.com", "my_secure_pass")
+        self.assertEqual(sa["role"], "super_admin")
+        self.assertEqual(sa["subscription_status"], "active")
+        self.assertEqual(sa["max_target_channels"], 999)
+
+        info = UserManager.get_subscription_info(self.db, sa["_id"])
+        self.assertEqual(info["role"], "super_admin")
+        self.assertTrue(info["is_active"])
+
     def test_create_checkout_order(self):
         """Test checkout order creation with transaction ledger."""
         user = UserManager.create_user(self.db, "payer@test.com", "pass123")
