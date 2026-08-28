@@ -75,6 +75,7 @@ class ForwarderEngine:
                     "timestamp": datetime.now(timezone.utc),
                     "level": level,
                     "message": clean_msg,
+                    "user_id": self.user_id or "system",
                 })
             except Exception:
                 pass
@@ -695,6 +696,7 @@ class ForwarderEngine:
             "message_id": message_id,
             "source_id": source_id,
             "target_id": target_id,
+            "user_id": self.user_id or "system",
             "forwarded_at": datetime.now(timezone.utc),
         })
 

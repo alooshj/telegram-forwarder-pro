@@ -184,7 +184,69 @@ class SaaSArchitectureTestCase(unittest.TestCase):
             self.assertEqual(res_chan.get_json()["channels"], [])
             self.assertFalse(res_chan.get_json()["connected"])
 
+    def test_multi_tenant_logs_isolation(self):
+        """Verify that logs are strictly isolated per user and Super Admin can fetch all with ?all=true."""
+        # Create Super Admin, User A, and User B
+        super_admin = UserManager.create_user(self.db, "alooshpal@gmail.com", "superpass123")
+        token_super = generate_auth_token(super_admin["_id"], super_admin["email"])
+
+        user_a = UserManager.create_user(self.db, "log_usera@test.com", "passA123")
+        token_a = generate_auth_token(user_a["_id"], user_a["email"])
+
+        user_b = UserManager.create_user(self.db, "log_userb@test.com", "passB123")
+        token_b = generate_auth_token(user_b["_id"], user_b["email"])
+
+        from src.web.api import _log_event
+
+        # Insert distinct logs for each user
+        _log_event(self.db, "INFO", "User A private action", user_id=str(user_a["_id"]))
+        _log_event(self.db, "WARNING", "User B private action", user_id=str(user_b["_id"]))
+        _log_event(self.db, "INFO", "Super admin action", user_id=str(super_admin["_id"]))
+
+        with patch("src.web.api.get_db", return_value=self.db):
+            # User A fetches logs -> should see ONLY User A's log
+            res_a = self.client.get("/api/logs", headers={"Authorization": f"Bearer {token_a}"})
+            self.assertEqual(res_a.status_code, 200)
+            logs_a = res_a.get_json()["logs"]
+            self.assertEqual(len(logs_a), 1)
+            self.assertIn("User A private action", logs_a[0]["message"])
+
+            # User B fetches logs -> should see ONLY User B's log
+            res_b = self.client.get("/api/logs", headers={"Authorization": f"Bearer {token_b}"})
+            self.assertEqual(res_b.status_code, 200)
+            logs_b = res_b.get_json()["logs"]
+            self.assertEqual(len(logs_b), 1)
+            self.assertIn("User B private action", logs_b[0]["message"])
+
+            # Super Admin without ?all=true -> sees only Super Admin's logs
+            res_super_own = self.client.get("/api/logs", headers={"Authorization": f"Bearer {token_super}"})
+            self.assertEqual(res_super_own.status_code, 200)
+            logs_super = res_super_own.get_json()["logs"]
+            self.assertEqual(len(logs_super), 1)
+            self.assertIn("Super admin action", logs_super[0]["message"])
+
+            # Super Admin with ?all=true -> sees ALL 3 logs
+            res_super_all = self.client.get("/api/logs?all=true", headers={"Authorization": f"Bearer {token_super}"})
+            self.assertEqual(res_super_all.status_code, 200)
+            logs_all = res_super_all.get_json()["logs"]
+            self.assertEqual(len(logs_all), 3)
+
+            # Regular User B cannot fetch all logs even if passing ?all=true (security enforcement!)
+            res_b_all = self.client.get("/api/logs?all=true", headers={"Authorization": f"Bearer {token_b}"})
+            self.assertEqual(res_b_all.status_code, 200)
+            logs_b_attempt = res_b_all.get_json()["logs"]
+            self.assertEqual(len(logs_b_attempt), 1)  # Still only sees User B's log!
+
+            # User A clears logs -> clears only User A's logs
+            res_clear_a = self.client.post("/api/logs/clear", headers={"Authorization": f"Bearer {token_a}"})
+            self.assertEqual(res_clear_a.status_code, 200)
+
+            # User B's log is still intact in DB!
+            res_b_after = self.client.get("/api/logs", headers={"Authorization": f"Bearer {token_b}"})
+            self.assertEqual(len(res_b_after.get_json()["logs"]), 1)
+
 
 if __name__ == "__main__":
     unittest.main()
+
 

@@ -1257,6 +1257,12 @@
 
                     <!-- Controls Bar -->
                     <div class="flex flex-wrap items-center gap-2">
+                        <!-- Super Admin Scope Switch (Visible only for Super Admin) -->
+                        <div id="logs-super-scope-box" class="hidden flex bg-slate-950 border border-purple-500/40 p-1 rounded-xl text-xs">
+                            <button onclick="setLogsScope('user')" id="logs-scope-user" class="px-2.5 py-1 rounded-lg font-semibold bg-purple-600 text-white transition">👤 سجلاتي فقط</button>
+                            <button onclick="setLogsScope('all')" id="logs-scope-all" class="px-2.5 py-1 rounded-lg text-slate-400 hover:text-purple-300 transition">🌐 كل النظام</button>
+                        </div>
+
                         <!-- Level Filter -->
                         <div class="flex bg-slate-950 border border-slate-800 p-1 rounded-xl text-xs">
                             <button onclick="setLogLevelFilter('ALL')" id="filter-lvl-all" class="px-2.5 py-1 rounded-lg font-semibold bg-brand-600 text-white">ALL</button>
@@ -2581,8 +2587,25 @@
         }
 
         // ==================== LIVE LOGS ====================
+        let logsScope = 'user'; // 'user' or 'all'
+
+        function setLogsScope(scope) {
+            logsScope = scope;
+            const btnUser = document.getElementById('logs-scope-user');
+            const btnAll = document.getElementById('logs-scope-all');
+            if (scope === 'all') {
+                if (btnAll) btnAll.className = 'px-2.5 py-1 rounded-lg font-semibold bg-purple-600 text-white transition';
+                if (btnUser) btnUser.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-purple-300 transition';
+            } else {
+                if (btnUser) btnUser.className = 'px-2.5 py-1 rounded-lg font-semibold bg-purple-600 text-white transition';
+                if (btnAll) btnAll.className = 'px-2.5 py-1 rounded-lg text-slate-400 hover:text-purple-300 transition';
+            }
+            loadLogs(true);
+        }
+
         async function loadLogs(isManual = false) {
-            const res = await api('/api/logs');
+            const endpoint = (logsScope === 'all') ? '/api/logs?all=true' : '/api/logs';
+            const res = await api(endpoint);
             allLogs = res.logs || [];
             renderLogs();
             if (isManual) showToast(currentLang === 'ar' ? 'تم تحديث السجلات' : 'Logs refreshed', 'info');
@@ -2625,6 +2648,12 @@
                     rowBg = 'bg-amber-950/10 hover:bg-amber-950/20';
                 }
 
+                let userBadge = '';
+                if (logsScope === 'all' && l.user_id) {
+                    const isSys = l.user_id === 'system';
+                    userBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono ${isSys ? 'bg-slate-800 text-slate-400' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'}">${isSys ? 'SYS' : 'USR:' + l.user_id.substring(0, 6)}</span>`;
+                }
+
                 // Clean up message text
                 let msg = (l.message || '')
                     .replace(/\(caused by CheckChatInviteRequest\)/g, '')
@@ -2634,6 +2663,7 @@
                 return `<div class="py-2 px-2.5 rounded-lg mb-1 border-b border-slate-900/80 flex items-start space-x-2.5 rtl:space-x-reverse ${rowBg} transition">
                     <span class="text-slate-500 font-mono text-[11px] whitespace-nowrap pt-0.5">${ts}</span>
                     <span class="whitespace-nowrap">${badge}</span>
+                    ${userBadge ? `<span class="whitespace-nowrap">${userBadge}</span>` : ''}
                     <span class="text-slate-200 text-xs font-mono break-all leading-relaxed">${msg}</span>
                 </div>`;
             }).join('');
@@ -2655,10 +2685,14 @@
         }
 
         async function clearLogs() {
-            if (!confirm(currentLang === 'ar' ? 'هل أنت متأكد من رغبتك في مسح كافة السجلات؟' : 'Clear all stored logs?')) return;
-            const res = await api('/api/logs/clear', 'POST');
+            const msg = (logsScope === 'all')
+                ? (currentLang === 'ar' ? 'هل أنت متأكد من رغبتك في مسح كافة سجلات النظام بالكامل؟ (Super Admin)' : 'Clear ALL system logs?')
+                : (currentLang === 'ar' ? 'هل أنت متأكد من رغبتك في مسح سجلات حسابك؟' : 'Clear your account logs?');
+            if (!confirm(msg)) return;
+            const endpoint = (logsScope === 'all') ? '/api/logs/clear?all=true' : '/api/logs/clear';
+            const res = await api(endpoint, 'POST');
             if (res.success) {
-                showToast(currentLang === 'ar' ? 'تم تفريغ السجلات' : 'Logs cleared', 'info');
+                showToast(currentLang === 'ar' ? 'تم تفريغ السجلات بنجاح' : 'Logs cleared successfully', 'info');
                 await loadLogs();
             }
         }
@@ -3288,12 +3322,24 @@
 
         function checkAdminVisibility() {
             const headerAdminBtn = document.getElementById('header-admin-btn');
-            const isSuper = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com');
-            if (isSuper) {
+            const logsScopeBox = document.getElementById('logs-super-scope-box');
+            const isSuper = currentUser && (currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com');
+            const isAdmin = currentUser && (currentUser.role === 'admin' || isSuper);
+
+            if (isAdmin) {
                 if (headerAdminBtn) headerAdminBtn.classList.remove('hidden');
             } else {
                 if (headerAdminBtn) headerAdminBtn.classList.add('hidden');
                 if (currentTab === 'admin') switchTab('overview');
+            }
+
+            if (logsScopeBox) {
+                if (isSuper) {
+                    logsScopeBox.classList.remove('hidden');
+                } else {
+                    logsScopeBox.classList.add('hidden');
+                    logsScope = 'user';
+                }
             }
         }
 

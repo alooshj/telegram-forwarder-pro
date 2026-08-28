@@ -63,8 +63,8 @@ def _to_db_id(raw_id):
     return str(raw_id)
 
 
-def _log_event(db, level: str, message: str):
-    """Log an operational event to logger and db.logs collection."""
+def _log_event(db, level: str, message: str, user_id: str = None):
+    """Log an operational event to logger and db.logs collection with user_id isolation."""
     if level == "INFO":
         logger.info(message)
     elif level == "WARNING":
@@ -74,12 +74,25 @@ def _log_event(db, level: str, message: str):
     else:
         logger.debug(message)
 
+    if not user_id:
+        try:
+            if hasattr(g, "current_user") and g.current_user:
+                user_id = str(g.current_user.get("_id", ""))
+            else:
+                from src.web.auth import get_current_user_from_request
+                u = get_current_user_from_request(db)
+                if u:
+                    user_id = str(u.get("_id", ""))
+        except Exception:
+            pass
+
     if db and hasattr(db, "logs"):
         try:
             db.logs.insert_one({
                 "timestamp": datetime.now(timezone.utc),
                 "level": level,
                 "message": message,
+                "user_id": user_id or "system",
             })
         except Exception:
             pass
@@ -545,17 +558,36 @@ def api_remove_blacklist(channel_id):
 
 @app.route("/api/logs")
 def api_get_logs():
-    """Get recent logs."""
+    """Get recent logs isolated by user. Super Admin can pass ?all=true to fetch all system logs."""
     db = get_db()
     if not db:
         return jsonify({"logs": [], "warning": "Database not connected"}), 200
+
+    from src.web.auth import get_current_user_from_request
+    user = get_current_user_from_request(db)
+    is_super = user and (user.get("role") == "super_admin" or user.get("email") == "alooshpal@gmail.com")
+    fetch_all = request.args.get("all", "").lower() in ("true", "1", "yes")
+
+    if is_super and fetch_all:
+        query = {}
+    elif user:
+        user_id = str(user["_id"])
+        query = {"user_id": user_id}
+    else:
+        user_count = db.users.count_documents({}) if hasattr(db, "users") else 0
+        query = {} if user_count == 0 else {"user_id": "__unauthenticated__"}
+
     try:
-        logs = list(db.logs.find({}).sort("timestamp", -1).limit(100))
+        logs = list(db.logs.find(query).sort("timestamp", -1).limit(100))
         for log in logs:
             log["_id"] = str(log["_id"])
             if log.get("timestamp"):
                 log["timestamp"] = log["timestamp"].isoformat() if hasattr(log["timestamp"], 'isoformat') else str(log["timestamp"])
-        return jsonify({"logs": logs})
+        return jsonify({
+            "logs": logs,
+            "filtered_by_user": not (is_super and fetch_all),
+            "is_super_admin": bool(is_super),
+        })
     except Exception as e:
         logger.error(f"Failed to fetch logs: {e}")
         return jsonify({"logs": [], "error": "Database query failed"}), 200
@@ -617,7 +649,7 @@ def api_get_stats():
             if stats["total_forwarded"] == 0 and hasattr(db, "processed_posts"):
                 stats["total_forwarded"] = db.processed_posts.count_documents({})
             stats["blacklist_count"] = len(list(db.blacklist.find({})))
-            stats["logs_count"] = len(list(db.logs.find({})))
+            stats["logs_count"] = len(list(db.logs.find({"user_id": user_id})))
         except Exception as e:
             stats["error"] = str(e)
     return jsonify(stats)
@@ -645,7 +677,7 @@ def api_toggle_rule(rule_id):
 
     new_status = not rule.get("active", True)
     db.rules.update_one({"_id": object_id}, {"$set": {"active": new_status}})
-    _log_event(db, "INFO", f"Rule '{rule.get('name', rule_id)}' {'activated' if new_status else 'deactivated'}")
+    _log_event(db, "INFO", f"Rule '{rule.get('name', rule_id)}' {'activated' if new_status else 'deactivated'}", user_id=user_id)
     return jsonify({"success": True, "active": new_status})
 
 
@@ -670,23 +702,54 @@ def api_test_rule():
 
 @app.route("/api/logs/clear", methods=["POST"])
 def api_clear_logs():
-    """Clear all stored logs."""
+    """Clear logs isolated by current user. Super admins with ?all=true can clear all stored logs."""
     db = get_db()
     if not db:
         return jsonify({"error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request
+    user = get_current_user_from_request(db)
+    is_super = user and (user.get("role") == "super_admin" or user.get("email") == "alooshpal@gmail.com")
+    clear_all = request.args.get("all", "").lower() in ("true", "1", "yes")
+
     try:
-        if hasattr(db.logs, "delete_many"):
-            db.logs.delete_many({})
-        elif hasattr(db.logs, "table"):
-            with db._lock:
-                conn = db._get_conn()
-                try:
-                    conn.execute("DELETE FROM forwarding_logs")
-                    conn.commit()
-                finally:
-                    conn.close()
-        _log_event(db, "INFO", "Logs cleared by user")
-        return jsonify({"success": True, "message": "Logs cleared"})
+        if is_super and clear_all:
+            if hasattr(db.logs, "delete_many"):
+                db.logs.delete_many({})
+            elif hasattr(db.logs, "table"):
+                with db._lock:
+                    conn = db._get_conn()
+                    try:
+                        conn.execute("DELETE FROM forwarding_logs")
+                        conn.commit()
+                    finally:
+                        db._close_conn(conn)
+            _log_event(db, "INFO", "All system logs cleared by Super Admin", user_id=str(user["_id"]))
+        elif user:
+            user_id = str(user["_id"])
+            if hasattr(db.logs, "delete_many"):
+                db.logs.delete_many({"user_id": user_id})
+            elif hasattr(db.logs, "table"):
+                with db._lock:
+                    conn = db._get_conn()
+                    try:
+                        conn.execute("DELETE FROM forwarding_logs WHERE user_id = ?", (user_id,))
+                        conn.commit()
+                    finally:
+                        db._close_conn(conn)
+            _log_event(db, "INFO", "User logs cleared", user_id=user_id)
+        else:
+            if hasattr(db.logs, "delete_many"):
+                db.logs.delete_many({})
+            elif hasattr(db.logs, "table"):
+                with db._lock:
+                    conn = db._get_conn()
+                    try:
+                        conn.execute("DELETE FROM forwarding_logs")
+                        conn.commit()
+                    finally:
+                        db._close_conn(conn)
+        return jsonify({"success": True, "message": "Logs cleared successfully"})
     except Exception as e:
         logger.error(f"Failed to clear logs: {e}")
         return jsonify({"error": str(e)}), 500

@@ -197,6 +197,12 @@ class SQLiteDB:
                         conn.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT;")
                     except sqlite3.OperationalError:
                         pass
+                # Migrations for forwarding_logs & processed_posts
+                for tbl in ["forwarding_logs", "processed_posts"]:
+                    try:
+                        conn.execute(f"ALTER TABLE {tbl} ADD COLUMN user_id TEXT;")
+                    except sqlite3.OperationalError:
+                        pass
                 # Migrations for transactions
                 for col in ["invoice_id", "invoice_url"]:
                     try:
