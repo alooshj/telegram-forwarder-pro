@@ -316,10 +316,15 @@ class UserManager:
             return None
 
         # Check expiration
-        expires = user.get("verification_expires_at")
+        expires = user.get("verification_expires_at") or user.get("verification_expires")
+        if expires and isinstance(expires, str):
+            try:
+                expires = datetime.fromisoformat(expires.replace("Z", "+00:00"))
+            except Exception:
+                expires = None
         if expires and isinstance(expires, datetime) and expires.tzinfo is None:
             expires = expires.replace(tzinfo=timezone.utc)
-        if expires and expires < now:
+        if expires and isinstance(expires, datetime) and expires < now:
             return None
 
         db.users.update_one(
@@ -346,10 +351,15 @@ class UserManager:
         if not user:
             return None
 
-        expires = user.get("verification_expires_at")
+        expires = user.get("verification_expires_at") or user.get("verification_expires")
+        if expires and isinstance(expires, str):
+            try:
+                expires = datetime.fromisoformat(expires.replace("Z", "+00:00"))
+            except Exception:
+                expires = None
         if expires and isinstance(expires, datetime) and expires.tzinfo is None:
             expires = expires.replace(tzinfo=timezone.utc)
-        if expires and expires < now:
+        if expires and isinstance(expires, datetime) and expires < now:
             return None
 
         db.users.update_one(

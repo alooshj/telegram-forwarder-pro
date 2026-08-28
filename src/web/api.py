@@ -999,9 +999,9 @@ def api_auth_verify_email():
         return jsonify({"success": False, "error": "Database not connected"}), 500
 
     data = request.get_json() or {}
-    token = data.get("token", "").strip()
-    email = data.get("email", "").strip()
-    otp = data.get("otp", "").strip()
+    token = str(data.get("token") or "").strip()
+    email = str(data.get("email") or "").strip()
+    otp = str(data.get("otp") or "").strip()
 
     # Fallback to current authenticated user email if OTP provided without email
     if otp and not email:
