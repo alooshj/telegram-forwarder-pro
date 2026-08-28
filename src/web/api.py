@@ -163,8 +163,8 @@ def get_db():
         _db_initialized = True
         logger.info(f"Database initialized: {type(db).__name__}")
 
-        # Try starting the forwarder engine if credentials are available
-        if config.get("SESSION_STRING") and config.get("API_ID"):
+        # Start forwarder engine only if explicitly enabled via AUTO_START_ENGINE
+        if os.environ.get("AUTO_START_ENGINE", "").lower() in ("true", "1") and config.get("SESSION_STRING") and config.get("API_ID"):
             _start_forwarder_engine(config, db)
 
     except Exception as e:
@@ -446,9 +446,22 @@ def api_get_logs():
 def api_get_stats():
     """Get aggregated statistics for the dashboard."""
     db = get_db()
+    from src.web.auth import get_current_user_from_request
+    user = get_current_user_from_request(db) if db else None
+
+    tg_connected = False
+    tg_username = None
+    if user and user.get("telegram_account") and user["telegram_account"].get("session_string"):
+        tg_connected = True
+        tg_username = user["telegram_account"].get("username") or user["telegram_account"].get("first_name")
+    elif forwarder_status.get("connected") and forwarder_status.get("running"):
+        tg_connected = True
+
     stats = {
         "running": forwarder_status.get("running", False),
-        "connected": forwarder_status.get("connected", False),
+        "connected": tg_connected,
+        "telegram_connected": tg_connected,
+        "telegram_username": tg_username,
         "last_update": forwarder_status.get("last_update"),
         "total_rules": 0,
         "active_rules": 0,
@@ -588,11 +601,26 @@ def api_start_forwarder():
     if not db:
         return jsonify({"error": "Database not connected"}), 500
 
+    from src.web.auth import get_current_user_from_request
+    user = get_current_user_from_request(db)
+    session_string = None
+    if user and user.get("telegram_account") and user["telegram_account"].get("session_string"):
+        session_string = user["telegram_account"]["session_string"]
+    elif config.get("SESSION_STRING"):
+        session_string = config.get("SESSION_STRING")
+
+    if not session_string:
+        return jsonify({"success": False, "error": "No Telegram account connected. Please connect your Telegram account first."}), 400
+
+    config["SESSION_STRING"] = session_string
+
     if forwarder_status["running"] and _engine_instance and getattr(_engine_instance, "_running", False):
         return jsonify({"success": True, "message": "Forwarder already running"})
 
     started = _start_forwarder_engine(config, db)
     if started:
+        forwarder_status["running"] = True
+        forwarder_status["connected"] = True
         return jsonify({"success": True, "message": "Forwarder started"})
     return jsonify({"error": "Could not start forwarder"}), 500
 
@@ -716,16 +744,14 @@ def api_auth_me():
 
     user = get_current_user_from_request(db)
     if not user:
-        # Check if environment session exists (default admin mode)
-        cfg = load_config()
-        env_session = cfg.get("TELEGRAM_STRING_SESSION")
         return jsonify({
             "authenticated": False,
-            "default_mode": bool(env_session),
-            "admin_account": "@ayg1133" if env_session else None
+            "telegram_connected": False,
+            "telegram_username": None
         })
 
     tg_account = user.get("telegram_account") or {}
+    has_tg = bool(tg_account.get("session_string"))
     return jsonify({
         "authenticated": True,
         "user": {
@@ -734,7 +760,7 @@ def api_auth_me():
             "name": user.get("name", ""),
             "plan": user.get("plan", "free"),
             "role": user.get("role", "user"),
-            "telegram_connected": bool(tg_account),
+            "telegram_connected": has_tg,
             "telegram_username": tg_account.get("username", ""),
             "telegram_first_name": tg_account.get("first_name", ""),
             "telegram_phone": tg_account.get("phone", ""),
@@ -789,27 +815,49 @@ def api_telegram_verify_code():
 
     result = asyncio.run(verify_telegram_login_code(db, api_id, api_hash, user_id, code, password, phone_number))
 
-    if result.get("success") and user and db:
-        # Save session to user profile
+    if result.get("success"):
         tg_data = result.get("telegram_account", {})
-        UserManager.update_telegram_account(db, str(user["_id"]), tg_data)
+        if user and db:
+            # Save session to user profile
+            UserManager.update_telegram_account(db, str(user["_id"]), tg_data)
+
+        # Automatically start or update engine with newly connected session
+        session_str = tg_data.get("session_string")
+        if session_str and db:
+            _stop_forwarder_engine()
+            cfg = load_config()
+            cfg["SESSION_STRING"] = session_str
+            _start_forwarder_engine(cfg, db)
+
+        forwarder_status["connected"] = True
+        forwarder_status["running"] = True
+        forwarder_status["last_update"] = datetime.now(timezone.utc).isoformat()
 
     return jsonify(result)
 
 
 @app.route("/api/auth/telegram/disconnect", methods=["POST"])
 def api_telegram_disconnect():
-    """Disconnect user's Telegram account."""
+    """Disconnect user's Telegram account and terminate active engine."""
     db = get_db()
-    if not db:
-        return jsonify({"success": False, "error": "Database not connected"}), 500
+    user = get_current_user_from_request(db) if db else None
 
-    user = get_current_user_from_request(db)
-    if not user:
-        return jsonify({"success": False, "error": "Not authenticated"}), 401
+    # Stop active engine completely
+    _stop_forwarder_engine()
 
-    UserManager.disconnect_telegram_account(db, str(user["_id"]))
-    return jsonify({"success": True, "message": "Telegram account disconnected successfully."})
+    if user and db:
+        UserManager.disconnect_telegram_account(db, str(user["_id"]))
+
+    forwarder_status["running"] = False
+    forwarder_status["connected"] = False
+    forwarder_status["last_update"] = datetime.now(timezone.utc).isoformat()
+
+    return jsonify({
+        "success": True,
+        "message": "Telegram account disconnected successfully.",
+        "connected": False,
+        "running": False
+    })
 
 
 @app.errorhandler(404)

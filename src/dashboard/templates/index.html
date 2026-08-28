@@ -222,11 +222,11 @@
                     <div class="space-y-3 text-sm">
                         <div class="flex justify-between items-center text-slate-300">
                             <span class="text-slate-400" data-i18n="lbl_userbot_account">Userbot Account:</span>
-                            <span id="overview-account-name" class="font-semibold text-brand-400">@ayg1133</span>
+                            <span id="overview-account-name" class="font-semibold text-slate-400">غير متصل (Disconnected)</span>
                         </div>
                         <div class="flex justify-between items-center text-slate-300">
                             <span class="text-slate-400" data-i18n="lbl_session_mode">Session Type:</span>
-                            <span class="font-mono text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-300">StringSession (Cloud)</span>
+                            <span id="overview-session-type" class="font-mono text-xs bg-slate-800 px-2 py-0.5 rounded text-slate-400">لا توجد جلسة نشطة</span>
                         </div>
                         <div class="flex justify-between items-center text-slate-300">
                             <span class="text-slate-400" data-i18n="lbl_keepalive">Keep-Alive Cron:</span>
@@ -242,7 +242,7 @@
                     <div class="pt-1">
                         <button onclick="openTelegramConnectModal()" class="w-full py-2 bg-gradient-to-r from-cyan-600/20 via-blue-600/20 to-cyan-600/20 hover:from-cyan-600/30 hover:to-blue-600/30 border border-cyan-500/40 text-cyan-300 text-xs font-semibold rounded-xl transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse shadow-sm">
                             <svg class="w-3.5 h-3.5 text-cyan-400 ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                            <span data-i18n="btn_connect_telegram">Connect Telegram Account (Web)</span>
+                            <span id="overview-tg-btn-text" data-i18n="btn_connect_telegram">Connect Telegram Account (Web)</span>
                         </button>
                     </div>
 
@@ -2047,17 +2047,30 @@
             try {
                 const res = await api('/api/auth/me');
                 const userBtnLabel = document.getElementById('header-user-label');
+                const accEl = document.getElementById('overview-account-name');
+                const sessEl = document.getElementById('overview-session-type');
+                const tgBtnText = document.getElementById('overview-tg-btn-text');
+
                 if (res.authenticated && res.user) {
                     currentUser = res.user;
                     if (userBtnLabel) userBtnLabel.textContent = currentUser.name || currentUser.email;
                     
-                    if (currentUser.telegram_connected && currentUser.telegram_username) {
-                        const accEl = document.getElementById('overview-account-name');
-                        if (accEl) accEl.textContent = '@' + currentUser.telegram_username;
+                    if (currentUser.telegram_connected) {
+                        const tgName = currentUser.telegram_username ? '@' + currentUser.telegram_username : (currentUser.telegram_first_name || 'Connected');
+                        if (accEl) accEl.innerHTML = `<span class="text-emerald-400 font-bold">${tgName}</span>`;
+                        if (sessEl) sessEl.innerHTML = `<span class="text-emerald-400 font-mono text-xs bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">StringSession (Active)</span>`;
+                        if (tgBtnText) tgBtnText.textContent = currentLang === 'ar' ? 'إدارة اتصال تليجرام (متصل)' : 'Manage Telegram (Connected)';
+                    } else {
+                        if (accEl) accEl.innerHTML = `<span class="text-slate-500 font-medium">${currentLang === 'ar' ? 'غير متصل' : 'Disconnected'}</span>`;
+                        if (sessEl) sessEl.innerHTML = `<span class="text-slate-500 font-mono text-xs bg-slate-800 px-2 py-0.5 rounded">${currentLang === 'ar' ? 'لا توجد جلسة نشطة' : 'No Active Session'}</span>`;
+                        if (tgBtnText) tgBtnText.textContent = currentLang === 'ar' ? 'ربط حساب تليجرام (Connect Web)' : 'Connect Telegram Account (Web)';
                     }
                 } else {
                     currentUser = null;
                     if (userBtnLabel) userBtnLabel.textContent = currentLang === 'ar' ? 'حسابي / تسجيل الدخول' : 'Account / Login';
+                    if (accEl) accEl.innerHTML = `<span class="text-slate-500 font-medium">${currentLang === 'ar' ? 'غير متصل' : 'Disconnected'}</span>`;
+                    if (sessEl) sessEl.innerHTML = `<span class="text-slate-500 font-mono text-xs bg-slate-800 px-2 py-0.5 rounded">${currentLang === 'ar' ? 'لا توجد جلسة نشطة' : 'No Active Session'}</span>`;
+                    if (tgBtnText) tgBtnText.textContent = currentLang === 'ar' ? 'ربط حساب تليجرام (Connect Web)' : 'Connect Telegram Account (Web)';
                 }
             } catch (e) {
                 console.warn('Auth status check failed:', e);
@@ -2236,14 +2249,19 @@
         }
 
         async function disconnectTelegramAccount() {
-            if (!confirm(currentLang === 'ar' ? 'هل أنت متأكد من رغبتك في قطع اتصال حساب التليجرام؟' : 'Are you sure you want to disconnect Telegram account?')) return;
+            if (!confirm(currentLang === 'ar' ? 'هل أنت متأكد من رغبتك في قطع اتصال حساب التليجرام وإيقاف التوجيه؟' : 'Are you sure you want to disconnect Telegram account and stop forwarder?')) return;
 
             const res = await api('/api/auth/telegram/disconnect', 'POST');
             if (res.success) {
-                showToast(currentLang === 'ar' ? 'تم قطع اتصال الحساب' : 'Telegram disconnected', 'info');
-                await checkAuthStatus();
+                showToast(currentLang === 'ar' ? 'تم قطع اتصال حساب تليجرام بنجاح وإيقاف المحرك' : 'Telegram disconnected and forwarder stopped', 'info');
+                if (currentUser) {
+                    currentUser.telegram_connected = false;
+                    currentUser.telegram_username = null;
+                }
                 resetTelegramConnectWizard();
                 closeTelegramConnectModal();
+                await checkAuthStatus();
+                await fetchStatus();
             } else {
                 showToast(res.error || 'Failed to disconnect', 'error');
             }
