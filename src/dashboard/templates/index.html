@@ -2812,20 +2812,15 @@
             }
         }
 
-        let pendingVerificationEmail = '';
-        let resendCooldownInterval = null;
-
         function openAuthModal() {
             const modal = document.getElementById('auth-modal');
             const loggedInView = document.getElementById('auth-logged-in-view');
             const formView = document.getElementById('auth-form-view');
-            const verifyView = document.getElementById('auth-verify-view');
             if (!modal) return;
 
             if (currentUser) {
                 loggedInView.classList.remove('hidden');
                 formView.classList.add('hidden');
-                if (verifyView) verifyView.classList.add('hidden');
                 document.getElementById('auth-user-email').textContent = currentUser.email;
                 document.getElementById('auth-user-name').textContent = currentUser.name || currentUser.email;
 
@@ -2868,9 +2863,7 @@
                 }
             } else {
                 loggedInView.classList.add('hidden');
-                if (verifyView) verifyView.classList.add('hidden');
                 formView.classList.remove('hidden');
-                switchAuthTab('login');
             }
             modal.classList.remove('hidden');
         }
@@ -2878,139 +2871,6 @@
         function closeAuthModal() {
             const modal = document.getElementById('auth-modal');
             if (modal) modal.classList.add('hidden');
-            if (resendCooldownInterval) {
-                clearInterval(resendCooldownInterval);
-                resendCooldownInterval = null;
-            }
-        }
-
-        function switchAuthTab(tab) {
-            currentAuthTab = tab;
-            const loginBtn = document.getElementById('auth-tab-login-btn');
-            const regBtn = document.getElementById('auth-tab-reg-btn');
-            const nameField = document.getElementById('auth-name-field');
-            const submitBtn = document.getElementById('auth-submit-btn');
-            const verifyView = document.getElementById('auth-verify-view');
-            const formView = document.getElementById('auth-form-view');
-
-            if (verifyView) verifyView.classList.add('hidden');
-            if (formView) formView.classList.remove('hidden');
-
-            if (tab === 'register') {
-                regBtn.className = 'flex-1 py-1.5 rounded-lg bg-brand-600 text-white font-bold';
-                loginBtn.className = 'flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800 font-medium';
-                nameField.classList.remove('hidden');
-                submitBtn.textContent = currentLang === 'ar' ? 'إنشاء الحساب' : 'Create Account';
-            } else {
-                loginBtn.className = 'flex-1 py-1.5 rounded-lg bg-brand-600 text-white font-bold';
-                regBtn.className = 'flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800 font-medium';
-                nameField.classList.add('hidden');
-                submitBtn.textContent = currentLang === 'ar' ? 'تسجيل الدخول' : 'Log In';
-            }
-        }
-
-        async function handleAuthSubmit(e) {
-            e.preventDefault();
-            const email = document.getElementById('auth-input-email').value.trim();
-            const password = document.getElementById('auth-input-password').value;
-            const name = document.getElementById('auth-input-name').value.trim();
-
-            const endpoint = currentAuthTab === 'register' ? '/api/auth/register' : '/api/auth/login';
-            const payload = currentAuthTab === 'register' ? { email, password, name } : { email, password };
-
-            const res = await api(endpoint, 'POST', payload);
-            if (res.success) {
-                if (currentAuthTab === 'register' && res.requires_verification) {
-                    pendingVerificationEmail = email;
-                    document.getElementById('auth-form-view').classList.add('hidden');
-                    const verifyView = document.getElementById('auth-verify-view');
-                    if (verifyView) {
-                        verifyView.classList.remove('hidden');
-                        document.getElementById('verify-user-email-display').textContent = email;
-                        const otpInput = document.getElementById('verify-input-otp');
-                        if (otpInput) {
-                            otpInput.value = '';
-                            otpInput.focus();
-                        }
-                    }
-                    startResendCooldown();
-                    showToast(currentLang === 'ar' ? 'تم إنشاء الحساب! أرسلنا رمز التحقق إلى بريدك الإلكتروني.' : 'Account created! Verification code sent to your email.', 'success');
-                    await checkAuthStatus();
-                } else {
-                    showToast(currentLang === 'ar' ? 'تم تسجيل الدخول بنجاح!' : 'Logged in successfully!', 'success');
-                    closeAuthModal();
-                    await checkAuthStatus();
-                    await loadRules();
-                }
-            } else {
-                showToast(res.error || 'Authentication failed', 'error');
-            }
-        }
-
-        async function handleVerifySubmit(e) {
-            e.preventDefault();
-            const otp = document.getElementById('verify-input-otp').value.trim();
-            const email = pendingVerificationEmail || (currentUser ? currentUser.email : '');
-
-            if (!otp) {
-                showToast(currentLang === 'ar' ? 'يرجى إدخال رمز التحقق' : 'Please enter verification code', 'warning');
-                return;
-            }
-
-            const btn = document.getElementById('verify-submit-btn');
-            if (btn) btn.disabled = true;
-
-            const res = await api('/api/auth/verify-email', 'POST', { email, otp });
-            if (btn) btn.disabled = false;
-
-            if (res.success) {
-                showToast(currentLang === 'ar' ? '🎉 تم تأكيد حسابك وتفعيله بنجاح!' : '🎉 Email verified successfully!', 'success');
-                closeAuthModal();
-                await checkAuthStatus();
-                await loadUserSubscription();
-            } else {
-                showToast(res.error || 'Verification failed', 'error');
-            }
-        }
-
-        async function handleResendVerification() {
-            const email = pendingVerificationEmail || (currentUser ? currentUser.email : '');
-            if (!email) {
-                showToast(currentLang === 'ar' ? 'البريد الإلكتروني مفقود' : 'Email missing', 'error');
-                return;
-            }
-
-            const res = await api('/api/auth/resend-verification', 'POST', { email });
-            if (res.success) {
-                showToast(currentLang === 'ar' ? 'تم إرسال رمز تحقق جديد إلى بريدك الإلكتروني' : 'New verification code sent', 'info');
-                startResendCooldown();
-            } else {
-                showToast(res.error || 'Failed to resend code', 'error');
-            }
-        }
-
-        function startResendCooldown() {
-            const btn = document.getElementById('btn-resend-verification');
-            const countdownEl = document.getElementById('resend-countdown');
-            if (!btn || !countdownEl) return;
-
-            let remaining = 60;
-            btn.classList.add('pointer-events-none', 'opacity-50');
-            countdownEl.classList.remove('hidden');
-            countdownEl.textContent = `(${remaining}s)`;
-
-            if (resendCooldownInterval) clearInterval(resendCooldownInterval);
-            resendCooldownInterval = setInterval(() => {
-                remaining--;
-                if (remaining <= 0) {
-                    clearInterval(resendCooldownInterval);
-                    resendCooldownInterval = null;
-                    btn.classList.remove('pointer-events-none', 'opacity-50');
-                    countdownEl.classList.add('hidden');
-                } else {
-                    countdownEl.textContent = `(${remaining}s)`;
-                }
-            }, 1000);
         }
 
         async function handleUserLogout() {
@@ -3090,18 +2950,42 @@
                 }
                 return clerkInstance;
             } catch (err) {
-                console.warn('Clerk initialization notice:', err);
+                console.warn('Auth initialization notice:', err);
                 return null;
             }
         }
 
-        async function handleClerkSignIn() {
+        async function handleGoogleSignIn() {
+            const clerk = await initClerk();
+            if (clerk) {
+                closeAuthModal();
+                try {
+                    clerk.openSignIn({ strategy: 'oauth_google' });
+                } catch (e) {
+                    clerk.openSignIn();
+                }
+            } else {
+                showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
+            }
+        }
+
+        async function handleEmailSignIn() {
             const clerk = await initClerk();
             if (clerk) {
                 closeAuthModal();
                 clerk.openSignIn();
             } else {
-                showToast(currentLang === 'ar' ? 'يمكنك تهيئة مفتاح CLERK_PUBLISHABLE_KEY في ملف .env للتفعيل السحابي' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
+                showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
+            }
+        }
+
+        async function handleEmailSignUp() {
+            const clerk = await initClerk();
+            if (clerk) {
+                closeAuthModal();
+                clerk.openSignUp();
+            } else {
+                showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
             }
         }
 
@@ -3795,6 +3679,7 @@
         window.addEventListener('DOMContentLoaded', async () => {
             setLanguage(currentLang);
             await checkAuthStatus();
+            initClerk();
             checkAdminVisibility();
             await loadUserSubscription();
             await fetchStatus();
@@ -3925,70 +3810,37 @@
                 </button>
             </div>
 
-            <!-- Email Verification View -->
-            <div id="auth-verify-view" class="hidden space-y-4 text-xs">
-                <div class="text-center space-y-2 py-2">
-                    <div class="w-12 h-12 rounded-2xl bg-indigo-500/20 text-indigo-400 border border-indigo-500/40 flex items-center justify-center mx-auto text-xl shadow-lg shadow-indigo-500/20">
-                        📬
-                    </div>
-                    <h4 class="text-base font-black text-white">تأكيد البريد الإلكتروني</h4>
-                    <p class="text-slate-400 text-xs leading-relaxed">
-                        تم إرسال رمز التحقق المكون من 6 أرقام ورابط التفعيل إلى بريدك:
-                    </p>
-                    <div id="verify-user-email-display" class="font-mono text-cyan-300 font-bold bg-slate-950 px-3 py-1.5 rounded-xl border border-slate-800 inline-block text-xs"></div>
-                </div>
-
-                <form id="verify-form" onsubmit="handleVerifySubmit(event)" class="space-y-3.5">
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1 text-center">أدخل رمز التحقق (OTP Code)</label>
-                        <input type="text" id="verify-input-otp" maxlength="6" pattern="[0-9]{6}" required placeholder="123456" class="w-full bg-slate-950 border border-indigo-500/60 rounded-xl px-4 py-2.5 text-center text-2xl font-mono tracking-widest text-cyan-300 font-black focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20">
-                    </div>
-
-                    <button type="submit" id="verify-submit-btn" class="w-full py-2.5 bg-gradient-to-r from-brand-600 to-cyan-500 hover:from-brand-500 hover:to-cyan-400 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-600/25 transition active:scale-95">
-                        ⚡ تأكيد الحساب وتفعيله
-                    </button>
-                </form>
-
-                <div class="flex items-center justify-between pt-2 border-t border-slate-800 text-[11px]">
-                    <button type="button" id="btn-resend-verification" onclick="handleResendVerification()" class="text-cyan-400 hover:text-cyan-300 font-semibold underline">
-                        إعادة إرسال الرمز
-                    </button>
-                    <span id="resend-countdown" class="text-slate-500 font-mono hidden">60s</span>
-                    <button type="button" onclick="closeAuthModal()" class="text-slate-400 hover:text-slate-200">
-                        إغلاق
-                    </button>
-                </div>
-            </div>
-
-            <!-- Login / Register Form View -->
+            <!-- Login / Register Options View -->
             <div id="auth-form-view" class="space-y-4">
-                <div class="flex border-b border-slate-800 pb-2 gap-2 text-xs font-semibold">
-                    <button type="button" id="auth-tab-login-btn" onclick="switchAuthTab('login')" class="flex-1 py-1.5 rounded-lg bg-brand-600 text-white font-bold">تسجيل الدخول</button>
-                    <button type="button" id="auth-tab-reg-btn" onclick="switchAuthTab('register')" class="flex-1 py-1.5 rounded-lg text-slate-400 hover:text-white bg-slate-800 font-medium">إنشاء حساب جديد</button>
+                <div class="text-center space-y-1 pb-1">
+                    <h4 class="text-base font-black text-white">تسجيل الدخول إلى TeleTips Pro</h4>
+                    <p class="text-xs text-slate-400">سجل الدخول بحساب Google أو بريدك الإلكتروني للمتابعة فوراً</p>
                 </div>
-                <form id="auth-form" onsubmit="handleAuthSubmit(event)" class="space-y-3.5">
-                    <div id="auth-name-field" class="hidden">
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">الاسم الكامل</label>
-                        <input type="text" id="auth-input-name" placeholder="John Doe" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-xs text-slate-100 focus:outline-none focus:border-brand-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">البريد الإلكتروني</label>
-                        <input type="email" id="auth-input-email" required placeholder="client@example.com" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-xs text-slate-100 focus:outline-none focus:border-brand-500">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-300 mb-1">كلمة المرور</label>
-                        <input type="password" id="auth-input-password" required placeholder="••••••••" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2 text-xs text-slate-100 focus:outline-none focus:border-brand-500">
-                    </div>
-                    <button type="submit" id="auth-submit-btn" class="w-full py-2.5 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-bold shadow-md shadow-brand-600/20 transition">
-                        تسجيل الدخول
-                    </button>
-                </form>
 
-                <!-- Clerk Fast Login Button -->
-                <div class="pt-2 border-t border-slate-800">
-                    <button type="button" onclick="handleClerkSignIn()" class="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-900 border border-slate-800 hover:border-cyan-500/50 text-slate-300 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2 rtl:space-x-reverse shadow-inner">
-                        <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4M10 17l5-5-5-5M15 12H3"/></svg>
-                        <span>تسجيل الدخول عبر Clerk (Google / Passkey)</span>
+                <!-- Google Sign In Button -->
+                <button type="button" onclick="handleGoogleSignIn()" class="w-full py-3 px-4 bg-white hover:bg-slate-100 text-slate-900 rounded-xl text-xs font-black transition flex items-center justify-center space-x-2.5 rtl:space-x-reverse shadow-lg shadow-white/10 hover:scale-[1.01] active:scale-95">
+                    <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                    <span>المتابعة باستخدام حساب Google</span>
+                </button>
+
+                <!-- Divider -->
+                <div class="flex items-center my-2">
+                    <div class="flex-grow border-t border-slate-800"></div>
+                    <span class="px-3 text-[11px] text-slate-500 font-semibold uppercase">أو</span>
+                    <div class="flex-grow border-t border-slate-800"></div>
+                </div>
+
+                <!-- Email Sign In Button -->
+                <button type="button" onclick="handleEmailSignIn()" class="w-full py-3 px-4 bg-slate-950 hover:bg-slate-900 border border-slate-700/80 hover:border-cyan-500/50 text-slate-200 hover:text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2.5 rtl:space-x-reverse shadow-md hover:scale-[1.01] active:scale-95">
+                    <svg class="w-4 h-4 text-cyan-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                    <span>المتابعة باستخدام البريد الإلكتروني</span>
+                </button>
+
+                <!-- Sign Up Link -->
+                <div class="pt-3 border-t border-slate-800/80 text-center text-xs text-slate-400 flex items-center justify-center gap-1.5">
+                    <span>ليس لديك حساب؟</span>
+                    <button type="button" onclick="handleEmailSignUp()" class="text-cyan-400 hover:text-cyan-300 font-bold underline">
+                        إنشاء حساب جديد (3 أيام تجربة مجانية)
                     </button>
                 </div>
             </div>
