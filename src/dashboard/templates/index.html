@@ -2443,7 +2443,33 @@
                 formView.classList.add('hidden');
                 document.getElementById('auth-user-email').textContent = currentUser.email;
                 document.getElementById('auth-user-name').textContent = currentUser.name || currentUser.email;
-                document.getElementById('auth-user-plan').textContent = (currentUser.plan || 'Free').toUpperCase();
+
+                const roleEl = document.getElementById('auth-user-role');
+                const planEl = document.getElementById('auth-user-plan');
+                const isSuper = (currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com');
+
+                if (roleEl) {
+                    if (isSuper) {
+                        roleEl.textContent = '👑 SUPER ADMIN';
+                        roleEl.className = 'px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold uppercase border border-purple-500/40';
+                    } else if (currentUser.role === 'admin') {
+                        roleEl.textContent = '🛡️ ADMIN';
+                        roleEl.className = 'px-2.5 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold uppercase border border-blue-500/40';
+                    } else {
+                        roleEl.textContent = 'CLIENT';
+                        roleEl.className = 'px-2.5 py-0.5 rounded bg-slate-800 text-slate-300 font-medium';
+                    }
+                }
+
+                if (planEl) {
+                    if (isSuper) {
+                        planEl.textContent = '💎 ANNUAL VIP (UNLIMITED)';
+                        planEl.className = 'px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold uppercase border border-emerald-500/40';
+                    } else {
+                        planEl.textContent = (currentUser.plan || 'Trial').toUpperCase();
+                        planEl.className = 'px-2.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold uppercase';
+                    }
+                }
             } else {
                 loggedInView.classList.add('hidden');
                 formView.classList.remove('hidden');
@@ -2896,8 +2922,12 @@
                         <span id="auth-user-name" class="font-semibold text-slate-200"></span>
                     </div>
                     <div class="flex justify-between items-center text-slate-400">
-                        <span>الباقة الحالية:</span>
-                        <span id="auth-user-plan" class="px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold uppercase">PRO</span>
+                        <span>الرتبة والصلاحية:</span>
+                        <span id="auth-user-role" class="px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold uppercase border border-purple-500/40">SUPER ADMIN</span>
+                    </div>
+                    <div class="flex justify-between items-center text-slate-400">
+                        <span>الباقة والاشتراك:</span>
+                        <span id="auth-user-plan" class="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold uppercase border border-emerald-500/40">ANNUAL VIP</span>
                     </div>
                 </div>
                 <button onclick="handleUserLogout()" class="w-full py-2.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl font-bold transition">

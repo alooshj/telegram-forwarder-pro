@@ -916,14 +916,15 @@ def api_auth_me():
 
     tg_account = user.get("telegram_account") or {}
     has_tg = bool(tg_account.get("session_string"))
+    is_super = (user.get("role") == "super_admin" or user.get("email") == "alooshpal@gmail.com")
     return jsonify({
         "authenticated": True,
         "user": {
             "id": str(user["_id"]),
             "email": user.get("email", ""),
             "name": user.get("name", ""),
-            "plan": user.get("plan", "free"),
-            "role": user.get("role", "user"),
+            "plan": "annual" if is_super else user.get("plan", "trial"),
+            "role": "super_admin" if is_super else user.get("role", "client"),
             "telegram_connected": has_tg,
             "telegram_username": tg_account.get("username", ""),
             "telegram_first_name": tg_account.get("first_name", ""),
