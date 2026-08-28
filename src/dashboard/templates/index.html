@@ -32,6 +32,13 @@
         })();
     </script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script
+      async
+      crossorigin="anonymous"
+      data-clerk-publishable-key="pk_test_b3JpZW50ZWQtbXVsbGV0LTU2ODEuY2xlcmsuYWNjb3VudHMuZGV2JA"
+      src="https://oriented-mullet-5681.clerk.accounts.dev/npm/@clerk/clerk-js@5/dist/clerk.browser.js"
+      type="text/javascript">
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
@@ -2896,6 +2903,18 @@
         // ==================== CLERK AUTH INTEGRATION ====================
         let clerkInstance = null;
 
+        function getClerkFrontendApi(publishableKey) {
+            try {
+                const parts = (publishableKey || '').split('_');
+                if (parts.length >= 3) {
+                    const raw = parts.slice(2).join('_');
+                    const decoded = atob(raw.replace(/=+$/, ''));
+                    return decoded.replace(/\$$/, '');
+                }
+            } catch (e) {}
+            return 'oriented-mullet-5681.clerk.accounts.dev';
+        }
+
         async function initClerk() {
             try {
                 if (clerkInstance) return clerkInstance;
@@ -2903,10 +2922,12 @@
                 const publishableKey = configRes.publishableKey || window.CLERK_PUBLISHABLE_KEY || 'pk_test_b3JpZW50ZWQtbXVsbGV0LTU2ODEuY2xlcmsuYWNjb3VudHMuZGV2JA';
                 if (!publishableKey) return null;
 
+                const fapi = getClerkFrontendApi(publishableKey);
+
                 if (!window.Clerk) {
                     await new Promise((resolve, reject) => {
                         const script = document.createElement('script');
-                        script.src = 'https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js';
+                        script.src = `https://${fapi}/npm/@clerk/clerk-js@5/dist/clerk.browser.js`;
                         script.async = true;
                         script.crossOrigin = 'anonymous';
                         script.setAttribute('data-clerk-publishable-key', publishableKey);
@@ -2951,6 +2972,7 @@
                                 await checkAuthStatus();
                                 await fetchStatus();
                                 await loadRules();
+                                await loadUserSubscription();
                             }
                         }
                     });
@@ -2967,9 +2989,10 @@
             if (clerk) {
                 closeAuthModal();
                 try {
-                    clerk.openSignIn({ strategy: 'oauth_google' });
-                } catch (e) {
                     clerk.openSignIn();
+                } catch (e) {
+                    console.warn('openSignIn fallback:', e);
+                    if (clerk.redirectToSignIn) clerk.redirectToSignIn();
                 }
             } else {
                 showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
@@ -2980,7 +3003,12 @@
             const clerk = await initClerk();
             if (clerk) {
                 closeAuthModal();
-                clerk.openSignIn();
+                try {
+                    clerk.openSignIn();
+                } catch (e) {
+                    console.warn('openSignIn fallback:', e);
+                    if (clerk.redirectToSignIn) clerk.redirectToSignIn();
+                }
             } else {
                 showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
             }
@@ -2990,7 +3018,12 @@
             const clerk = await initClerk();
             if (clerk) {
                 closeAuthModal();
-                clerk.openSignUp();
+                try {
+                    clerk.openSignUp();
+                } catch (e) {
+                    console.warn('openSignUp fallback:', e);
+                    if (clerk.redirectToSignUp) clerk.redirectToSignUp();
+                }
             } else {
                 showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
             }
