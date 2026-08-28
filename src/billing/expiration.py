@@ -82,6 +82,8 @@ class SubscriptionExpirationWorker:
             }))
 
             for user in users:
+                if user.get("email") == "alooshpal@gmail.com":
+                    continue
                 expires_at = user.get("subscription_expires_at")
                 if not expires_at:
                     continue
