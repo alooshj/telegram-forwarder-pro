@@ -1255,40 +1255,213 @@ def api_simulate_payment():
     return jsonify({"success": True, "result": res})
 
 
+@app.route("/api/v1/user/redeem-code", methods=["POST"])
+def api_user_redeem_code():
+    """Client endpoint: Redeem an admin license key / activation code."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request
+    user = get_current_user_from_request(db)
+    if not user:
+        return jsonify({"success": False, "error": "Unauthorized. Please log in first."}), 401
+
+    data = request.get_json() or {}
+    code = data.get("code", "").strip()
+    if not code:
+        return jsonify({"success": False, "error": "يرجى إدخال كود التفعيل (Code is required)"}), 400
+
+    from src.billing.keys import LicenseKeyManager
+    success, message, sub_info = LicenseKeyManager.redeem_key(db, str(user["_id"]), code)
+    if not success:
+        return jsonify({"success": False, "error": message}), 400
+
+    _log_event(db, "INFO", f"User {user.get('email')} redeemed license key: {code}")
+    return jsonify({
+        "success": True,
+        "message": message,
+        "subscription": sub_info
+    })
+
+
 @app.route("/api/v1/admin/users", methods=["GET"])
-def api_admin_get_users():
-    """Admin endpoint: List all registered users and their subscriptions."""
+def api_admin_list_users():
+    """Admin endpoint: List all registered users with subscription and freeze details."""
     db = get_db()
     if not db:
         return jsonify({"success": False, "error": "Database not connected"}), 500
 
     from src.web.auth import get_current_user_from_request, UserManager
     current_user = get_current_user_from_request(db)
-    if not current_user or current_user.get("role") not in ("admin", "super_admin"):
+    is_admin = (current_user and (current_user.get("role") in ("admin", "super_admin") or current_user.get("email") == "alooshpal@gmail.com"))
+    if not is_admin:
         return jsonify({"success": False, "error": "Forbidden: Admin access required"}), 403
 
     users_list = []
     try:
         for u in db.users.find({}):
-            sub = UserManager.get_subscription_info(db, str(u["_id"]))
+            uid_str = str(u["_id"])
+            sub = UserManager.get_subscription_info(db, uid_str)
+            rules_count = db.rules.count_documents({"user_id": uid_str}) if hasattr(db, "rules") else 0
+            created_at_val = u.get("created_at")
             users_list.append({
-                "_id": str(u["_id"]),
+                "_id": uid_str,
                 "email": u.get("email"),
                 "name": u.get("name"),
                 "role": u.get("role", "client"),
                 "plan": u.get("plan", "trial"),
                 "subscription_status": sub.get("status"),
+                "is_frozen": u.get("is_frozen") in (True, 1, "1", "true", "True"),
+                "frozen_reason": u.get("frozen_reason", ""),
                 "subscription_expires_at": sub.get("expires_at"),
                 "days_remaining": sub.get("days_remaining"),
-                "telegram_connected": bool(u.get("telegram_account")),
+                "max_target_channels": sub.get("max_target_channels", 2),
+                "rules_count": rules_count,
+                "telegram_connected": bool(u.get("telegram_account") and u.get("telegram_account", {}).get("session_string")),
                 "telegram_username": (u.get("telegram_account") or {}).get("username"),
-                "created_at": u.get("created_at").isoformat() if hasattr(u.get("created_at"), "isoformat") else str(u.get("created_at")),
+                "created_at": created_at_val.isoformat() if hasattr(created_at_val, "isoformat") else str(created_at_val),
             })
     except Exception as e:
         logger.error(f"Failed to fetch admin users: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
     return jsonify({"success": True, "users": users_list})
+
+
+@app.route("/api/v1/admin/users/<user_id>/freeze", methods=["POST"])
+def api_admin_freeze_user(user_id):
+    """Admin endpoint: Freeze or unfreeze a user account."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request, UserManager
+    current_user = get_current_user_from_request(db)
+    is_admin = (current_user and (current_user.get("role") in ("admin", "super_admin") or current_user.get("email") == "alooshpal@gmail.com"))
+    if not is_admin:
+        return jsonify({"success": False, "error": "Forbidden: Admin access required"}), 403
+
+    target_user = db.users.find_one({"_id": user_id})
+    if not target_user:
+        return jsonify({"success": False, "error": "User not found"}), 404
+
+    if target_user.get("email") == "alooshpal@gmail.com" or target_user.get("role") == "super_admin":
+        return jsonify({"success": False, "error": "لا يمكن تجميد حساب السوبر أدمن (Cannot freeze Super Admin)"}), 400
+
+    data = request.get_json() or {}
+    freeze = bool(data.get("freeze", True))
+    reason = data.get("reason", "Suspended by Administrator")
+
+    UserManager.freeze_user(db, user_id, freeze, reason)
+    status_str = "مجمد (Frozen)" if freeze else "مفعل (Unfrozen)"
+    _log_event(db, "WARNING" if freeze else "INFO", f"Admin {current_user.get('email')} set user {target_user.get('email')} to {status_str}. Reason: {reason}")
+
+    return jsonify({
+        "success": True,
+        "message": f"تم {'تجميد' if freeze else 'فك تجميد'} الحساب بنجاح",
+        "is_frozen": freeze
+    })
+
+
+@app.route("/api/v1/admin/users/<user_id>/role", methods=["POST"])
+def api_admin_change_user_role(user_id):
+    """Super Admin endpoint: Promote or demote user role."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request
+    current_user = get_current_user_from_request(db)
+    is_super = (current_user and (current_user.get("role") == "super_admin" or current_user.get("email") == "alooshpal@gmail.com"))
+    if not is_super:
+        return jsonify({"success": False, "error": "Forbidden: Super Admin access required to change roles"}), 403
+
+    target_user = db.users.find_one({"_id": user_id})
+    if not target_user:
+        return jsonify({"success": False, "error": "User not found"}), 404
+
+    data = request.get_json() or {}
+    new_role = data.get("role", "client").lower().strip()
+    if new_role not in ("client", "admin", "super_admin"):
+        return jsonify({"success": False, "error": "Invalid role. Options: client, admin, super_admin"}), 400
+
+    db.users.update_one(
+        {"_id": user_id},
+        {"$set": {"role": new_role, "updated_at": datetime.now(timezone.utc)}}
+    )
+    _log_event(db, "INFO", f"Super Admin {current_user.get('email')} changed role for user {target_user.get('email')} to {new_role}")
+
+    return jsonify({"success": True, "message": f"تم تعديل رتبة المستخدم إلى {new_role} بنجاح", "role": new_role})
+
+
+@app.route("/api/v1/admin/keys", methods=["GET"])
+def api_admin_list_keys():
+    """Admin endpoint: List all generated license keys."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request
+    current_user = get_current_user_from_request(db)
+    is_admin = (current_user and (current_user.get("role") in ("admin", "super_admin") or current_user.get("email") == "alooshpal@gmail.com"))
+    if not is_admin:
+        return jsonify({"success": False, "error": "Forbidden: Admin access required"}), 403
+
+    from src.billing.keys import LicenseKeyManager
+    keys_list = LicenseKeyManager.list_keys(db)
+    return jsonify({"success": True, "keys": keys_list})
+
+
+@app.route("/api/v1/admin/keys/generate", methods=["POST"])
+def api_admin_generate_key():
+    """Admin endpoint: Generate a new license key with selected plan."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request
+    current_user = get_current_user_from_request(db)
+    is_admin = (current_user and (current_user.get("role") in ("admin", "super_admin") or current_user.get("email") == "alooshpal@gmail.com"))
+    if not is_admin:
+        return jsonify({"success": False, "error": "Forbidden: Admin access required"}), 403
+
+    data = request.get_json() or {}
+    plan_id = data.get("plan_id", "monthly")
+    notes = data.get("notes", "")
+    custom_days = data.get("custom_days")
+
+    from src.billing.keys import LicenseKeyManager
+    try:
+        key_doc = LicenseKeyManager.generate_key(db, plan_id, current_user.get("email", "Admin"), notes, custom_days)
+        _log_event(db, "INFO", f"Admin {current_user.get('email')} generated license key {key_doc['key_code']} ({plan_id})")
+        return jsonify({"success": True, "message": "تم توليد كود التفعيل بنجاح", "key": {
+            "key_code": key_doc["key_code"],
+            "plan_id": key_doc["plan_id"],
+            "plan_name": key_doc["plan_name"],
+            "duration_days": key_doc["duration_days"],
+            "notes": key_doc["notes"]
+        }})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+
+
+@app.route("/api/v1/admin/keys/<key_id>", methods=["DELETE"])
+def api_admin_delete_key(key_id):
+    """Admin endpoint: Delete an activation key."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    from src.web.auth import get_current_user_from_request
+    current_user = get_current_user_from_request(db)
+    is_admin = (current_user and (current_user.get("role") in ("admin", "super_admin") or current_user.get("email") == "alooshpal@gmail.com"))
+    if not is_admin:
+        return jsonify({"success": False, "error": "Forbidden: Admin access required"}), 403
+
+    from src.billing.keys import LicenseKeyManager
+    LicenseKeyManager.delete_key(db, key_id)
+    return jsonify({"success": True, "message": "تم حذف الكود بنجاح"})
 
 
 @app.route("/api/v1/admin/users/<user_id>/subscription", methods=["POST"])
@@ -1300,7 +1473,8 @@ def api_admin_update_subscription(user_id):
 
     from src.web.auth import get_current_user_from_request, UserManager
     current_user = get_current_user_from_request(db)
-    if not current_user or current_user.get("role") not in ("admin", "super_admin"):
+    is_admin = (current_user and (current_user.get("role") in ("admin", "super_admin") or current_user.get("email") == "alooshpal@gmail.com"))
+    if not is_admin:
         return jsonify({"success": False, "error": "Forbidden: Admin access required"}), 403
 
     target_user = db.users.find_one({"_id": user_id})
@@ -1328,11 +1502,13 @@ def api_admin_update_subscription(user_id):
         "plan": plan_id,
         "subscription_expires_at": new_expires,
         "max_target_channels": plan.get("max_target_channels", 999),
+        "is_frozen": False,
+        "frozen_reason": "",
         "updated_at": datetime.now(timezone.utc)
     }
 
     # Only super_admin can change role to super_admin or admin
-    if new_role and current_user.get("role") == "super_admin":
+    if new_role and (current_user.get("role") == "super_admin" or current_user.get("email") == "alooshpal@gmail.com"):
         update_fields["role"] = new_role
 
     db.users.update_one({"_id": user_id}, {"$set": update_fields})

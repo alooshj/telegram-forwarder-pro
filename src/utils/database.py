@@ -156,6 +156,19 @@ class SQLiteDB:
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         completed_at TIMESTAMP
                     );
+                    CREATE TABLE IF NOT EXISTS license_keys (
+                        _id TEXT PRIMARY KEY,
+                        key_code TEXT UNIQUE,
+                        plan_id TEXT,
+                        plan_name TEXT,
+                        duration_days INTEGER,
+                        created_by TEXT,
+                        is_redeemed INTEGER DEFAULT 0,
+                        redeemed_by TEXT,
+                        redeemed_at TIMESTAMP,
+                        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                        notes TEXT
+                    );
                     CREATE TABLE IF NOT EXISTS pending_auth (
                         _id TEXT PRIMARY KEY,
                         phone TEXT,
@@ -171,7 +184,7 @@ class SQLiteDB:
                     except sqlite3.OperationalError:
                         pass
                 # Migrations for users
-                for col in ["subscription_status", "subscription_expires_at", "max_target_channels", "plan", "role"]:
+                for col in ["subscription_status", "subscription_expires_at", "max_target_channels", "plan", "role", "is_frozen", "frozen_reason"]:
                     try:
                         conn.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT;")
                     except sqlite3.OperationalError:
@@ -188,6 +201,10 @@ class SQLiteDB:
     @property
     def transactions(self):
         return _SQLiteCollection(self, "transactions")
+
+    @property
+    def license_keys(self):
+        return _SQLiteCollection(self, "license_keys")
 
     @property
     def pending_auth(self):

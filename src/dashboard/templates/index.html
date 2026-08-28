@@ -175,6 +175,11 @@
                 <span data-i18n="tab_pricing">Plans & Subscriptions</span>
                 <span id="tab-sub-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1 rtl:mr-1"></span>
             </button>
+            <button onclick="switchTab('admin')" id="tab-admin-btn" class="tab-btn hidden flex items-center space-x-2 rtl:space-x-reverse px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 hover:border-rose-400/50 transition-all shadow-sm flex-shrink-0 whitespace-nowrap">
+                <svg class="w-4 h-4 text-rose-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <span>لوحة الإدارة والمشتركين (Admin Panel)</span>
+                <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse ml-1 rtl:mr-1"></span>
+            </button>
             <button onclick="switchTab('forwarding')" id="tab-forwarding-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
                 <svg class="w-4 h-4 text-cyan-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
                 <span data-i18n="tab_forwarding">Forwarding Rules</span>
@@ -226,6 +231,25 @@
                         <button onclick="openCheckoutModal('monthly')" class="px-4 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold rounded-xl text-xs sm:text-sm shadow-lg shadow-amber-500/20 transition-all flex items-center space-x-1.5 rtl:space-x-reverse hover:scale-105 active:scale-95">
                             <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
                             <span data-i18n="btn_upgrade_now">ترقية / تمديد الاشتراك الآن</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Manual Key Redemption Card for Public / Clients -->
+            <div class="bg-gradient-to-r from-surface-900 via-surface-850 to-indigo-950/40 border border-indigo-500/30 rounded-2xl p-4 sm:p-5 shadow-lg">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                            <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">🎁</div>
+                            <h3 class="font-bold text-white text-sm sm:text-base">تفعيل كود اشتراك يدوي (Redeem Activation Key)</h3>
+                        </div>
+                        <p class="text-xs text-slate-400">إذا استلمت كود تفعيل أو بطاقة اشتراك من الإدارة، اكتب الكود هنا وسيتم تفعيل وتمديد حسابك فوراً.</p>
+                    </div>
+                    <div class="flex items-center gap-2 max-w-md w-full md:w-auto">
+                        <input type="text" id="redeem-code-input" placeholder="ACT-XXXX-XXXX-XXXX" dir="ltr" class="w-full md:w-60 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-indigo-300 font-mono uppercase tracking-widest focus:outline-none focus:border-indigo-400">
+                        <button onclick="submitRedeemCode()" id="btn-redeem-code" class="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-600/20 transition whitespace-nowrap flex items-center space-x-1 rtl:space-x-reverse">
+                            <span>تفعيل الآن</span>
                         </button>
                     </div>
                 </div>
@@ -360,6 +384,189 @@
                 </div>
 
             </div>
+        </div>
+
+        <!-- ==================== TAB: ADMIN & SUBSCRIBERS MANAGEMENT ==================== -->
+        <div id="tab-content-admin" class="tab-pane hidden space-y-6 animate-fade-in">
+            
+            <!-- Admin Header Banner -->
+            <div class="bg-gradient-to-r from-surface-900 via-rose-950/30 to-slate-900 border border-rose-500/30 rounded-2xl p-5 sm:p-6 shadow-xl relative overflow-hidden">
+                <div class="absolute -top-12 -right-12 w-48 h-48 bg-rose-500/10 rounded-full blur-3xl pointer-events-none"></div>
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+                    <div class="space-y-1">
+                        <div class="flex items-center space-x-2.5 rtl:space-x-reverse">
+                            <span class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-black">👑</span>
+                            <h2 class="text-xl sm:text-2xl font-black text-white">لوحة الإدارة والتحكم بالأعضاء المشتركين</h2>
+                            <span class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/20 text-rose-300 border border-rose-500/40">ADMIN ONLY</span>
+                        </div>
+                        <p class="text-xs sm:text-sm text-slate-400">إدارة المشتركين، تجميد وفك تجميد الحسابات، تمديد الخطط يدوياً، وتوليد أكواد التفعيل.</p>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="loadAdminData()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 rounded-xl text-xs font-bold transition flex items-center space-x-1.5 rtl:space-x-reverse">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+                            <span>تحديث البيانات</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Admin Overview Metrics Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Total Users -->
+                <div class="bg-surface-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-2">
+                    <div class="flex justify-between items-center text-slate-400 text-xs font-bold uppercase">
+                        <span>إجمالي المشتركين</span>
+                        <div class="w-8 h-8 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg></div>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-white" id="admin-stat-total-users">0</div>
+                    <p class="text-[11px] text-slate-500">حسابات مسجلة في قاعدة البيانات</p>
+                </div>
+
+                <!-- Active Subscriptions -->
+                <div class="bg-surface-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-2">
+                    <div class="flex justify-between items-center text-slate-400 text-xs font-bold uppercase">
+                        <span>الاشتراكات النشطة</span>
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-400 flex items-center justify-center"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg></div>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-emerald-400" id="admin-stat-active-subs">0</div>
+                    <p class="text-[11px] text-slate-500">مشتركين نشطين في فترة الصلاحية</p>
+                </div>
+
+                <!-- Frozen Users -->
+                <div class="bg-surface-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-2">
+                    <div class="flex justify-between items-center text-slate-400 text-xs font-bold uppercase">
+                        <span>الحسابات المجمدة</span>
+                        <div class="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-400 flex items-center justify-center font-bold">❄️</div>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-rose-400" id="admin-stat-frozen-users">0</div>
+                    <p class="text-[11px] text-slate-500">حسابات موقوفة ومجمدة عن التوجيه</p>
+                </div>
+
+                <!-- Unused License Keys -->
+                <div class="bg-surface-900 border border-slate-800 rounded-2xl p-4 sm:p-5 shadow-sm space-y-2">
+                    <div class="flex justify-between items-center text-slate-400 text-xs font-bold uppercase">
+                        <span>أكواد التفعيل المتاحة</span>
+                        <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">🎁</div>
+                    </div>
+                    <div class="text-2xl sm:text-3xl font-black text-amber-400" id="admin-stat-unused-keys">0</div>
+                    <p class="text-[11px] text-slate-500">مفاتيح تفعيل غير مستخدمة</p>
+                </div>
+            </div>
+
+            <!-- Section 1: Subscribers List Table -->
+            <div class="bg-surface-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-sm">
+                <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-4">
+                    <div class="space-y-0.5">
+                        <h3 class="font-bold text-white text-base">قائمة الأعضاء المشتركين والتحكم بالحسابات</h3>
+                        <p class="text-xs text-slate-400">عرض كامل لتفاصيل الحسابات، الخطط المفعلة، وإجراءات التجميد والتمديد.</p>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-2">
+                        <input type="text" id="admin-user-search" oninput="filterAdminUsersTable()" placeholder="بحث بالبريد أو الاسم..." class="bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-rose-400 w-full sm:w-56">
+                        <select id="admin-user-filter" onchange="filterAdminUsersTable()" class="bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-rose-400">
+                            <option value="all">كافة الحسابات (All)</option>
+                            <option value="active">نشط فقط (Active)</option>
+                            <option value="trial">تجريبي (Trial)</option>
+                            <option value="expired">منتهي (Expired)</option>
+                            <option value="frozen">مجمد فقط (Frozen ❄️)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Users Table -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-right rtl:text-right text-xs">
+                        <thead class="bg-slate-950/60 text-slate-400 font-semibold border-b border-slate-800">
+                            <tr>
+                                <th class="p-3">المستخدم / البريد الإلكتروني</th>
+                                <th class="p-3">الرتبة</th>
+                                <th class="p-3">حساب تليجرام</th>
+                                <th class="p-3">الخطة المفعلة</th>
+                                <th class="p-3">حالة الاشتراك</th>
+                                <th class="p-3">المدة والانتهاء</th>
+                                <th class="p-3 text-center">الإجراءات والتحكم</th>
+                            </tr>
+                        </thead>
+                        <tbody id="admin-users-tbody" class="divide-y divide-slate-800/60 text-slate-300">
+                            <tr>
+                                <td colspan="7" class="p-6 text-center text-slate-500">جارٍ تحميل بيانات المشتركين...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Section 2: License Keys Generator & Vault -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                <!-- Card 1: Key Generator Form -->
+                <div class="bg-surface-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-sm flex flex-col justify-between">
+                    <div class="space-y-3">
+                        <div class="flex items-center space-x-2 rtl:space-x-reverse border-b border-slate-800 pb-3">
+                            <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">⚡</div>
+                            <h3 class="font-bold text-white text-sm">توليد كود تفعيل جديد (Generate Key)</h3>
+                        </div>
+                        <p class="text-xs text-slate-400">أنشئ مفتاح ترخيص يدوي لمنحه لأحد العملاء لتفعيل حسابه فوراً.</p>
+
+                        <div class="space-y-3 pt-1">
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-300 mb-1">الخطة والمدة</label>
+                                <select id="key-gen-plan" onchange="toggleCustomDaysInput()" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400">
+                                    <option value="weekly">باقة أسبوع ($5 / 7 أيام)</option>
+                                    <option value="monthly" selected>باقة شهر ($15 / 30 يوم)</option>
+                                    <option value="quarterly">باقة 3 شهور ($35 / 90 يوم)</option>
+                                    <option value="semi_annual">باقة 6 شهور ($65 / 180 يوم)</option>
+                                    <option value="annual">باقة سنة ($110 / 365 يوم)</option>
+                                    <option value="custom">مدة مخصصة بالأيام (Custom Days)...</option>
+                                </select>
+                            </div>
+
+                            <div id="key-gen-custom-days-container" class="hidden">
+                                <label class="block text-[11px] font-semibold text-slate-300 mb-1">عدد الأيام المخصصة</label>
+                                <input type="number" id="key-gen-custom-days" min="1" max="3650" placeholder="30" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400">
+                            </div>
+
+                            <div>
+                                <label class="block text-[11px] font-semibold text-slate-300 mb-1">ملاحظات / اسم العميل (اختياري)</label>
+                                <input type="text" id="key-gen-notes" placeholder="e.g. VIP Customer John" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-amber-400">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button onclick="generateAdminKey()" id="btn-generate-key" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse mt-4">
+                        <span>⚡ توليد كود التفعيل الآن</span>
+                    </button>
+                </div>
+
+                <!-- Card 2: Generated Keys Vault Table -->
+                <div class="lg:col-span-2 bg-surface-900 border border-slate-800 rounded-2xl p-5 space-y-4 shadow-sm">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                        <div class="space-y-0.5">
+                            <h3 class="font-bold text-white text-sm sm:text-base">سجل مفاتيح وأكواد التفعيل المولدة</h3>
+                            <p class="text-xs text-slate-400">قائمة بكافة الأكواد وحالة استخدامها من قبل الأعضاء.</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto max-h-80 overflow-y-auto">
+                        <table class="w-full text-right rtl:text-right text-xs">
+                            <thead class="bg-slate-950/60 text-slate-400 font-semibold border-b border-slate-800 sticky top-0">
+                                <tr>
+                                    <th class="p-2.5">كود التفعيل</th>
+                                    <th class="p-2.5">الخطة / المدة</th>
+                                    <th class="p-2.5">الحالة</th>
+                                    <th class="p-2.5">المستفيد</th>
+                                    <th class="p-2.5">الملاحظات</th>
+                                    <th class="p-2.5 text-center">إجراء</th>
+                                </tr>
+                            </thead>
+                            <tbody id="admin-keys-tbody" class="divide-y divide-slate-800/60 text-slate-300">
+                                <tr>
+                                    <td colspan="6" class="p-5 text-center text-slate-500">لا توجد أكواد مولدة بعد</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
         </div>
 
         <!-- ==================== TAB 1: OVERVIEW ==================== -->
@@ -2427,6 +2634,7 @@
                     if (sessEl) sessEl.innerHTML = `<span class="text-slate-500 font-mono text-xs bg-slate-800 px-2 py-0.5 rounded">${currentLang === 'ar' ? 'لا توجد جلسة نشطة' : 'No Active Session'}</span>`;
                     if (tgBtnText) tgBtnText.textContent = currentLang === 'ar' ? 'ربط حساب تليجرام (Connect Web)' : 'Connect Telegram Account (Web)';
                 }
+                checkAdminVisibility();
             } catch (e) {
                 console.warn('Auth status check failed:', e);
             }
@@ -2809,13 +3017,400 @@
             }
         }
 
+        // ==================== ADMIN & LICENSE KEYS MANAGEMENT JS ====================
+        let adminUsersCache = [];
+        let adminKeysCache = [];
+        let activeAdminModalUserId = null;
+
+        function checkAdminVisibility() {
+            const adminTabBtn = document.getElementById('tab-admin-btn');
+            if (!adminTabBtn) return;
+            const isSuper = currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com');
+            if (isSuper) {
+                adminTabBtn.classList.remove('hidden');
+            } else {
+                adminTabBtn.classList.add('hidden');
+                if (currentTab === 'admin') switchTab('overview');
+            }
+        }
+
+        async function submitRedeemCode() {
+            if (!currentUser) {
+                showToast(currentLang === 'ar' ? 'يرجى تسجيل الدخول أولاً' : 'Please login first', 'warning');
+                openAuthModal();
+                return;
+            }
+            const input = document.getElementById('redeem-code-input');
+            const code = input ? input.value.trim() : '';
+            if (!code) {
+                showToast(currentLang === 'ar' ? 'يرجى كتابة كود التفعيل' : 'Please enter code', 'warning');
+                return;
+            }
+
+            const btn = document.getElementById('btn-redeem-code');
+            if (btn) btn.disabled = true;
+
+            try {
+                const res = await api('/api/v1/user/redeem-code', 'POST', { code: code });
+                if (res.success) {
+                    showToast(res.message || 'Code redeemed successfully!', 'success');
+                    if (input) input.value = '';
+                    await loadUserSubscription();
+                    await checkAuthStatus();
+                    await fetchStatus();
+                } else {
+                    showToast(res.error || 'Failed to redeem code', 'error');
+                }
+            } catch (e) {
+                showToast('Redeem request failed', 'error');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        async function loadAdminData() {
+            try {
+                const [usersRes, keysRes] = await Promise.all([
+                    api('/api/v1/admin/users'),
+                    api('/api/v1/admin/keys')
+                ]);
+
+                if (usersRes.success) {
+                    adminUsersCache = usersRes.users || [];
+                    renderAdminUsersTable(adminUsersCache);
+                    updateAdminStats();
+                }
+                if (keysRes.success) {
+                    adminKeysCache = keysRes.keys || [];
+                    renderAdminKeysTable(adminKeysCache);
+                    updateAdminStats();
+                }
+            } catch (e) {
+                console.error('Failed to load admin data:', e);
+            }
+        }
+
+        function updateAdminStats() {
+            const totalUsersEl = document.getElementById('admin-stat-total-users');
+            const activeSubsEl = document.getElementById('admin-stat-active-subs');
+            const frozenUsersEl = document.getElementById('admin-stat-frozen-users');
+            const unusedKeysEl = document.getElementById('admin-stat-unused-keys');
+
+            if (totalUsersEl) totalUsersEl.textContent = adminUsersCache.length;
+            if (activeSubsEl) activeSubsEl.textContent = adminUsersCache.filter(u => u.subscription_status === 'active').length;
+            if (frozenUsersEl) frozenUsersEl.textContent = adminUsersCache.filter(u => u.is_frozen).length;
+            if (unusedKeysEl) unusedKeysEl.textContent = adminKeysCache.filter(k => !k.is_redeemed).length;
+        }
+
+        function filterAdminUsersTable() {
+            const query = (document.getElementById('admin-user-search')?.value || '').toLowerCase().trim();
+            const filter = document.getElementById('admin-user-filter')?.value || 'all';
+
+            const filtered = adminUsersCache.filter(u => {
+                const matchQuery = !query || (u.email && u.email.toLowerCase().includes(query)) || (u.name && u.name.toLowerCase().includes(query));
+                if (!matchQuery) return false;
+
+                if (filter === 'active') return u.subscription_status === 'active' && !u.is_frozen;
+                if (filter === 'trial') return u.subscription_status === 'trial' && !u.is_frozen;
+                if (filter === 'expired') return u.subscription_status === 'expired' && !u.is_frozen;
+                if (filter === 'frozen') return u.is_frozen;
+                return true;
+            });
+
+            renderAdminUsersTable(filtered);
+        }
+
+        function renderAdminUsersTable(users) {
+            const tbody = document.getElementById('admin-users-tbody');
+            if (!tbody) return;
+
+            if (!users || users.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="7" class="p-6 text-center text-slate-500">لا يوجد مستخدمين مطابقين للبحث</td></tr>`;
+                return;
+            }
+
+            const isCurrentSuper = currentUser && (currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com');
+
+            tbody.innerHTML = users.map(u => {
+                const isSuper = u.role === 'super_admin' || u.email === 'alooshpal@gmail.com';
+                const roleBadge = isSuper 
+                    ? `<span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">👑 SUPER ADMIN</span>`
+                    : (u.role === 'admin' 
+                        ? `<span class="px-2 py-0.5 rounded bg-blue-500/20 text-blue-300 font-bold border border-blue-500/40">🛡️ ADMIN</span>`
+                        : `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-medium">CLIENT</span>`);
+
+                const tgBadge = u.telegram_connected 
+                    ? `<span class="text-cyan-400 font-mono">@${u.telegram_username || 'Connected'}</span>`
+                    : `<span class="text-slate-500">غير متصل</span>`;
+
+                let statusBadge = '';
+                if (u.is_frozen) {
+                    statusBadge = `<span class="px-2 py-0.5 rounded bg-rose-500/20 text-rose-300 font-bold border border-rose-500/40 animate-pulse">❄️ مجمد (Frozen)</span>`;
+                } else if (u.subscription_status === 'active') {
+                    statusBadge = `<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">نشط (Active)</span>`;
+                } else if (u.subscription_status === 'trial') {
+                    statusBadge = `<span class="px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 font-bold border border-amber-500/30">تجريبي (Trial)</span>`;
+                } else {
+                    statusBadge = `<span class="px-2 py-0.5 rounded bg-slate-800 text-rose-400 font-bold border border-rose-500/20">منتهي (Expired)</span>`;
+                }
+
+                const expiryStr = u.subscription_expires_at 
+                    ? `${new Date(u.subscription_expires_at).toLocaleDateString()} (${u.days_remaining}d)`
+                    : '--';
+
+                const freezeBtn = isSuper ? '' : `
+                    <button onclick="toggleFreezeUser('${u._id}', ${u.is_frozen ? 'true' : 'false'}, '${u.email}')" class="px-2.5 py-1 rounded-lg text-xs font-bold ${u.is_frozen ? 'bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/30 border border-emerald-500/30' : 'bg-rose-600/20 text-rose-300 hover:bg-rose-600/30 border border-rose-500/30'} transition">
+                        ${u.is_frozen ? '🔥 فك التجميد' : '❄️ تجميد'}
+                    </button>
+                `;
+
+                const extendBtn = `
+                    <button onclick="openAdminExtendModal('${u._id}', '${u.email}', '${u.plan}')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 transition">
+                        📅 تمديد
+                    </button>
+                `;
+
+                const roleBtn = isCurrentSuper && !isSuper ? `
+                    <button onclick="openAdminRoleModal('${u._id}', '${u.email}', '${u.role}')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-500/30 transition">
+                        👑 رتبة
+                    </button>
+                ` : '';
+
+                return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="p-3">
+                            <div class="font-bold text-white">${u.email}</div>
+                            <div class="text-[11px] text-slate-400">${u.name || '--'} &bull; ${u.rules_count || 0} rules</div>
+                        </td>
+                        <td class="p-3">${roleBadge}</td>
+                        <td class="p-3">${tgBadge}</td>
+                        <td class="p-3">
+                            <span class="font-bold uppercase text-slate-200">${u.plan || 'trial'}</span>
+                            <span class="text-[10px] text-slate-400 block">${u.max_target_channels >= 999 ? 'Unlimited Targets' : `Max ${u.max_target_channels} Targets`}</span>
+                        </td>
+                        <td class="p-3">${statusBadge}</td>
+                        <td class="p-3 font-mono text-slate-300 text-[11px]">${expiryStr}</td>
+                        <td class="p-3 text-center">
+                            <div class="flex items-center justify-center gap-1.5 flex-wrap">
+                                ${freezeBtn}
+                                ${extendBtn}
+                                ${roleBtn}
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function renderAdminKeysTable(keys) {
+            const tbody = document.getElementById('admin-keys-tbody');
+            if (!tbody) return;
+
+            if (!keys || keys.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="6" class="p-5 text-center text-slate-500">لا توجد أكواد مولدة بعد</td></tr>`;
+                return;
+            }
+
+            tbody.innerHTML = keys.map(k => {
+                const statusBadge = k.is_redeemed
+                    ? `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold">مستخدم ✅</span>`
+                    : `<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">متاح (Unused)</span>`;
+
+                return `
+                    <tr class="hover:bg-slate-800/30 transition">
+                        <td class="p-2.5">
+                            <div class="flex items-center space-x-1.5 rtl:space-x-reverse">
+                                <span class="font-mono font-bold text-amber-300 select-all">${k.key_code}</span>
+                                <button onclick="navigator.clipboard.writeText('${k.key_code}'); showToast('تم نسخ الكود!', 'info');" class="text-slate-400 hover:text-white p-1 rounded bg-slate-800 text-[10px]">
+                                    نسخ
+                                </button>
+                            </div>
+                        </td>
+                        <td class="p-2.5">
+                            <span class="font-bold text-slate-200">${k.plan_name}</span>
+                            <span class="text-[10px] text-slate-400 block">${k.duration_days} days</span>
+                        </td>
+                        <td class="p-2.5">${statusBadge}</td>
+                        <td class="p-2.5 text-[11px] text-slate-300 font-mono">${k.redeemed_by || '--'}</td>
+                        <td class="p-2.5 text-[11px] text-slate-400">${k.notes || '--'}</td>
+                        <td class="p-2.5 text-center">
+                            <button onclick="deleteAdminKey('${k.id}')" class="text-rose-400 hover:text-rose-300 p-1 rounded hover:bg-rose-500/10 transition">
+                                <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function toggleCustomDaysInput() {
+            const plan = document.getElementById('key-gen-plan')?.value;
+            const container = document.getElementById('key-gen-custom-days-container');
+            if (container) {
+                if (plan === 'custom') container.classList.remove('hidden');
+                else container.classList.add('hidden');
+            }
+        }
+
+        async function generateAdminKey() {
+            const planId = document.getElementById('key-gen-plan')?.value || 'monthly';
+            const notes = document.getElementById('key-gen-notes')?.value || '';
+            let customDays = null;
+            if (planId === 'custom') {
+                customDays = parseInt(document.getElementById('key-gen-custom-days')?.value || '30');
+            }
+
+            const btn = document.getElementById('btn-generate-key');
+            if (btn) btn.disabled = true;
+
+            try {
+                const res = await api('/api/v1/admin/keys/generate', 'POST', {
+                    plan_id: planId === 'custom' ? 'monthly' : planId,
+                    notes: notes,
+                    custom_days: customDays
+                });
+
+                if (res.success) {
+                    showToast(res.message || 'Key generated!', 'success');
+                    if (document.getElementById('key-gen-notes')) document.getElementById('key-gen-notes').value = '';
+                    await loadAdminData();
+                } else {
+                    showToast(res.error || 'Failed to generate key', 'error');
+                }
+            } catch (e) {
+                showToast('Key generation failed', 'error');
+            } finally {
+                if (btn) btn.disabled = false;
+            }
+        }
+
+        async function deleteAdminKey(keyId) {
+            if (!confirm(currentLang === 'ar' ? 'هل أنت متأكد من حذف هذا الكود؟' : 'Delete this key?')) return;
+            try {
+                const res = await api(`/api/v1/admin/keys/${keyId}`, 'DELETE');
+                if (res.success) {
+                    showToast(currentLang === 'ar' ? 'تم حذف الكود' : 'Key deleted', 'info');
+                    await loadAdminData();
+                } else {
+                    showToast(res.error || 'Failed to delete', 'error');
+                }
+            } catch (e) {
+                showToast('Delete failed', 'error');
+            }
+        }
+
+        async function toggleFreezeUser(userId, currentFrozen, userEmail) {
+            const actionText = currentFrozen ? 'فك تجميد' : 'تجميد';
+            if (!confirm(`هل أنت متأكد من رغبتك في ${actionText} حساب ${userEmail}؟`)) return;
+
+            let reason = "Suspended by admin";
+            if (!currentFrozen) {
+                const promptReason = prompt("اكتب سبب التجميد (اختياري):", "مخالفة الشروط والسياسات");
+                if (promptReason !== null) reason = promptReason;
+            }
+
+            try {
+                const res = await api(`/api/v1/admin/users/${userId}/freeze`, 'POST', {
+                    freeze: !currentFrozen,
+                    reason: reason
+                });
+
+                if (res.success) {
+                    showToast(res.message || 'Status updated', 'success');
+                    await loadAdminData();
+                } else {
+                    showToast(res.error || 'Failed to update', 'error');
+                }
+            } catch (e) {
+                showToast('Request failed', 'error');
+            }
+        }
+
+        function openAdminExtendModal(userId, email, plan) {
+            activeAdminModalUserId = userId;
+            const modal = document.getElementById('admin-extend-modal');
+            if (!modal) return;
+            document.getElementById('admin-extend-email').textContent = email;
+            document.getElementById('admin-extend-plan-select').value = plan || 'monthly';
+            modal.classList.remove('hidden');
+        }
+
+        function closeAdminExtendModal() {
+            const modal = document.getElementById('admin-extend-modal');
+            if (modal) modal.classList.add('hidden');
+            activeAdminModalUserId = null;
+        }
+
+        async function submitAdminExtendPlan() {
+            if (!activeAdminModalUserId) return;
+            const planId = document.getElementById('admin-extend-plan-select').value;
+            const days = parseInt(document.getElementById('admin-extend-days-input').value || '30');
+
+            try {
+                const res = await api(`/api/v1/admin/users/${activeAdminModalUserId}/subscription`, 'POST', {
+                    plan_id: planId,
+                    days: days
+                });
+
+                if (res.success) {
+                    showToast(res.message || 'Subscription updated', 'success');
+                    closeAdminExtendModal();
+                    await loadAdminData();
+                } else {
+                    showToast(res.error || 'Failed to update subscription', 'error');
+                }
+            } catch (e) {
+                showToast('Request failed', 'error');
+            }
+        }
+
+        function openAdminRoleModal(userId, email, currentRole) {
+            activeAdminModalUserId = userId;
+            const modal = document.getElementById('admin-role-modal');
+            if (!modal) return;
+            document.getElementById('admin-role-email').textContent = email;
+            document.getElementById('admin-role-select').value = currentRole || 'client';
+            modal.classList.remove('hidden');
+        }
+
+        function closeAdminRoleModal() {
+            const modal = document.getElementById('admin-role-modal');
+            if (modal) modal.classList.add('hidden');
+            activeAdminModalUserId = null;
+        }
+
+        async function submitAdminChangeRole() {
+            if (!activeAdminModalUserId) return;
+            const role = document.getElementById('admin-role-select').value;
+
+            try {
+                const res = await api(`/api/v1/admin/users/${activeAdminModalUserId}/role`, 'POST', {
+                    role: role
+                });
+
+                if (res.success) {
+                    showToast(res.message || 'Role updated', 'success');
+                    closeAdminRoleModal();
+                    await loadAdminData();
+                } else {
+                    showToast(res.error || 'Failed to update role', 'error');
+                }
+            } catch (e) {
+                showToast('Request failed', 'error');
+            }
+        }
+
         // ==================== INIT ====================
         window.addEventListener('DOMContentLoaded', async () => {
             setLanguage(currentLang);
             await checkAuthStatus();
+            checkAdminVisibility();
             await loadUserSubscription();
             await fetchStatus();
             await loadRules();
+            if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com')) {
+                loadAdminData();
+            }
             logsPollInterval = setInterval(loadLogs, 3500);
             setInterval(fetchStatus, 8000);
             setInterval(loadUserSubscription, 15000);
@@ -3045,6 +3640,78 @@
                 <button onclick="closeCheckoutModal(); switchTab('forwarding');" class="px-6 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-emerald-600/20 transition">
                     ابدأ التوجيه الآن (Go to Forwarding)
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: ADMIN EXTEND SUBSCRIPTION ==================== -->
+    <div id="admin-extend-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-fade-in my-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                    <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">📅</div>
+                    <h3 class="font-bold text-white text-base">تمديد / تعديل اشتراك العميل</h3>
+                </div>
+                <button onclick="closeAdminExtendModal()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <span class="text-slate-400">البريد الإلكتروني للعميل:</span>
+                    <div id="admin-extend-email" class="font-bold text-white text-sm font-mono mt-0.5">--</div>
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">الخطة الممنوحة</label>
+                    <select id="admin-extend-plan-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-400">
+                        <option value="weekly">باقة أسبوع (Weekly - 7 Days)</option>
+                        <option value="monthly">باقة شهر (Monthly - 30 Days)</option>
+                        <option value="quarterly">باقة 3 شهور (Quarterly - 90 Days)</option>
+                        <option value="semi_annual">باقة 6 شهور (Semi-Annual - 180 Days)</option>
+                        <option value="annual">باقة سنة كاملة (Annual VIP - 365 Days)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">عدد الأيام الإضافية (Add Days)</label>
+                    <input type="number" id="admin-extend-days-input" value="30" min="1" max="3650" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-amber-400">
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="closeAdminExtendModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition">إلغاء</button>
+                    <button onclick="submitAdminExtendPlan()" class="flex-1 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 rounded-xl font-bold transition">حفظ وتفعيل</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ==================== MODAL: ADMIN CHANGE ROLE ==================== -->
+    <div id="admin-role-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-surface-900 border border-slate-700/80 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-fade-in my-6">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                    <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold">👑</div>
+                    <h3 class="font-bold text-white text-base">تعديل رتبة وصلاحية المستخدم</h3>
+                </div>
+                <button onclick="closeAdminRoleModal()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div class="space-y-3 text-xs">
+                <div>
+                    <span class="text-slate-400">البريد الإلكتروني:</span>
+                    <div id="admin-role-email" class="font-bold text-white text-sm font-mono mt-0.5">--</div>
+                </div>
+                <div>
+                    <label class="block text-slate-300 font-semibold mb-1">الرتبة الجديدة</label>
+                    <select id="admin-role-select" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-100 focus:outline-none focus:border-purple-400">
+                        <option value="client">عميل عادي (Client)</option>
+                        <option value="admin">أدمن إدارة (Admin)</option>
+                        <option value="super_admin">سوبر أدمن كامل الصلاحيات (Super Admin)</option>
+                    </select>
+                </div>
+                <div class="flex gap-2 pt-2">
+                    <button onclick="closeAdminRoleModal()" class="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition">إلغاء</button>
+                    <button onclick="submitAdminChangeRole()" class="flex-1 py-2.5 bg-purple-600 hover:bg-purple-500 text-white rounded-xl font-bold transition">تحديث الرتبة</button>
+                </div>
             </div>
         </div>
     </div>

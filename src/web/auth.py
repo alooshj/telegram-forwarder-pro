@@ -170,6 +170,8 @@ class UserManager:
             "created_at": now,
             "updated_at": now,
             "telegram_account": None,  # Will store connected telegram info
+            "is_frozen": False,
+            "frozen_reason": "",
         }
 
         db.users.insert_one(user_doc)
@@ -254,6 +256,8 @@ class UserManager:
             return {
                 "status": "active",
                 "is_active": True,
+                "is_frozen": False,
+                "frozen_reason": "",
                 "plan": "annual",
                 "plan_name": "Super Admin VIP (Full Access)",
                 "plan_name_ar": "سوبر أدمن VIP (صلاحيات كاملة)",
@@ -263,14 +267,22 @@ class UserManager:
                 "max_target_channels": 999,
             }
 
+        raw_frozen = user.get("is_frozen", False)
+        is_frozen = raw_frozen in (True, 1, "1", "true", "True")
         from src.billing.plans import check_subscription_status, get_plan
         status, is_active, expires_at, days_left = check_subscription_status(user)
+        if is_frozen:
+            status = "frozen"
+            is_active = False
+
         plan_id = user.get("plan", "trial")
         plan_cfg = get_plan(plan_id) or {}
 
         return {
             "status": status,
             "is_active": is_active,
+            "is_frozen": is_frozen,
+            "frozen_reason": user.get("frozen_reason", ""),
             "plan": plan_id,
             "plan_name": plan_cfg.get("name", plan_id.capitalize()),
             "plan_name_ar": plan_cfg.get("name_ar", plan_id),
@@ -282,6 +294,32 @@ class UserManager:
 
     @staticmethod
     def is_subscription_valid(db, user_id: str) -> bool:
-        """Check if user has an active or trial subscription (or is super_admin)."""
+        """Check if user has an active or trial subscription (and is not frozen)."""
         info = UserManager.get_subscription_info(db, user_id)
+        if info.get("is_frozen"):
+            return False
         return info.get("is_active", False)
+
+    @staticmethod
+    def freeze_user(db, user_id: str, frozen: bool, reason: str = "") -> bool:
+        """Freeze or unfreeze a user account. Freezing immediately stops their worker."""
+        if not db or not user_id:
+            return False
+
+        now = datetime.now(timezone.utc)
+        db.users.update_one(
+            {"_id": user_id},
+            {"$set": {
+                "is_frozen": bool(frozen),
+                "frozen_reason": reason.strip() if frozen else "",
+                "updated_at": now
+            }}
+        )
+
+        if frozen:
+            try:
+                from src.forwarder.worker_pool import worker_pool
+                worker_pool.stop_user_worker(user_id)
+            except Exception:
+                pass
+        return True

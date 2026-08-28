@@ -303,6 +303,113 @@ class BillingWebhookTestCase(unittest.TestCase):
             self.assertEqual(resp.status_code, 403)
             self.assertIn("expired", resp.get_json()["error"])
 
+    def test_license_key_generation_and_manual_redemption(self):
+        """Test license key generation by admin and manual redemption by client."""
+        from src.billing.keys import LicenseKeyManager
+        # Admin generates a 30-day monthly key
+        key_doc = LicenseKeyManager.generate_key(self.db, "monthly", "admin@test.com", notes="VIP Customer")
+        self.assertTrue(key_doc["key_code"].startswith("ACT-"))
+        self.assertEqual(key_doc["duration_days"], 30)
+
+        # Client redeems code via POST /api/v1/user/redeem-code
+        client = UserManager.create_user(self.db, "redeemer@test.com", "pass123", role="client")
+        token = generate_auth_token(client["_id"], client["email"])
+
+        with patch("src.web.api.get_db", return_value=self.db):
+            resp = self.client.post(
+                "/api/v1/user/redeem-code",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"code": key_doc["key_code"]}
+            )
+            self.assertEqual(resp.status_code, 200)
+            data = resp.get_json()
+            self.assertTrue(data["success"])
+            self.assertEqual(data["subscription"]["status"], "active")
+
+            # Verify key cannot be redeemed twice
+            resp_dup = self.client.post(
+                "/api/v1/user/redeem-code",
+                headers={"Authorization": f"Bearer {token}"},
+                json={"code": key_doc["key_code"]}
+            )
+            self.assertEqual(resp_dup.status_code, 400)
+            self.assertIn("مسبقاً", resp_dup.get_json()["error"])
+
+    def test_admin_freeze_user_and_block_forwarding(self):
+        """Test admin freezing a user account and blocking forwarding."""
+        admin = UserManager.create_user(self.db, "super_admin_freeze@test.com", "pass123", role="super_admin")
+        admin_token = generate_auth_token(admin["_id"], admin["email"])
+
+        client = UserManager.create_user(self.db, "bad_client@test.com", "pass123", role="client")
+        client_token = generate_auth_token(client["_id"], client["email"])
+
+        with patch("src.web.api.get_db", return_value=self.db):
+            # Admin freezes client
+            resp = self.client.post(
+                f"/api/v1/admin/users/{client['_id']}/freeze",
+                headers={"Authorization": f"Bearer {admin_token}"},
+                json={"freeze": True, "reason": "Violation of terms"}
+            )
+            self.assertEqual(resp.status_code, 200)
+            self.assertTrue(resp.get_json()["is_frozen"])
+
+            # Verify frozen status in get_subscription_info
+            info = UserManager.get_subscription_info(self.db, client["_id"])
+            self.assertTrue(info["is_frozen"])
+            self.assertFalse(info["is_active"])
+
+            # Client starting forwarder is blocked
+            resp_start = self.client.post(
+                "/api/forward/start",
+                headers={"Authorization": f"Bearer {client_token}"}
+            )
+            self.assertEqual(resp_start.status_code, 403)
+
+            # Admin unfreezes client
+            resp_unfreeze = self.client.post(
+                f"/api/v1/admin/users/{client['_id']}/freeze",
+                headers={"Authorization": f"Bearer {admin_token}"},
+                json={"freeze": False}
+            )
+            self.assertEqual(resp_unfreeze.status_code, 200)
+            self.assertFalse(resp_unfreeze.get_json()["is_frozen"])
+
+    def test_admin_role_change_and_keys_crud(self):
+        """Test Super Admin role elevation and License Keys CRUD endpoints."""
+        super_admin = UserManager.create_user(self.db, "sa_role_test@test.com", "pass123", role="super_admin")
+        sa_token = generate_auth_token(super_admin["_id"], super_admin["email"])
+
+        client = UserManager.create_user(self.db, "promoted_client@test.com", "pass123", role="client")
+
+        with patch("src.web.api.get_db", return_value=self.db):
+            # Change role to admin
+            resp_role = self.client.post(
+                f"/api/v1/admin/users/{client['_id']}/role",
+                headers={"Authorization": f"Bearer {sa_token}"},
+                json={"role": "admin"}
+            )
+            self.assertEqual(resp_role.status_code, 200)
+            self.assertEqual(resp_role.get_json()["role"], "admin")
+
+            # Generate key via API
+            resp_key = self.client.post(
+                "/api/v1/admin/keys/generate",
+                headers={"Authorization": f"Bearer {sa_token}"},
+                json={"plan_id": "annual", "notes": "VIP Year Key"}
+            )
+            self.assertEqual(resp_key.status_code, 200)
+            key_code = resp_key.get_json()["key"]["key_code"]
+
+            # List keys
+            resp_list = self.client.get(
+                "/api/v1/admin/keys",
+                headers={"Authorization": f"Bearer {sa_token}"}
+            )
+            self.assertEqual(resp_list.status_code, 200)
+            keys = resp_list.get_json()["keys"]
+            self.assertTrue(any(k["key_code"] == key_code for k in keys))
+
 
 if __name__ == "__main__":
     unittest.main()
+

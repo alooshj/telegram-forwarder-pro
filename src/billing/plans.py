@@ -11,7 +11,7 @@ Defines available subscription plans, durations, pricing, and feature limits:
 """
 
 from datetime import datetime, timedelta, timezone
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 
 PLANS = {
     "weekly": {
@@ -94,7 +94,7 @@ def get_plan(plan_id: str) -> Optional[dict]:
     return PLANS.get(plan_id.lower().strip()) if plan_id else None
 
 
-def calculate_new_expiration(current_expires_at: Optional[datetime], duration_days: int) -> datetime:
+def calculate_new_expiration(current_expires_at: Optional[Union[datetime, str]], duration_days: int) -> datetime:
     """
     Calculate new expiration date:
     - If user currently has an active subscription in the future, stack/extend from current_expires_at.
@@ -102,11 +102,18 @@ def calculate_new_expiration(current_expires_at: Optional[datetime], duration_da
     """
     now = datetime.now(timezone.utc)
     if current_expires_at:
-        # Ensure current_expires_at has timezone
-        if current_expires_at.tzinfo is None:
-            current_expires_at = current_expires_at.replace(tzinfo=timezone.utc)
-        if current_expires_at > now:
-            return current_expires_at + timedelta(days=duration_days)
+        if isinstance(current_expires_at, str):
+            try:
+                current_expires_at = datetime.fromisoformat(current_expires_at.replace("Z", "+00:00"))
+            except Exception:
+                current_expires_at = None
+
+        if isinstance(current_expires_at, datetime):
+            # Ensure current_expires_at has timezone
+            if current_expires_at.tzinfo is None:
+                current_expires_at = current_expires_at.replace(tzinfo=timezone.utc)
+            if current_expires_at > now:
+                return current_expires_at + timedelta(days=duration_days)
 
     return now + timedelta(days=duration_days)
 
