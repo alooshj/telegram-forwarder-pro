@@ -258,6 +258,36 @@ class DetailedErrorLoggingTest(unittest.TestCase):
         self.assertIn("[ChannelPrivateError]", formatted3)
         self.assertIn("private", formatted3)
 
+        # ChatForwardsRestrictedError
+        err4 = tele_errors.ChatForwardsRestrictedError(request="test")
+        formatted4 = engine._format_telethon_error(err4)
+        self.assertIn("[ChatForwardsRestrictedError]", formatted4)
+
+    def test_restricted_forwarding_fallback_in_memory(self):
+        import asyncio
+        from unittest.mock import patch, MagicMock, AsyncMock
+        from telethon import errors as tele_errors
+
+        engine = make_engine()
+        # When sending file normally, raise ChatForwardsRestrictedError on first attempt, then succeed with buffer
+        original_msg = MagicMock(media=MagicMock(), chat_id=12345, id=893)
+        target = MagicMock(id=67890)
+
+        engine.client.download_media = AsyncMock(return_value=b"fake_data")
+        engine.client.send_file = AsyncMock()
+
+        # Call _forward_via_memory_copy directly
+        async def run():
+            return await engine._forward_via_memory_copy(
+                original_msg, target, "Transformed Text",
+                media_type="photo", src_name="@restricted_channel", tgt_name="@my_target", msg_id=893
+            )
+
+        res = asyncio.run(run())
+        self.assertTrue(res)
+        engine.client.download_media.assert_awaited_once()
+        engine.client.send_file.assert_awaited_once()
+
 
 if __name__ == "__main__":
     unittest.main(verbosity=2)

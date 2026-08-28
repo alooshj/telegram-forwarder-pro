@@ -615,6 +615,7 @@ class ForwarderEngine:
             "FilePartsInvalidError": "File upload parts failed or timed out.",
             "PhotoInvalidDimensionsError": "Photo dimensions are not supported by Telegram.",
             "BotResponseTimeoutError": "Target bot did not respond in time.",
+            "ChatForwardsRestrictedError": "Source channel restricts forwarding. In-memory copy bypass mode activated.",
             "BadRequestError": f"Telegram rejected the request: {err_msg}",
             "RPCError": f"Telegram RPC error: {err_msg}",
         }
@@ -626,6 +627,68 @@ class ForwarderEngine:
         if err_msg and err_msg != "None" and err_msg != "":
             return f"[{err_type}] {err_msg}"
         return f"[{err_type}] {str(exc)}"
+
+    async def _forward_via_memory_copy(
+        self, original_message, target_entity, transformed_text: str,
+        media_type: str = "text", src_name=None, tgt_name=None, msg_id=None
+    ) -> bool:
+        """
+        Fallback copy mode for restricted channels (ChatForwardsRestrictedError):
+        Downloads media into in-memory buffer and sends as a fresh post under userbot account.
+        Leaves 0 temporary files on disk.
+        """
+        try:
+            has_media = bool(getattr(original_message, "media", None))
+            if has_media:
+                import io
+                buffer = io.BytesIO()
+                downloaded = await self.client.download_media(original_message, file=buffer)
+                if downloaded:
+                    buffer.seek(0)
+                    filename = getattr(getattr(original_message, "file", None), "name", None)
+                    ext = getattr(getattr(original_message, "file", None), "ext", "") or ".jpg"
+                    buffer.name = filename or f"media_{msg_id}{ext}"
+
+                    attributes = getattr(getattr(original_message, "file", None), "attributes", None) or []
+
+                    await self.client.send_file(
+                        target_entity,
+                        buffer,
+                        caption=transformed_text or "",
+                        attributes=attributes,
+                    )
+                    self._log_event(
+                        "INFO",
+                        f"✅ Forwarded post #{msg_id} [RESTRICTED-BYPASS] [{media_type.upper()}] from {src_name} ➔ {tgt_name}"
+                    )
+                    return True
+                else:
+                    text_to_send = transformed_text or getattr(original_message, "message", "")
+                    if text_to_send:
+                        await self.client.send_message(target_entity, text_to_send)
+                        self._log_event(
+                            "INFO",
+                            f"✅ Forwarded post #{msg_id} [RESTRICTED-TEXT] from {src_name} ➔ {tgt_name}"
+                        )
+                        return True
+                    return False
+            else:
+                text_to_send = transformed_text or getattr(original_message, "message", "")
+                if text_to_send:
+                    await self.client.send_message(target_entity, text_to_send)
+                    self._log_event(
+                        "INFO",
+                        f"✅ Forwarded post #{msg_id} [RESTRICTED-TEXT] from {src_name} ➔ {tgt_name}"
+                    )
+                    return True
+                return False
+        except Exception as copy_err:
+            detailed = self._format_telethon_error(copy_err)
+            self._log_event(
+                "ERROR",
+                f"❌ Failed to copy restricted post #{msg_id} to {tgt_name}: {detailed}"
+            )
+            return False
 
     async def _forward_message(
         self, original_message, target_entity, transformed_text: str,
@@ -676,7 +739,21 @@ class ForwarderEngine:
         except errors.FloodWaitError as e:
             await self._handle_flood_wait(tgt_name, e.seconds)
             return False
-        except (errors.RPCError, Exception) as e:
+        except (errors.ChatForwardsRestrictedError, errors.RPCError, Exception) as e:
+            err_name = type(e).__name__
+            err_msg = getattr(e, "message", "") or str(e)
+
+            # Auto-fallback to In-Memory Copy Mode when forwarding is restricted
+            if "ChatForwardsRestricted" in err_name or "FORWARDS_RESTRICTED" in err_msg or "RESTRICTED" in err_msg:
+                self._log_event(
+                    "WARNING",
+                    f"🛡️ Source channel {src_name} has restricted forwarding. Switching to In-Memory Copy Mode for post #{msg_id}..."
+                )
+                return await self._forward_via_memory_copy(
+                    original_message, target_entity, transformed_text,
+                    media_type, src_name, tgt_name, msg_id
+                )
+
             detailed_err = self._format_telethon_error(e)
             self._log_event(
                 "ERROR",
