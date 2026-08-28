@@ -1778,18 +1778,16 @@
                 return;
             }
 
-            const fallbackSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 24 24' fill='%231e1b4b'><rect width='24' height='24' rx='12'/><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' fill='none' stroke='%23a5b4fc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>";
-
             list.innerHTML = channels.map(c => {
                 const titleStr = escapeHtml(c.title || 'Channel');
                 const usernameStr = c.username ? escapeHtml(c.username) : '';
                 const channelId = escapeHtml(String(c.id));
-                const avatarSrc = c.photo_url || `/api/telegram/avatar/${c.id}`;
+                const avatarSrc = c.photo_url || `/api/telegram/avatar/${encodeURIComponent(String(c.id))}`;
 
                 return `
                 <div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-850 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/40 transition">
                     <div class="flex items-center space-x-3 rtl:space-x-reverse min-w-0">
-                        <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${fallbackSvg}';" class="w-9 h-9 rounded-full object-cover border border-slate-700/80 bg-slate-900 flex-shrink-0 shadow-sm" alt="">
+                        <img src="${avatarSrc}" class="w-9 h-9 rounded-full object-cover border border-slate-700/80 bg-slate-900 flex-shrink-0 shadow-sm" alt="" loading="lazy">
                         <div class="truncate">
                             <p class="text-xs font-bold text-white truncate max-w-[190px] sm:max-w-[240px]">${titleStr}</p>
                             <p class="text-[11px] text-slate-400 font-mono flex items-center gap-1">

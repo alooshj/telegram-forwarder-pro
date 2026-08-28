@@ -936,12 +936,21 @@ def api_telegram_disconnect():
     })
 
 
+_DEFAULT_CHANNEL_AVATAR_SVG = b"""<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="#1e1b4b">
+<rect width="24" height="24" rx="12" fill="#1e1b4b"/>
+<path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" fill="none" stroke="#818cf8" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>"""
+
+
 @app.route("/api/telegram/avatar/<path:entity_id>")
 def api_telegram_avatar(entity_id):
-    """Serve channel/group profile avatar image."""
+    """Serve channel/group profile avatar image or clean SVG badge (HTTP 200)."""
     entity_str = str(entity_id).strip()
     if not entity_str or entity_str.startswith("http") or entity_str == "undefined":
-        return jsonify({"error": "Invalid entity ID"}), 404
+        from flask import Response
+        resp = Response(_DEFAULT_CHANNEL_AVATAR_SVG, mimetype="image/svg+xml")
+        resp.headers["Cache-Control"] = "public, max-age=86400"
+        return resp
 
     target_entity = entity_str
     try:
@@ -960,21 +969,26 @@ def api_telegram_avatar(entity_id):
         config = load_config()
         session_string = config.get("SESSION_STRING")
 
-    if not session_string:
-        return jsonify({"error": "No session"}), 404
+    if session_string:
+        try:
+            config = load_config()
+            api_id = int(config.get("API_ID") or config.get("TELEGRAM_API_ID") or os.environ.get("API_ID", 0) or os.environ.get("TELEGRAM_API_ID", 0))
+            api_hash = config.get("API_HASH") or config.get("TELEGRAM_API_HASH") or os.environ.get("API_HASH", "") or os.environ.get("TELEGRAM_API_HASH", "")
 
-    config = load_config()
-    api_id = int(config.get("API_ID") or config.get("TELEGRAM_API_ID") or os.environ.get("API_ID", 0) or os.environ.get("TELEGRAM_API_ID", 0))
-    api_hash = config.get("API_HASH") or config.get("TELEGRAM_API_HASH") or os.environ.get("API_HASH", "") or os.environ.get("TELEGRAM_API_HASH", "")
+            from src.web.telegram_auth import fetch_channel_avatar
+            photo_bytes = asyncio.run(fetch_channel_avatar(api_id, api_hash, session_string, target_entity))
+            if photo_bytes:
+                from flask import Response
+                resp = Response(photo_bytes, mimetype="image/jpeg")
+                resp.headers["Cache-Control"] = "public, max-age=86400"
+                return resp
+        except Exception:
+            pass
 
-    from src.web.telegram_auth import fetch_channel_avatar
-    photo_bytes = asyncio.run(fetch_channel_avatar(api_id, api_hash, session_string, target_entity))
-    if photo_bytes:
-        from flask import Response
-        resp = Response(photo_bytes, mimetype="image/jpeg")
-        resp.headers["Cache-Control"] = "public, max-age=86400"
-        return resp
-    return jsonify({"error": "No avatar found"}), 404
+    from flask import Response
+    resp = Response(_DEFAULT_CHANNEL_AVATAR_SVG, mimetype="image/svg+xml")
+    resp.headers["Cache-Control"] = "public, max-age=86400"
+    return resp
 
 
 @app.errorhandler(404)
