@@ -1705,6 +1705,16 @@
 
         let loadedUserChannels = [];
 
+        function escapeHtml(str) {
+            if (!str) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
         async function loadMyChannels() {
             const panel = document.getElementById('channels-picker-panel');
             const list = document.getElementById('channels-picker-list');
@@ -1716,19 +1726,24 @@
             if (searchInput) searchInput.value = '';
             list.innerHTML = `<div class="py-6 text-center text-xs text-slate-400"><svg class="animate-spin w-5 h-5 inline text-brand-400 mb-1.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg><p>${currentLang === 'ar' ? 'جارٍ جلب قنواتك وصورها من تليجرام...' : 'Fetching your channels and avatars...'}</p></div>`;
 
-            const res = await api('/api/telegram/dialogs');
-            loadedUserChannels = res.dialogs || res.channels || [];
+            try {
+                const res = await api('/api/telegram/dialogs');
+                loadedUserChannels = res.dialogs || res.channels || [];
 
-            if (countBadge) countBadge.textContent = loadedUserChannels.length;
+                if (countBadge) countBadge.textContent = loadedUserChannels.length;
 
-            if (loadedUserChannels.length === 0) {
-                list.innerHTML = `<div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300 text-center">
-                    ${currentLang === 'ar' ? 'لم يتم العثور على قنوات، تأكد من ربط حساب التليجرام الخاص بك أولاً.' : 'No channels found. Please connect your Telegram account first.'}
-                </div>`;
-                return;
+                if (loadedUserChannels.length === 0) {
+                    list.innerHTML = `<div class="p-4 bg-amber-500/10 border border-amber-500/20 rounded-xl text-xs text-amber-300 text-center">
+                        ${currentLang === 'ar' ? 'لم يتم العثور على قنوات، تأكد من ربط حساب التليجرام الخاص بك أولاً.' : 'No channels found. Please connect your Telegram account first.'}
+                    </div>`;
+                    return;
+                }
+
+                renderChannelsList(loadedUserChannels);
+            } catch (err) {
+                console.error("loadMyChannels error:", err);
+                list.innerHTML = `<div class="p-4 text-center text-xs text-red-400">${currentLang === 'ar' ? 'تعذر جلب القنوات حالياً' : 'Failed to fetch channels'}</div>`;
             }
-
-            renderChannelsList(loadedUserChannels);
         }
 
         function filterChannelsList() {
@@ -1757,28 +1772,31 @@
                 return;
             }
 
+            const fallbackSvg = "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 24 24' fill='%231e1b4b'><rect width='24' height='24' rx='12'/><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' fill='none' stroke='%23a5b4fc' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>";
+
             list.innerHTML = channels.map(c => {
-                const initial = (c.title || 'C').charAt(0).toUpperCase();
+                const titleStr = escapeHtml(c.title || 'Channel');
+                const usernameStr = c.username ? escapeHtml(c.username) : '';
+                const channelId = escapeHtml(String(c.id));
                 const avatarSrc = c.photo_url || `/api/telegram/avatar/${c.id}`;
-                const fallbackSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='36' height='36' viewBox='0 0 24 24' fill='%231e1b4b'><rect width='24' height='24' rx='12'/><text x='12' y='16' text-anchor='middle' font-size='11' font-weight='bold' fill='%23a5b4fc'>${encodeURIComponent(initial)}</text></svg>`;
 
                 return `
                 <div class="flex items-center justify-between p-2.5 rounded-xl bg-surface-850 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/40 transition">
                     <div class="flex items-center space-x-3 rtl:space-x-reverse min-w-0">
                         <img src="${avatarSrc}" onerror="this.onerror=null; this.src='${fallbackSvg}';" class="w-9 h-9 rounded-full object-cover border border-slate-700/80 bg-slate-900 flex-shrink-0 shadow-sm" alt="">
                         <div class="truncate">
-                            <p class="text-xs font-bold text-white truncate max-w-[190px] sm:max-w-[240px]">${c.title}</p>
+                            <p class="text-xs font-bold text-white truncate max-w-[190px] sm:max-w-[240px]">${titleStr}</p>
                             <p class="text-[11px] text-slate-400 font-mono flex items-center gap-1">
-                                <span class="text-slate-400">${c.id}</span>
-                                ${c.username ? `<span class="text-cyan-400 font-medium">(@${c.username})</span>` : ''}
+                                <span class="text-slate-400">${channelId}</span>
+                                ${usernameStr ? `<span class="text-cyan-400 font-medium">(@${usernameStr})</span>` : ''}
                             </p>
                         </div>
                     </div>
                     <div class="flex items-center space-x-1.5 rtl:space-x-reverse flex-shrink-0">
-                        <button type="button" onclick="selectQuickChannel('rule-form-source', '${c.id}')" class="px-2.5 py-1.5 text-xs font-semibold bg-brand-600/20 hover:bg-brand-600/40 text-brand-300 border border-brand-500/30 rounded-lg transition flex items-center gap-1">
+                        <button type="button" onclick="selectQuickChannel('rule-form-source', '${channelId}')" class="px-2.5 py-1.5 text-xs font-semibold bg-brand-600/20 hover:bg-brand-600/40 text-brand-300 border border-brand-500/30 rounded-lg transition flex items-center gap-1">
                             <svg class='w-3.5 h-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='8 17 12 21 16 17'></polyline><line x1='12' y1='12' x2='12' y2='21'></line></svg> <span>كمصدر</span>
                         </button>
-                        <button type="button" onclick="selectQuickChannel('rule-form-target', '${c.id}')" class="px-2.5 py-1.5 text-xs font-semibold bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg transition flex items-center gap-1">
+                        <button type="button" onclick="selectQuickChannel('rule-form-target', '${channelId}')" class="px-2.5 py-1.5 text-xs font-semibold bg-cyan-600/20 hover:bg-cyan-600/40 text-cyan-300 border border-cyan-500/30 rounded-lg transition flex items-center gap-1">
                             <svg class='w-3.5 h-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='16 16 12 12 8 16'></polyline><line x1='12' y1='12' x2='12' y2='21'></line></svg> <span>كهدف</span>
                         </button>
                     </div>
