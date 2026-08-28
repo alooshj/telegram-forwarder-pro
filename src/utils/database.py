@@ -138,6 +138,12 @@ class SQLiteDB:
                         subscription_status TEXT DEFAULT 'trial',
                         subscription_expires_at TIMESTAMP,
                         max_target_channels INTEGER DEFAULT 2,
+                        is_verified INTEGER DEFAULT 0,
+                        verification_token TEXT,
+                        verification_otp TEXT,
+                        verification_expires_at TIMESTAMP,
+                        is_frozen INTEGER DEFAULT 0,
+                        frozen_reason TEXT,
                         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
                         telegram_account TEXT,
                         updated_at TIMESTAMP
@@ -186,7 +192,7 @@ class SQLiteDB:
                     except sqlite3.OperationalError:
                         pass
                 # Migrations for users
-                for col in ["subscription_status", "subscription_expires_at", "max_target_channels", "plan", "role", "is_frozen", "frozen_reason"]:
+                for col in ["subscription_status", "subscription_expires_at", "max_target_channels", "plan", "role", "is_verified", "verification_token", "verification_otp", "verification_expires_at", "is_frozen", "frozen_reason"]:
                     try:
                         conn.execute(f"ALTER TABLE users ADD COLUMN {col} TEXT;")
                     except sqlite3.OperationalError:

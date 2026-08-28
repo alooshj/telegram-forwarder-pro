@@ -61,6 +61,17 @@ def load_config():
         "NOWPAYMENTS_API_KEY": os.environ.get("NOWPAYMENTS_API_KEY", "1W5AC5M-NYBM2NJ-NQN36B4-C338EH5"),
         "NOWPAYMENTS_IPN_SECRET": os.environ.get("NOWPAYMENTS_IPN_SECRET", "c37ecbc1-6a5a-4e56-917b-3c77672a812b"),
         "NOWPAYMENTS_API_URL": os.environ.get("NOWPAYMENTS_API_URL", "https://api.nowpayments.io/v1"),
+
+        # SMTP & Transactional Email Settings (TeleTips Pro)
+        "SMTP_HOST": os.environ.get("SMTP_HOST", ""),
+        "SMTP_PORT": int(os.environ.get("SMTP_PORT", "587") or "587"),
+        "SMTP_USER": os.environ.get("SMTP_USER", "") or os.environ.get("SMTP_EMAIL", ""),
+        "SMTP_PASSWORD": os.environ.get("SMTP_PASSWORD", "") or os.environ.get("SMTP_PASS", ""),
+        "SMTP_TLS": os.environ.get("SMTP_TLS", "true").lower() in ("true", "1", "yes"),
+        "SMTP_SSL": os.environ.get("SMTP_SSL", "false").lower() in ("true", "1", "yes"),
+        "SMTP_FROM_EMAIL": os.environ.get("SMTP_FROM_EMAIL", "") or os.environ.get("FROM_EMAIL", ""),
+        "SMTP_FROM_NAME": os.environ.get("SMTP_FROM_NAME", "TeleTips Pro"),
+        "APP_URL": os.environ.get("APP_URL", ""),
     }
     return config
 

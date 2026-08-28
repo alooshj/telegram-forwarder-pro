@@ -10,6 +10,7 @@ import uuid
 import hmac
 import hashlib
 import time
+import secrets
 import logging
 from functools import wraps
 from datetime import datetime, timezone, timedelta
@@ -144,18 +145,25 @@ class UserManager:
         # Super admin emails or first registered user
         SUPER_ADMIN_EMAILS = {"alooshpal@gmail.com"}
         user_count = db.users.count_documents({}) if hasattr(db, "users") else 0
-        if email in SUPER_ADMIN_EMAILS or (user_count == 0 and role is None):
+        is_super = email in SUPER_ADMIN_EMAILS or (user_count == 0 and role is None)
+        if is_super:
             assigned_role = "super_admin"
             assigned_plan = "annual"
             sub_status = "active"
             expires_at = now + timedelta(days=3650)
             max_channels = 999
+            is_verified = True
         else:
             assigned_role = role or "client"
             assigned_plan = plan or "trial"
             sub_status = "trial" if assigned_plan == "trial" else "active"
             expires_at = now + timedelta(days=3) if assigned_plan == "trial" else now + timedelta(days=30)
             max_channels = 2 if assigned_plan == "trial" else 999
+            is_verified = False
+
+        verification_token = secrets.token_urlsafe(32)
+        verification_otp = str(secrets.randbelow(900000) + 100000)
+        verification_expires = now + timedelta(hours=24)
 
         user_doc = {
             "_id": user_id,
@@ -167,6 +175,10 @@ class UserManager:
             "subscription_status": sub_status,
             "subscription_expires_at": expires_at,
             "max_target_channels": max_channels,
+            "is_verified": is_verified,
+            "verification_token": verification_token if not is_verified else None,
+            "verification_otp": verification_otp if not is_verified else None,
+            "verification_expires_at": verification_expires if not is_verified else None,
             "created_at": now,
             "updated_at": now,
             "telegram_account": None,  # Will store connected telegram info
@@ -176,6 +188,91 @@ class UserManager:
 
         db.users.insert_one(user_doc)
         return user_doc
+
+    @staticmethod
+    def verify_user_by_token(db, token: str) -> dict:
+        """Verify user account via URL verification token."""
+        if not db or not token:
+            return None
+        now = datetime.now(timezone.utc)
+        user = db.users.find_one({"verification_token": token})
+        if not user:
+            return None
+
+        # Check expiration
+        expires = user.get("verification_expires_at")
+        if expires and isinstance(expires, datetime) and expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expires and expires < now:
+            return None
+
+        db.users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {
+                "is_verified": True,
+                "verification_token": None,
+                "verification_otp": None,
+                "updated_at": now
+            }}
+        )
+        user["is_verified"] = True
+        return user
+
+    @staticmethod
+    def verify_user_by_otp(db, email: str, otp: str) -> dict:
+        """Verify user account via 6-digit OTP code."""
+        if not db or not email or not otp:
+            return None
+        email = email.strip().lower()
+        otp = str(otp).strip()
+        now = datetime.now(timezone.utc)
+        user = db.users.find_one({"email": email, "verification_otp": otp})
+        if not user:
+            return None
+
+        expires = user.get("verification_expires_at")
+        if expires and isinstance(expires, datetime) and expires.tzinfo is None:
+            expires = expires.replace(tzinfo=timezone.utc)
+        if expires and expires < now:
+            return None
+
+        db.users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {
+                "is_verified": True,
+                "verification_token": None,
+                "verification_otp": None,
+                "updated_at": now
+            }}
+        )
+        user["is_verified"] = True
+        return user
+
+    @staticmethod
+    def regenerate_verification(db, email: str) -> tuple:
+        """Generate a fresh verification token and OTP code for a user."""
+        if not db or not email:
+            raise ValueError("Email is required")
+        email = email.strip().lower()
+        user = db.users.find_one({"email": email})
+        if not user:
+            raise ValueError("Account not found")
+
+        now = datetime.now(timezone.utc)
+        token = secrets.token_urlsafe(32)
+        otp = str(secrets.randbelow(900000) + 100000)
+        expires = now + timedelta(hours=24)
+
+        db.users.update_one(
+            {"_id": user["_id"]},
+            {"$set": {
+                "verification_token": token,
+                "verification_otp": otp,
+                "verification_expires_at": expires,
+                "updated_at": now
+            }}
+        )
+        return token, otp, user.get("name") or email.split("@")[0]
 
     @staticmethod
     def authenticate_user(db, email: str, password: str) -> dict:

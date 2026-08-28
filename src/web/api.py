@@ -812,7 +812,7 @@ from src.web.telegram_auth import (
 
 @app.route("/api/auth/register", methods=["POST"])
 def api_auth_register():
-    """Register a new customer account."""
+    """Register a new customer account and send verification email."""
     db = get_db()
     if not db:
         return jsonify({"success": False, "error": "Database not connected"}), 500
@@ -828,18 +828,33 @@ def api_auth_register():
     try:
         user = UserManager.create_user(db, email, password, name)
         token = generate_auth_token(str(user["_id"]), user["email"])
+
+        # Send verification email asynchronously if user is not auto-verified
+        is_verified = bool(user.get("is_verified", False))
+        if not is_verified:
+            from src.utils.email_service import send_verification_email
+            send_verification_email(
+                recipient_email=user["email"],
+                recipient_name=user.get("name", ""),
+                token=user.get("verification_token", ""),
+                otp_code=user.get("verification_otp", ""),
+                app_url=request.host_url,
+            )
+
         resp = jsonify({
             "success": True,
+            "requires_verification": not is_verified,
             "user": {
                 "id": str(user["_id"]),
                 "email": user["email"],
                 "name": user.get("name", ""),
-                "plan": user.get("plan", "free"),
-                "role": user.get("role", "user"),
+                "plan": user.get("plan", "trial"),
+                "role": user.get("role", "client"),
+                "is_verified": is_verified,
                 "telegram_connected": bool(user.get("telegram_account")),
             },
             "token": token,
-            "message": "Account created successfully"
+            "message": "Account created successfully. Verification email sent." if not is_verified else "Account created successfully."
         })
         resp.set_cookie("auth_token", token, max_age=30 * 86400, httponly=True, samesite="Lax")
         return resp
@@ -848,6 +863,132 @@ def api_auth_register():
     except Exception as e:
         logger.error(f"Registration error: {e}")
         return jsonify({"success": False, "error": f"Registration failed: {str(e)}"}), 500
+
+
+@app.route("/api/auth/verify-email", methods=["POST"])
+def api_auth_verify_email():
+    """Verify user email via token or 6-digit OTP code."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    data = request.get_json() or {}
+    token = data.get("token", "").strip()
+    email = data.get("email", "").strip()
+    otp = data.get("otp", "").strip()
+
+    # Fallback to current authenticated user email if OTP provided without email
+    if otp and not email:
+        user = get_current_user_from_request(db)
+        if user:
+            email = user.get("email", "")
+
+    if token:
+        user = UserManager.verify_user_by_token(db, token)
+    elif email and otp:
+        user = UserManager.verify_user_by_otp(db, email, otp)
+    else:
+        return jsonify({"success": False, "error": "Verification token or OTP code with email is required"}), 400
+
+    if not user:
+        return jsonify({"success": False, "error": "Invalid or expired verification code"}), 400
+
+    return jsonify({
+        "success": True,
+        "message": "Email verified successfully",
+        "user": {
+            "id": str(user["_id"]),
+            "email": user["email"],
+            "name": user.get("name", ""),
+            "is_verified": True,
+        }
+    })
+
+
+@app.route("/api/auth/resend-verification", methods=["POST"])
+def api_auth_resend_verification():
+    """Resend email verification code."""
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database not connected"}), 500
+
+    data = request.get_json() or {}
+    email = data.get("email", "").strip()
+
+    if not email:
+        user = get_current_user_from_request(db)
+        if user:
+            email = user.get("email", "")
+
+    if not email:
+        return jsonify({"success": False, "error": "Email is required"}), 400
+
+    try:
+        token, otp, name = UserManager.regenerate_verification(db, email)
+        from src.utils.email_service import send_verification_email
+        send_verification_email(
+            recipient_email=email,
+            recipient_name=name,
+            token=token,
+            otp_code=otp,
+            app_url=request.host_url,
+        )
+        return jsonify({"success": True, "message": "Verification email sent successfully"})
+    except ValueError as e:
+        return jsonify({"success": False, "error": str(e)}), 400
+    except Exception as e:
+        logger.error(f"Resend verification error: {e}")
+        return jsonify({"success": False, "error": "Failed to resend verification email"}), 500
+
+
+@app.route("/verify-email", methods=["GET"])
+def web_verify_email():
+    """Web route for 1-click email confirmation from inbox link."""
+    db = get_db()
+    token = request.args.get("token", "").strip()
+    if not db or not token:
+        success = False
+        message = "رابط التأكيد غير صالح أو مفقود."
+    else:
+        user = UserManager.verify_user_by_token(db, token)
+        if user:
+            success = True
+            name = user.get("name", "")
+            message = f"أهلاً بك {name}! تم تأكيد بريدك الإلكتروني بنجاح. حسابك مفعل بالكامل الآن."
+        else:
+            success = False
+            message = "عذراً، رابط التأكيد غير صالح أو انتهت صلاحيته (24 ساعة)."
+
+    status_color = "#10b981" if success else "#f43f5e"
+    status_icon = "✓" if success else "✕"
+    title_text = "تم تأكيد الحساب بنجاح!" if success else "تعذر تأكيد الحساب"
+
+    html = f"""<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{title_text} — TeleTips Pro</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;900&display=swap" rel="stylesheet">
+    <style>body {{ font-family: 'Cairo', sans-serif; }}</style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex items-center justify-center p-4">
+    <div class="max-w-md w-full bg-slate-900 border border-slate-800 rounded-3xl p-8 shadow-2xl text-center space-y-6">
+        <div class="w-16 h-16 rounded-2xl mx-auto flex items-center justify-center text-3xl font-bold" style="background-color: {status_color}20; color: {status_color}; border: 1px solid {status_color}40;">
+            {status_icon}
+        </div>
+        <div class="space-y-2">
+            <h1 class="text-2xl font-black text-white">{title_text}</h1>
+            <p class="text-sm text-slate-400 leading-relaxed">{message}</p>
+        </div>
+        <a href="/" class="block w-full py-3.5 px-6 rounded-xl font-bold text-white shadow-lg transition hover:opacity-90" style="background: linear-gradient(135deg, #4f46e5 0%, #06b6d4 100%);">
+            ⚡ الانتقال إلى لوحة التحكم (TeleTips Dashboard)
+        </a>
+    </div>
+</body>
+</html>"""
+    return html, 200
 
 
 @app.route("/api/auth/login", methods=["POST"])
@@ -873,8 +1014,9 @@ def api_auth_login():
                 "id": str(user["_id"]),
                 "email": user["email"],
                 "name": user.get("name", ""),
-                "plan": user.get("plan", "free"),
-                "role": user.get("role", "user"),
+                "plan": user.get("plan", "trial"),
+                "role": user.get("role", "client"),
+                "is_verified": bool(user.get("is_verified", False)),
                 "telegram_connected": bool(user.get("telegram_account")),
                 "telegram_account": {
                     "username": user.get("telegram_account", {}).get("username", "") if user.get("telegram_account") else "",
@@ -925,6 +1067,7 @@ def api_auth_me():
             "name": user.get("name", ""),
             "plan": "annual" if is_super else user.get("plan", "trial"),
             "role": "super_admin" if is_super else user.get("role", "client"),
+            "is_verified": bool(user.get("is_verified", False)),
             "telegram_connected": has_tg,
             "telegram_username": tg_account.get("username", ""),
             "telegram_first_name": tg_account.get("first_name", ""),
