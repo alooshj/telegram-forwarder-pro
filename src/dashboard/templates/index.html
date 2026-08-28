@@ -92,70 +92,93 @@
     <!-- Toast Notifications Container -->
     <div id="toast-container" class="fixed top-5 left-5 z-50 flex flex-col space-y-3 pointer-events-none"></div>
 
-    <!-- Navigation Header -->
-    <header class="bg-surface-900/90 backdrop-blur-md border-b border-slate-800 sticky top-0 z-40">
-        <div class="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-            <div class="flex flex-col sm:flex-row items-stretch sm:items-center justify-between py-2 sm:py-0 sm:h-16 gap-2 sm:gap-0">
-                <!-- Logo & Brand -->
-                <div class="flex items-center justify-between sm:justify-start space-x-2 sm:space-x-3 rtl:space-x-reverse">
-                    <div class="flex items-center space-x-2 sm:space-x-3 rtl:space-x-reverse">
-                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-brand-500/20 text-white font-black text-lg sm:text-xl flex-shrink-0">
-                            <svg class="w-5 h-5 text-white inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
-                        </div>
-                        <div>
-                            <div class="flex items-center space-x-1.5 rtl:space-x-reverse">
-                                <span class="font-bold text-base sm:text-lg text-white tracking-wide truncate">Telegram Forwarder</span>
-                                <span class="text-[10px] sm:text-xs bg-brand-500/20 text-brand-400 font-semibold px-1.5 sm:px-2 py-0.5 rounded-full border border-brand-500/30">PRO</span>
-                            </div>
-                            <p class="text-[11px] sm:text-xs text-slate-400 hidden md:block" data-i18n="app_subtitle">24/7 Automated Post Forwarding & Content Transformation</p>
-                        </div>
+    <!-- Navigation Header (Fixed 64px Minimal Modern) -->
+    <header class="bg-surface-900/95 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-40 h-16 flex items-center">
+        <div class="max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-full">
+                <!-- Right Side (in RTL): Logo & Brand Name -->
+                <div class="flex items-center space-x-2.5 rtl:space-x-reverse">
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-cyan-500 flex items-center justify-center shadow-md shadow-brand-500/20 text-white font-black text-lg flex-shrink-0">
+                        <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </div>
-
-                    <!-- Mobile status pill (visible on narrow screens) -->
-                    <div class="sm:hidden flex items-center space-x-1.5 rtl:space-x-reverse bg-slate-800/80 border border-slate-700 px-2.5 py-1 rounded-full text-[11px] font-medium">
-                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
-                        <span class="text-slate-300">Live</span>
+                    <div class="flex items-center space-x-1.5 rtl:space-x-reverse">
+                        <span class="font-bold text-base sm:text-lg text-white tracking-tight">Telegram Forwarder</span>
+                        <span class="text-[10px] bg-brand-500/20 text-brand-400 font-bold px-1.5 py-0.5 rounded border border-brand-500/30">PRO</span>
                     </div>
                 </div>
 
-                <!-- Status & Quick Actions -->
-                <div class="flex items-center justify-between sm:justify-end flex-wrap sm:flex-nowrap gap-1.5 sm:space-x-3 rtl:sm:space-x-reverse">
-                    <!-- Engine Status Pill (desktop) -->
-                    <div id="header-status-pill" class="hidden sm:flex items-center space-x-2 rtl:space-x-reverse bg-slate-800/80 border border-slate-700 px-3 py-1.5 rounded-full text-xs font-medium">
-                        <span id="header-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-500 animate-pulse"></span>
-                        <span id="header-status-text" class="text-slate-300" data-i18n="status_connecting">Connecting...</span>
+                <!-- Left Side (in RTL): Engine Status, Minimal Toggle & User Dropdown -->
+                <div class="flex items-center space-x-2 sm:space-x-3 rtl:space-x-reverse">
+                    <!-- 1. Engine Status Indicator Pill -->
+                    <div id="header-status-pill" class="flex items-center space-x-1.5 rtl:space-x-reverse bg-slate-800/60 border border-slate-700/60 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-medium text-slate-300">
+                        <span id="header-status-dot" class="w-2 h-2 rounded-full bg-rose-500"></span>
+                        <span id="header-status-text" class="hidden sm:inline" data-i18n="status_stopped">متوقف</span>
                     </div>
 
-                    <!-- Forwarder Start/Stop Button -->
-                    <button id="quick-toggle-btn" onclick="toggleEngine()" class="flex-1 sm:flex-none flex items-center justify-center space-x-1.5 rtl:space-x-reverse px-2.5 sm:px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all">
-                        <span id="quick-toggle-icon"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></span>
-                        <span id="quick-toggle-text" data-i18n="btn_start">Start</span>
+                    <!-- 2. Minimal Engine Start/Stop Toggle Button -->
+                    <button id="quick-toggle-btn" onclick="toggleEngine()" class="flex items-center space-x-1.5 rtl:space-x-reverse px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/20 transition-all active:scale-95">
+                        <span id="quick-toggle-icon">
+                            <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                        </span>
+                        <span id="quick-toggle-text" data-i18n="btn_start">تشغيل المحرك</span>
                     </button>
 
-                    <!-- Prominent User Guide in Header -->
-                    <button onclick="switchTab('guide')" class="flex items-center space-x-1 rtl:space-x-reverse bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-indigo-600/30 hover:from-indigo-600/50 hover:to-purple-600/50 border border-indigo-500/50 text-indigo-200 px-2 sm:px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-md shadow-indigo-500/15 transition-all hover:scale-105 active:scale-95 group">
-                        <svg class="w-3.5 h-3.5 text-indigo-400 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                        <span class="hidden sm:inline" data-i18n="tab_guide">User Guide</span>
-                        <span class="bg-indigo-500/30 text-indigo-300 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold border border-indigo-400/30">DOCS</span>
-                    </button>
+                    <!-- 3. User Profile Dropdown Container -->
+                    <div class="relative" id="user-dropdown-container">
+                        <button id="header-user-btn" onclick="handleUserHeaderClick(event)" class="flex items-center space-x-2 rtl:space-x-reverse bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-medium text-slate-200 transition shadow-sm">
+                            <div class="w-5 h-5 rounded-lg bg-gradient-to-tr from-brand-600 to-cyan-500 text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0" id="header-user-avatar">U</div>
+                            <span id="header-user-label" class="max-w-[100px] sm:max-w-[120px] truncate" data-i18n="btn_login_account">حسابي</span>
+                            <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+                        </button>
 
-                    <!-- Subscription Plan Pill in Header -->
-                    <button id="header-sub-btn" onclick="switchTab('pricing')" class="flex items-center space-x-1.5 rtl:space-x-reverse bg-gradient-to-r from-amber-500/15 to-amber-600/15 hover:from-amber-500/25 hover:to-amber-600/25 border border-amber-500/30 text-amber-300 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-bold transition-all shadow-sm">
-                        <span id="header-sub-icon">✨</span>
-                        <span id="header-sub-label">Trial: 3 Days</span>
-                    </button>
+                        <!-- Floating Profile Dropdown Card -->
+                        <div id="user-dropdown-menu" class="hidden absolute left-0 rtl:left-0 rtl:right-auto mt-2 w-72 bg-slate-900/95 border border-slate-700/90 rounded-2xl p-3 shadow-2xl backdrop-blur-xl z-50 animate-fade-in space-y-2.5 text-right rtl:text-right">
+                            <!-- User Info Header Card -->
+                            <div class="p-2.5 bg-slate-950/80 rounded-xl border border-slate-800 space-y-1">
+                                <div class="flex items-center justify-between">
+                                    <span id="dropdown-user-name" class="font-bold text-white text-xs truncate max-w-[140px]">--</span>
+                                    <span id="dropdown-user-role-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30">Client</span>
+                                </div>
+                                <p id="dropdown-user-email" class="text-[11px] text-slate-400 font-mono truncate">--</p>
+                                <div class="pt-1.5 flex items-center justify-between text-[11px] text-slate-300 border-t border-slate-800/80 mt-1">
+                                    <span id="dropdown-user-plan" class="text-amber-300 font-bold text-[10px]">Trial (3 Days)</span>
+                                    <button onclick="switchTab('pricing'); closeUserDropdown();" class="text-[10px] text-cyan-400 hover:text-cyan-300 font-bold underline">ترقية / تمديد</button>
+                                </div>
+                            </div>
 
-                    <!-- User Account Button -->
-                    <button id="header-user-btn" onclick="openAuthModal()" class="flex items-center space-x-1 rtl:space-x-reverse bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-slate-200 transition">
-                        <svg class="w-3.5 h-3.5 text-cyan-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
-                        <span id="header-user-label" data-i18n="btn_login_account">Account</span>
-                    </button>
+                            <!-- Dropdown Action Links -->
+                            <div class="space-y-1 text-xs">
+                                <button onclick="openTelegramConnectModal(); closeUserDropdown();" class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition">
+                                    <span class="flex items-center space-x-2 rtl:space-x-reverse">
+                                        <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"></path></svg>
+                                        <span>إدارة اتصال تليجرام</span>
+                                    </span>
+                                    <span id="dropdown-tg-status" class="w-2 h-2 rounded-full bg-slate-600"></span>
+                                </button>
 
-                    <!-- Language Switcher -->
-                    <button onclick="toggleLanguage()" class="flex items-center space-x-1 rtl:space-x-reverse bg-slate-800 hover:bg-slate-700 border border-slate-700 px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition">
-                        <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
-                        <span id="lang-switch-label">En</span>
-                    </button>
+                                <button onclick="switchTab('guide'); closeUserDropdown();" class="w-full flex items-center space-x-2 rtl:space-x-reverse p-2 rounded-xl hover:bg-slate-800/80 text-indigo-300 hover:text-indigo-200 transition">
+                                    <svg class="w-4 h-4 text-indigo-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                                    <span>دليل الاستخدام (Documentation)</span>
+                                </button>
+
+                                <button onclick="toggleLanguage(); closeUserDropdown();" class="w-full flex items-center justify-between p-2 rounded-xl hover:bg-slate-800/80 text-slate-300 hover:text-white transition">
+                                    <span class="flex items-center space-x-2 rtl:space-x-reverse">
+                                        <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                                        <span>تغيير اللغة (Language)</span>
+                                    </span>
+                                    <span id="dropdown-lang-label" class="text-[10px] font-bold font-mono px-1.5 py-0.5 rounded bg-slate-800 text-cyan-300 border border-slate-700">English</span>
+                                </button>
+                            </div>
+
+                            <!-- Logout Action -->
+                            <div class="border-t border-slate-800/80 pt-1">
+                                <button onclick="handleUserLogout(); closeUserDropdown();" class="w-full flex items-center space-x-2 rtl:space-x-reverse p-2 rounded-xl hover:bg-rose-500/10 text-rose-400 hover:text-rose-300 transition text-xs font-bold">
+                                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                                    <span>تسجيل الخروج (Logout)</span>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -164,48 +187,57 @@
     <!-- Main Container -->
     <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
 
-        <!-- Top Navigation Tabs -->
-        <div class="bg-surface-900 border border-slate-800 p-1.5 rounded-2xl flex overflow-x-auto no-scrollbar sm:flex-wrap gap-1.5 shadow-sm scroll-smooth">
-            <button onclick="switchTab('overview')" id="tab-overview-btn" class="tab-btn active flex items-center space-x-2 rtl:space-x-reverse px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all flex-shrink-0 whitespace-nowrap">
-                <svg class="w-4 h-4 text-brand-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
-                <span data-i18n="tab_overview">Overview</span>
+        <!-- Single Segmented Navigation Tabs Bar (No wrapping, Clean Outline Icons) -->
+        <div class="bg-surface-900/90 backdrop-blur-md border border-slate-800/90 p-1.5 rounded-2xl flex items-center overflow-x-auto no-scrollbar gap-1.5 shadow-sm scroll-smooth">
+            <!-- 1. Overview -->
+            <button onclick="switchTab('overview')" id="tab-overview-btn" class="tab-btn active flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-xs sm:text-sm font-semibold transition-all flex-shrink-0 whitespace-nowrap">
+                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                <span data-i18n="tab_overview">نظرة عامة</span>
             </button>
-            <button onclick="switchTab('pricing')" id="tab-pricing-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 hover:border-amber-400/50 transition-all shadow-sm flex-shrink-0 whitespace-nowrap">
+
+            <!-- 2. Forwarding Rules -->
+            <button onclick="switchTab('forwarding')" id="tab-forwarding-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
+                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                <span data-i18n="tab_forwarding">قواعد التوجيه</span>
+                <span id="badge-rules-count" class="bg-slate-800 text-[11px] px-2 py-0.5 rounded-full text-slate-300 font-mono">0</span>
+            </button>
+
+            <!-- 3. Text Transformations -->
+            <button onclick="switchTab('text-rules')" id="tab-text-rules-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
+                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                <span data-i18n="tab_text_rules">تحويل النصوص</span>
+            </button>
+
+            <!-- 4. Blacklist -->
+            <button onclick="switchTab('blacklist')" id="tab-blacklist-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
+                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                <span data-i18n="tab_blacklist">القائمة السوداء</span>
+                <span id="badge-blacklist-count" class="bg-slate-800 text-[11px] px-2 py-0.5 rounded-full text-slate-300 font-mono">0</span>
+            </button>
+
+            <!-- 5. Real-Time Logs -->
+            <button onclick="switchTab('logs')" id="tab-logs-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
+                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                <span data-i18n="tab_logs">السجلات اللحظية</span>
+            </button>
+
+            <!-- 6. Plans & Subscriptions -->
+            <button onclick="switchTab('pricing')" id="tab-pricing-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
                 <svg class="w-4 h-4 text-amber-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
-                <span data-i18n="tab_pricing">Plans & Subscriptions</span>
-                <span id="tab-sub-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse ml-1 rtl:mr-1"></span>
+                <span data-i18n="tab_pricing">الخطط والاشتراكات</span>
+                <span id="tab-sub-status-dot" class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
             </button>
-            <button onclick="switchTab('admin')" id="tab-admin-btn" class="tab-btn hidden flex items-center space-x-2 rtl:space-x-reverse px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-black text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 hover:border-rose-400/50 transition-all shadow-sm flex-shrink-0 whitespace-nowrap">
-                <svg class="w-4 h-4 text-rose-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
-                <span>لوحة الإدارة والمشتركين (Admin Panel)</span>
-                <span class="w-2 h-2 rounded-full bg-rose-400 animate-pulse ml-1 rtl:mr-1"></span>
+
+            <!-- 7. Admin Panel (Conditional for Admins) -->
+            <button onclick="switchTab('admin')" id="tab-admin-btn" class="tab-btn hidden flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all flex-shrink-0 whitespace-nowrap">
+                <svg class="w-4 h-4 text-rose-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
+                <span>لوحة الإدارة</span>
             </button>
-            <button onclick="switchTab('forwarding')" id="tab-forwarding-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
-                <svg class="w-4 h-4 text-cyan-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
-                <span data-i18n="tab_forwarding">Forwarding Rules</span>
-                <span id="badge-rules-count" class="bg-slate-800 text-xs px-2 py-0.5 rounded-full text-slate-300">0</span>
-            </button>
-            <button onclick="switchTab('text-rules')" id="tab-text-rules-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
-                <svg class="w-4 h-4 text-purple-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
-                <span data-i18n="tab_text_rules">Text Transformation</span>
-            </button>
-            <button onclick="switchTab('guide')" id="tab-guide-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-bold text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 hover:border-indigo-400/50 transition-all shadow-sm flex-shrink-0 whitespace-nowrap">
-                <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
-                <span data-i18n="tab_guide">User Guide</span>
-                <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse ml-1 rtl:mr-1"></span>
-            </button>
-            <button onclick="switchTab('blacklist')" id="tab-blacklist-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
-                <svg class="w-4 h-4 text-rose-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
-                <span data-i18n="tab_blacklist">Blacklist</span>
-                <span id="badge-blacklist-count" class="bg-slate-800 text-xs px-2 py-0.5 rounded-full text-slate-300">0</span>
-            </button>
-            <button onclick="switchTab('logs')" id="tab-logs-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
-                <svg class="w-4 h-4 text-amber-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
-                <span data-i18n="tab_logs">Real-Time Logs</span>
-            </button>
-            <button onclick="switchTab('settings')" id="tab-settings-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-3.5 sm:px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
-                <svg class="w-4 h-4 text-slate-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-                <span data-i18n="tab_settings">Diagnostics & Settings</span>
+
+            <!-- 8. Settings & Diagnostics -->
+            <button onclick="switchTab('settings')" id="tab-settings-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-xs sm:text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all flex-shrink-0 whitespace-nowrap">
+                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                <span data-i18n="tab_settings">الإعدادات</span>
             </button>
         </div>
 
@@ -571,57 +603,65 @@
 
         <!-- ==================== TAB 1: OVERVIEW ==================== -->
         <div id="tab-content-overview" class="tab-pane space-y-6 animate-fade-in">
-            <!-- Hero Metrics Grid -->
+            <!-- Hero Metrics Grid (4 Equal Balanced Glassmorphic Cards) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Card 1: Forwarded Posts -->
-                <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                <div class="bg-slate-900/70 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" data-i18n="metric_forwarded">Total Posts Forwarded</span>
-                        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></div>
+                        <span class="text-xs font-bold text-slate-400" data-i18n="metric_forwarded">إجمالي المنشورات المحولة</span>
+                        <div class="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center border border-emerald-500/20 group-hover:scale-105 transition-transform">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        </div>
                     </div>
                     <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
-                        <span id="stat-total-forwarded" class="text-3xl font-extrabold text-white">0</span>
-                        <span class="text-xs text-emerald-400 font-medium" data-i18n="metric_posts_unit">posts</span>
+                        <span id="stat-total-forwarded" class="text-3xl font-black text-white tracking-tight">0</span>
+                        <span class="text-xs text-emerald-400 font-semibold" data-i18n="metric_posts_unit">منشور</span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-1" data-i18n="metric_forwarded_desc">Photos, videos & text posts</p>
+                    <p class="text-[11px] text-slate-500 mt-1" data-i18n="metric_forwarded_desc">صور، فيديوهات، ورسائل نصية</p>
                 </div>
 
                 <!-- Card 2: Active Rules -->
-                <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                <div class="bg-slate-900/70 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" data-i18n="metric_active_rules">Active Rules</span>
-                        <div class="w-9 h-9 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg></div>
+                        <span class="text-xs font-bold text-slate-400" data-i18n="metric_active_rules">قواعد التوجيه النشطة</span>
+                        <div class="w-10 h-10 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center border border-cyan-500/20 group-hover:scale-105 transition-transform">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                        </div>
                     </div>
                     <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
-                        <span id="stat-active-rules" class="text-3xl font-extrabold text-white">0</span>
-                        <span class="text-xs text-slate-400">/ <span id="stat-total-rules">0</span> <span data-i18n="metric_rules_total">total</span></span>
+                        <span id="stat-active-rules" class="text-3xl font-black text-white tracking-tight">0</span>
+                        <span class="text-xs text-slate-400 font-medium">/ <span id="stat-total-rules">0</span> <span data-i18n="metric_rules_total">إجمالي</span></span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-1" data-i18n="metric_rules_desc">Source to target channel pipelines</p>
+                    <p class="text-[11px] text-slate-500 mt-1" data-i18n="metric_rules_desc">مسارات التحويل من القنوات المصدرية</p>
                 </div>
 
                 <!-- Card 3: Blacklisted Channels -->
-                <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                <div class="bg-slate-900/70 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" data-i18n="metric_blacklist">Blacklisted Channels</span>
-                        <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg></div>
+                        <span class="text-xs font-bold text-slate-400" data-i18n="metric_blacklist">القنوات المحظورة</span>
+                        <div class="w-10 h-10 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center border border-rose-500/20 group-hover:scale-105 transition-transform">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
+                        </div>
                     </div>
                     <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
-                        <span id="stat-blacklist-count" class="text-3xl font-extrabold text-white">0</span>
-                        <span class="text-xs text-rose-400 font-medium" data-i18n="metric_blocked">blocked</span>
+                        <span id="stat-blacklist-count" class="text-3xl font-black text-white tracking-tight">0</span>
+                        <span class="text-xs text-rose-400 font-semibold" data-i18n="metric_blocked">محظورة</span>
                     </div>
-                    <p class="text-xs text-slate-500 mt-1" data-i18n="metric_blacklist_desc">Channels ignored automatically</p>
+                    <p class="text-[11px] text-slate-500 mt-1" data-i18n="metric_blacklist_desc">قنوات يتم تجاهل منشوراتها تلقائياً</p>
                 </div>
 
-                <!-- Card 4: Database & Engine -->
-                <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800 rounded-2xl p-5 shadow-sm relative overflow-hidden">
+                <!-- Card 4: Database Storage -->
+                <div class="bg-slate-900/70 backdrop-blur-md border border-slate-800/80 hover:border-slate-700/80 rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" data-i18n="metric_db">Database Storage</span>
-                        <div class="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg></div>
+                        <span class="text-xs font-bold text-slate-400" data-i18n="metric_db">قاعدة البيانات السحابية</span>
+                        <div class="w-10 h-10 rounded-xl bg-indigo-500/10 text-indigo-400 flex items-center justify-center border border-indigo-500/20 group-hover:scale-105 transition-transform">
+                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg>
+                        </div>
                     </div>
                     <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
-                        <span id="stat-db-type" class="text-2xl font-bold text-white">MongoDB</span>
+                        <span id="stat-db-type" class="text-2xl font-black text-white tracking-tight">MongoDB</span>
                     </div>
-                    <p id="stat-db-status" class="text-xs text-emerald-400 mt-1">● Atlas Cluster Connected</p>
+                    <p id="stat-db-status" class="text-xs text-emerald-400 font-medium mt-1">● Atlas Cluster Connected</p>
                 </div>
             </div>
 
@@ -1752,7 +1792,12 @@
             localStorage.setItem('tp_lang', lang);
             document.documentElement.lang = lang;
             document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
-            document.getElementById('lang-switch-label').textContent = lang === 'ar' ? 'English' : 'العربية';
+
+            const langLabel = document.getElementById('lang-switch-label');
+            if (langLabel) langLabel.textContent = lang === 'ar' ? 'English' : 'العربية';
+
+            const dropLangLabel = document.getElementById('dropdown-lang-label');
+            if (dropLangLabel) dropLangLabel.textContent = lang === 'ar' ? 'English' : 'العربية';
 
             // Translate elements
             document.querySelectorAll('[data-i18n]').forEach(el => {
@@ -2605,17 +2650,73 @@
         let currentAuthTab = 'login';
         let pendingTelegramPhone = '';
 
+        function handleUserHeaderClick(event) {
+            if (!currentUser) {
+                openAuthModal();
+            } else {
+                toggleUserDropdown(event);
+            }
+        }
+
+        function toggleUserDropdown(event) {
+            if (event) event.stopPropagation();
+            const menu = document.getElementById('user-dropdown-menu');
+            if (menu) menu.classList.toggle('hidden');
+        }
+
+        function closeUserDropdown() {
+            const menu = document.getElementById('user-dropdown-menu');
+            if (menu) menu.classList.add('hidden');
+        }
+
+        // Close dropdown when clicking outside
+        window.addEventListener('click', function(e) {
+            const container = document.getElementById('user-dropdown-container');
+            if (container && !container.contains(e.target)) {
+                closeUserDropdown();
+            }
+        });
+
         async function checkAuthStatus() {
             try {
                 const res = await api('/api/auth/me');
                 const userBtnLabel = document.getElementById('header-user-label');
+                const avatarEl = document.getElementById('header-user-avatar');
                 const accEl = document.getElementById('overview-account-name');
                 const sessEl = document.getElementById('overview-session-type');
                 const tgBtnText = document.getElementById('overview-tg-btn-text');
 
+                const dropName = document.getElementById('dropdown-user-name');
+                const dropEmail = document.getElementById('dropdown-user-email');
+                const dropRole = document.getElementById('dropdown-user-role-badge');
+                const dropTgStatus = document.getElementById('dropdown-tg-status');
+
                 if (res.authenticated && res.user) {
                     currentUser = res.user;
-                    if (userBtnLabel) userBtnLabel.textContent = currentUser.name || currentUser.email;
+                    const isSuper = (currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com');
+                    const isAdmin = (currentUser.role === 'admin' || isSuper);
+
+                    const displayName = currentUser.name || currentUser.email.split('@')[0];
+                    if (userBtnLabel) userBtnLabel.textContent = displayName;
+                    if (avatarEl) avatarEl.textContent = (displayName || 'U').charAt(0).toUpperCase();
+
+                    if (dropName) dropName.textContent = currentUser.name || displayName;
+                    if (dropEmail) dropEmail.textContent = currentUser.email;
+                    if (dropRole) {
+                        if (isSuper) {
+                            dropRole.textContent = currentLang === 'ar' ? '👑 سوبر أدمن VIP' : '👑 Super Admin';
+                            dropRole.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-purple-500/20 text-purple-300 border border-purple-500/30';
+                        } else if (isAdmin) {
+                            dropRole.textContent = currentLang === 'ar' ? '🛡️ أدمن' : '🛡️ Admin';
+                            dropRole.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-blue-500/20 text-blue-300 border border-blue-500/30';
+                        } else {
+                            dropRole.textContent = currentLang === 'ar' ? 'عميل' : 'Client';
+                            dropRole.className = 'px-2 py-0.5 text-[10px] font-bold rounded-full bg-slate-800 text-slate-300 border border-slate-700';
+                        }
+                    }
+                    if (dropTgStatus) {
+                        dropTgStatus.className = currentUser.telegram_connected ? 'w-2 h-2 rounded-full bg-emerald-400' : 'w-2 h-2 rounded-full bg-rose-500';
+                    }
                     
                     if (currentUser.telegram_connected) {
                         const tgName = currentUser.telegram_username ? '@' + currentUser.telegram_username : (currentUser.telegram_first_name || 'Connected');
@@ -2629,7 +2730,8 @@
                     }
                 } else {
                     currentUser = null;
-                    if (userBtnLabel) userBtnLabel.textContent = currentLang === 'ar' ? 'حسابي / تسجيل الدخول' : 'Account / Login';
+                    if (userBtnLabel) userBtnLabel.textContent = currentLang === 'ar' ? 'حسابي / دخول' : 'Account / Login';
+                    if (avatarEl) avatarEl.textContent = 'U';
                     if (accEl) accEl.innerHTML = `<span class="text-slate-500 font-medium">${currentLang === 'ar' ? 'غير متصل' : 'Disconnected'}</span>`;
                     if (sessEl) sessEl.innerHTML = `<span class="text-slate-500 font-mono text-xs bg-slate-800 px-2 py-0.5 rounded">${currentLang === 'ar' ? 'لا توجد جلسة نشطة' : 'No Active Session'}</span>`;
                     if (tgBtnText) tgBtnText.textContent = currentLang === 'ar' ? 'ربط حساب تليجرام (Connect Web)' : 'Connect Telegram Account (Web)';
@@ -2920,6 +3022,17 @@
             if (planName) planName.textContent = currentLang === 'ar' ? sub.plan_name_ar : sub.plan_name;
             if (expires) expires.textContent = sub.expires_at ? new Date(sub.expires_at).toLocaleString() : 'Never';
             if (channelsLimit) channelsLimit.textContent = sub.max_target_channels >= 999 ? (currentLang === 'ar' ? 'غير محدود (Unlimited)' : 'Unlimited') : `Max ${sub.max_target_channels} Targets`;
+
+            const dropPlan = document.getElementById('dropdown-user-plan');
+            if (dropPlan && sub) {
+                if (sub.status === 'trial') {
+                    dropPlan.textContent = currentLang === 'ar' ? `تجريبي (${sub.days_remaining} يوم)` : `Trial (${sub.days_remaining}d)`;
+                } else if (sub.is_active) {
+                    dropPlan.textContent = currentLang === 'ar' ? `${sub.plan_name_ar} (متبقي ${sub.days_remaining} يوم)` : `${sub.plan_name} (${sub.days_remaining}d left)`;
+                } else {
+                    dropPlan.textContent = currentLang === 'ar' ? 'منتهي الصلاحية' : 'Expired';
+                }
+            }
         }
 
         async function openCheckoutModal(planId) {
