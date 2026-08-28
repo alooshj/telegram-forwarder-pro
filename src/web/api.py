@@ -154,7 +154,7 @@ def get_db():
             if db.rules.count_documents({}) == 0:
                 db.rules.insert_many([
                     {"name": "Strip @usernames", "type": "regex", "pattern": r"@\w+", "replacement": "[username]", "priority": 1, "active": True},
-                    {"name": "Branding Footer", "type": "footer", "replacement": "Forwarded by Telegram Forwarder Pro", "priority": 99, "active": True},
+                    {"name": "Branding Footer", "type": "footer", "replacement": "Forwarded by TeleTips Pro", "priority": 99, "active": True},
                 ])
                 logger.info("Created default transformation rules")
         except Exception as e:

@@ -237,7 +237,7 @@ class RulesEngineFooterTest(unittest.TestCase):
             {
                 "name": "Branding Footer",
                 "type": "footer",
-                "replacement": "Forwarded by Telegram Forwarder Pro",
+                "replacement": "Forwarded by TeleTips Pro",
                 "priority": 99,
                 "active": True,
             }
@@ -247,14 +247,14 @@ class RulesEngineFooterTest(unittest.TestCase):
     def test_footer_appended(self):
         text = "Hello world"
         result = self.engine.apply_rules(text)
-        self.assertTrue(result.endswith("Forwarded by Telegram Forwarder Pro"))
+        self.assertTrue(result.endswith("Forwarded by TeleTips Pro"))
         self.assertIn("\n\n", result)
 
     def test_footer_with_original_content(self):
         text = "Original message"
         result = self.engine.apply_rules(text)
         self.assertEqual(
-            result, "Original message\n\nForwarded by Telegram Forwarder Pro"
+            result, "Original message\n\nForwarded by TeleTips Pro"
         )
 
     def test_empty_footer_rule(self):

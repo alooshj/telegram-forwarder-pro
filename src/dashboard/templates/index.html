@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Telegram Forwarder Pro — لوحة التحكم</title>
+    <title>TeleTips Pro — لوحة التحكم الذكية</title>
     <script>
         // Suppress third-party Chrome Extension promise rejections (e.g., 200.js)
         window.addEventListener('unhandledrejection', function(e) {
@@ -70,6 +70,7 @@
         .tab-btn.active {
             background-color: #4f46e5;
             color: #ffffff;
+            font-weight: 700;
             box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.35);
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
@@ -96,13 +97,18 @@
     <header class="bg-surface-900/95 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-40 h-16 flex items-center">
         <div class="max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8">
             <div class="flex items-center justify-between h-full">
-                <!-- Right Side (in RTL): Logo & Brand Name -->
+                <!-- Right Side (in RTL): Custom TeleTips Brand Logo & Name -->
                 <div class="flex items-center space-x-2.5 rtl:space-x-reverse">
-                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-cyan-500 flex items-center justify-center shadow-md shadow-brand-500/20 text-white font-black text-lg flex-shrink-0">
-                        <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                    <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-md shadow-brand-500/25 text-white font-black text-lg flex-shrink-0 relative overflow-hidden group">
+                        <!-- Custom TeleTips Mark: Styled 'T' with Forward Lightning Wing -->
+                        <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
+                            <path d="M2 17l10 5 10-5"></path>
+                            <path d="M2 12l10 5 10-5"></path>
+                        </svg>
                     </div>
                     <div class="flex items-center space-x-1.5 rtl:space-x-reverse">
-                        <span class="font-bold text-base sm:text-lg text-white tracking-tight">Telegram Forwarder</span>
+                        <span class="font-black text-lg text-white tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-300 bg-clip-text text-transparent">TeleTips</span>
                         <span class="text-[10px] bg-brand-500/20 text-brand-400 font-bold px-1.5 py-0.5 rounded border border-brand-500/30">PRO</span>
                     </div>
                 </div>
@@ -813,7 +819,7 @@
                             <span data-i18n="guide_badge">دليل الاستخدام والتوثيق البرمجي</span>
                         </div>
                         <h1 class="text-2xl sm:text-3xl font-extrabold text-white tracking-tight" data-i18n="guide_main_title">
-                            دليل تشغيل وإدارة Telegram Forwarder Pro
+                            دليل تشغيل وإدارة منصة TeleTips Pro
                         </h1>
                         <p class="text-sm text-slate-400 max-w-2xl leading-relaxed" data-i18n="guide_main_desc">
                             مرجع شامل يوضح كيفية ضبط مسارات التوجيه اللحظي، تخصيص القواعد لكل قناة، واستخدام التعبيرات النمطية (Regex) لمعالجة النصوص بدقة.

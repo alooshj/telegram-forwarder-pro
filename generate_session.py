@@ -19,7 +19,7 @@ API_HASH = os.environ.get("API_HASH")
 
 if not API_ID or not API_HASH:
     print("=" * 60)
-    print("  Telegram Forwarder Pro - Session String Generator")
+    print("  TeleTips Pro - Session String Generator")
     print("=" * 60)
     try:
         api_id_input = input("Enter API_ID: ").strip()

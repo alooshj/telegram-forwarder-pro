@@ -27,7 +27,7 @@ def generate_session_string(api_id: int, api_hash: str, phone_number: str = None
 
 def main():
     print("=" * 60)
-    print("  Telegram Forwarder Pro - Session String Generator")
+    print("  TeleTips Pro - Session String Generator")
     print("=" * 60)
     print()
     print("You'll need your API credentials from https://my.telegram.org")

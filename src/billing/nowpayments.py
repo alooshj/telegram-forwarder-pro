@@ -76,7 +76,7 @@ class NOWPaymentsGateway:
         Customer can pay with any cryptocurrency (USDT, BTC, ETH, LTC, TRX, SOL, etc.).
         """
         url = f"{cls.get_base_url()}/invoice"
-        description = f"Telegram Forwarder Pro - {plan_name or 'Subscription'} (${price_amount:.2f})"
+        description = f"TeleTips Pro - {plan_name or 'Subscription'} (${price_amount:.2f})"
 
         payload = {
             "price_amount": float(price_amount),

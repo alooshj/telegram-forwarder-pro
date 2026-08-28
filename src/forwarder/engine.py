@@ -104,7 +104,7 @@ class ForwarderEngine:
             await self.client.start()
             me = await self.client.get_me()
             self.username = getattr(me, 'username', None) or getattr(me, 'id', 'user')
-            self._log_event("INFO", f"Telegram Forwarder engine connected as @{self.username}")
+            self._log_event("INFO", f"TeleTips engine connected as @{self.username}")
 
             self._running = True
 
@@ -393,7 +393,7 @@ class ForwarderEngine:
             forwarder_status["last_update"] = datetime.now(timezone.utc).isoformat()
         except Exception:
             pass
-        self._log_event("INFO", "Telegram Forwarder engine stopped")
+        self._log_event("INFO", "TeleTips engine stopped")
 
     async def _run_forwarding_loop(self):
         """Main background polling loop."""

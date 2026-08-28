@@ -1,4 +1,4 @@
-# Telegram Forwarder Pro
+# TeleTips Pro
 
 A **non-programmer-friendly, 24/7 automated Telegram post forwarder and content transformer** designed for commercial use. Built for zero-cost deployment on free-tier infrastructure (MongoDB Atlas M0 + Render/Koyeb free tier).
 

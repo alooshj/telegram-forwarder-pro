@@ -188,7 +188,7 @@ class RulesEngine:
                 {
                     "name": "Branding Footer",
                     "type": "footer",
-                    "replacement": "Forwarded by Telegram Forwarder Pro",
+                    "replacement": "Forwarded by TeleTips Pro",
                     "priority": 99,
                     "active": True,
                 },

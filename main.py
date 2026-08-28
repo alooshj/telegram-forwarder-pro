@@ -1,7 +1,7 @@
 """
-Telegram Forwarder Pro - Main Entry Point
+TeleTips Pro - Main Entry Point
 |------------------------------------------
-Orchestrates the Telegram forwarder engine and web dashboard.
+Orchestrates the TeleTips forwarder engine and web dashboard.
 
 This file is kept for backwards compatibility.
 The actual app initialization (database, forwarder engine) happens in
@@ -26,13 +26,13 @@ logging.basicConfig(
         logging.StreamHandler(),
     ],
 )
-logger = logging.getLogger("telegram-forwarder-pro")
+logger = logging.getLogger("teletips-pro")
 
 
 if __name__ == "__main__":
     config = load_config()
     logger.info(f"Configuration loaded: API_ID={config['API_ID']}")
-    logger.info("Telegram Forwarder Pro starting...")
+    logger.info("TeleTips Pro starting...")
     app.run(
         host=config["WEB_HOST"],
         port=int(os.environ.get("PORT", config["WEB_PORT"])),
