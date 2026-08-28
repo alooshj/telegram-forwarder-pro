@@ -65,7 +65,7 @@
                 <!-- Logo & Brand -->
                 <div class="flex items-center space-x-3 rtl:space-x-reverse">
                     <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-brand-600 to-cyan-500 flex items-center justify-center shadow-lg shadow-brand-500/20 text-white font-black text-xl">
-                        ✈️
+                        <svg class="w-5 h-5 text-white inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                     </div>
                     <div>
                         <div class="flex items-center space-x-2 rtl:space-x-reverse">
@@ -86,13 +86,20 @@
 
                     <!-- Forwarder Start/Stop Button -->
                     <button id="quick-toggle-btn" onclick="toggleEngine()" class="flex items-center space-x-1.5 rtl:space-x-reverse px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all">
-                        <span id="quick-toggle-icon">▶</span>
+                        <span id="quick-toggle-icon"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg></span>
                         <span id="quick-toggle-text" data-i18n="btn_start">Start</span>
+                    </button>
+
+                    <!-- Prominent User Guide in Header -->
+                    <button onclick="switchTab('guide')" class="flex items-center space-x-1.5 rtl:space-x-reverse bg-gradient-to-r from-indigo-600/30 via-purple-600/30 to-indigo-600/30 hover:from-indigo-600/50 hover:to-purple-600/50 border border-indigo-500/50 text-indigo-200 px-3.5 py-1.5 rounded-lg text-xs font-bold shadow-md shadow-indigo-500/15 transition-all hover:scale-105 active:scale-95 group">
+                        <svg class="w-4 h-4 text-indigo-400 group-hover:text-white transition-colors" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                        <span data-i18n="tab_guide">User Guide</span>
+                        <span class="bg-indigo-500/30 text-indigo-300 text-[10px] px-1.5 py-0.5 rounded font-mono font-bold border border-indigo-400/30">DOCS</span>
                     </button>
 
                     <!-- Language Switcher -->
                     <button onclick="toggleLanguage()" class="flex items-center space-x-1 rtl:space-x-reverse bg-slate-800 hover:bg-slate-700 border border-slate-700 px-3 py-1.5 rounded-lg text-xs font-medium text-slate-300 hover:text-white transition">
-                        <span>🌐</span>
+                        <svg class="w-3.5 h-3.5 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                         <span id="lang-switch-label">English</span>
                     </button>
                 </div>
@@ -106,33 +113,34 @@
         <!-- Top Navigation Tabs -->
         <div class="bg-surface-900 border border-slate-800 p-1.5 rounded-2xl flex flex-wrap gap-1 shadow-sm">
             <button onclick="switchTab('overview')" id="tab-overview-btn" class="tab-btn active flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium transition-all">
-                <span>📊</span>
+                <svg class="w-4 h-4 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
                 <span data-i18n="tab_overview">Overview</span>
             </button>
             <button onclick="switchTab('forwarding')" id="tab-forwarding-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
-                <span>🔄</span>
+                <svg class="w-4 h-4 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
                 <span data-i18n="tab_forwarding">Forwarding Rules</span>
                 <span id="badge-rules-count" class="bg-slate-800 text-xs px-2 py-0.5 rounded-full text-slate-300">0</span>
             </button>
             <button onclick="switchTab('text-rules')" id="tab-text-rules-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
-                <span>✍️</span>
+                <svg class="w-4 h-4 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                 <span data-i18n="tab_text_rules">Text Transformation</span>
             </button>
-            <button onclick="switchTab('guide')" id="tab-guide-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
+            <button onclick="switchTab('guide')" id="tab-guide-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-bold text-indigo-300 bg-indigo-500/10 hover:bg-indigo-500/20 border border-indigo-500/30 hover:border-indigo-400/50 transition-all shadow-sm">
                 <svg class="w-4 h-4 text-indigo-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
                 <span data-i18n="tab_guide">User Guide</span>
+                <span class="w-2 h-2 rounded-full bg-indigo-400 animate-pulse ml-1 rtl:mr-1"></span>
             </button>
             <button onclick="switchTab('blacklist')" id="tab-blacklist-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
-                <span>🚫</span>
+                <svg class="w-4 h-4 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
                 <span data-i18n="tab_blacklist">Blacklist</span>
                 <span id="badge-blacklist-count" class="bg-slate-800 text-xs px-2 py-0.5 rounded-full text-slate-300">0</span>
             </button>
             <button onclick="switchTab('logs')" id="tab-logs-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
-                <span>📜</span>
+                <svg class="w-4 h-4 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
                 <span data-i18n="tab_logs">Real-Time Logs</span>
             </button>
             <button onclick="switchTab('settings')" id="tab-settings-btn" class="tab-btn flex items-center space-x-2 rtl:space-x-reverse px-4 py-2.5 rounded-xl text-sm font-medium text-slate-400 hover:text-white hover:bg-slate-800/60 transition-all">
-                <span>⚙️</span>
+                <svg class="w-4 h-4 text-slate-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
                 <span data-i18n="tab_settings">Diagnostics & Settings</span>
             </button>
         </div>
@@ -145,7 +153,7 @@
                 <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800 rounded-2xl p-5 shadow-sm relative overflow-hidden">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" data-i18n="metric_forwarded">Total Posts Forwarded</span>
-                        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center text-lg">🚀</div>
+                        <div class="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-400 flex items-center justify-center"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg></div>
                     </div>
                     <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
                         <span id="stat-total-forwarded" class="text-3xl font-extrabold text-white">0</span>
@@ -158,7 +166,7 @@
                 <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800 rounded-2xl p-5 shadow-sm relative overflow-hidden">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" data-i18n="metric_active_rules">Active Rules</span>
-                        <div class="w-9 h-9 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center text-lg">🔄</div>
+                        <div class="w-9 h-9 rounded-xl bg-brand-500/10 text-brand-400 flex items-center justify-center"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg></div>
                     </div>
                     <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
                         <span id="stat-active-rules" class="text-3xl font-extrabold text-white">0</span>
@@ -171,7 +179,7 @@
                 <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800 rounded-2xl p-5 shadow-sm relative overflow-hidden">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" data-i18n="metric_blacklist">Blacklisted Channels</span>
-                        <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-lg">🚫</div>
+                        <div class="w-9 h-9 rounded-xl bg-rose-500/10 text-rose-400 flex items-center justify-center"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg></div>
                     </div>
                     <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
                         <span id="stat-blacklist-count" class="text-3xl font-extrabold text-white">0</span>
@@ -184,7 +192,7 @@
                 <div class="bg-gradient-to-br from-surface-900 to-surface-850 border border-slate-800 rounded-2xl p-5 shadow-sm relative overflow-hidden">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-semibold uppercase tracking-wider text-slate-400" data-i18n="metric_db">Database Storage</span>
-                        <div class="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center text-lg">🍃</div>
+                        <div class="w-9 h-9 rounded-xl bg-cyan-500/10 text-cyan-400 flex items-center justify-center"><svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="5" rx="9" ry="3"></ellipse><path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3"></path><path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5"></path></svg></div>
                     </div>
                     <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
                         <span id="stat-db-type" class="text-2xl font-bold text-white">MongoDB</span>
@@ -199,7 +207,7 @@
                 <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-4">
                     <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                         <h3 class="font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
-                            <span>🤖</span>
+                            <svg class="w-4 h-4 text-brand-400 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="10" rx="2"></rect><circle cx="12" cy="5" r="2"></circle><path d="M12 7v4"></path><line x1="8" y1="16" x2="8.01" y2="16"></line><line x1="16" y1="16" x2="16.01" y2="16"></line></svg>
                             <span data-i18n="sec_account_status">Telegram Account & Engine</span>
                         </h3>
                         <span id="overview-engine-badge" class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">Running</span>
@@ -216,7 +224,7 @@
                         </div>
                         <div class="flex justify-between items-center text-slate-300">
                             <span class="text-slate-400" data-i18n="lbl_keepalive">Keep-Alive Cron:</span>
-                            <span class="text-xs font-medium text-emerald-400">✅ Active (Every 5 mins)</span>
+                            <span class="text-xs font-medium text-emerald-400"><svg class="w-3.5 h-3.5 text-emerald-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg> Active (Every 5 mins)</span>
                         </div>
                         <div class="flex justify-between items-center text-slate-300">
                             <span class="text-slate-400" data-i18n="lbl_last_sync">Last Heartbeat:</span>
@@ -226,10 +234,10 @@
 
                     <div class="pt-2 border-t border-slate-800 flex gap-2">
                         <button onclick="triggerManualSync()" class="flex-1 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-xl text-slate-200 transition">
-                            🔄 <span data-i18n="btn_sync_now">Sync Now</span>
+                            <svg class="w-3.5 h-3.5 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg><span data-i18n="btn_sync_now">Sync Now</span>
                         </button>
                         <button onclick="switchTab('logs')" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-xl text-slate-200 transition">
-                            📜 <span data-i18n="btn_view_logs">View Logs</span>
+                            <svg class="w-3.5 h-3.5 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg><span data-i18n="btn_view_logs">View Logs</span>
                         </button>
                     </div>
                 </div>
@@ -238,7 +246,7 @@
                 <div class="lg:col-span-2 bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-4">
                     <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                         <h3 class="font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
-                            <span>🧪</span>
+                            <svg class="w-4 h-4 text-purple-400 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2v7.31L4.89 20a1 1 0 0 0 .89 1.45h12.44a1 1 0 0 0 .89-1.45L14 9.31V2"></path><line x1="8" y1="2" x2="16" y2="2"></line></svg>
                             <span data-i18n="sec_quick_tester">Live Rule & Transformation Tester</span>
                         </h3>
                         <span class="text-xs text-slate-400" data-i18n="sec_quick_tester_desc">Test message output before forwarding</span>
@@ -259,7 +267,7 @@
 
                     <div class="flex justify-end pt-2">
                         <button onclick="runQuickTest()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-brand-600/20 transition flex items-center space-x-1.5 rtl:space-x-reverse">
-                            <span>⚡</span>
+                            <svg class="w-4 h-4 text-amber-400 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                             <span data-i18n="btn_run_test">Test Output</span>
                         </button>
                     </div>
@@ -274,7 +282,7 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
                     <div>
                         <h2 class="text-lg font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
-                            <span>🔄</span>
+                            <svg class="w-5 h-5 text-brand-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
                             <span data-i18n="title_forwarding_rules">Channel Forwarding Pipelines</span>
                         </h2>
                         <p class="text-xs text-slate-400 mt-1" data-i18n="desc_forwarding_rules">Configure source Telegram channels to monitor and target channels to post into.</p>
@@ -282,7 +290,7 @@
                     <div class="flex items-center space-x-2 rtl:space-x-reverse">
                         <input id="rules-search-input" onkeyup="filterRules()" type="text" placeholder="Search rules..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 w-48">
                         <button onclick="openRuleModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-brand-600/20 transition flex items-center space-x-1.5 rtl:space-x-reverse whitespace-nowrap">
-                            <span>➕</span>
+                            <svg class="w-4 h-4 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             <span data-i18n="btn_add_rule">Add New Pipeline</span>
                         </button>
                     </div>
@@ -292,7 +300,7 @@
                 <div id="rules-cards-container" class="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <!-- Rule cards rendered dynamically -->
                     <div class="col-span-full py-12 text-center text-slate-500">
-                        <span class="animate-spin inline-block mr-2">🔄</span> Loading rules...
+                        <svg class="animate-spin w-4 h-4 inline-block mr-2 rtl:ml-2 text-brand-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> Loading rules...
                     </div>
                 </div>
             </div>
@@ -304,13 +312,13 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
                     <div>
                         <h2 class="text-lg font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
-                            <span>✍️</span>
+                            <svg class="w-5 h-5 text-purple-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
                             <span data-i18n="title_text_rules">Content Transformation Rules</span>
                         </h2>
                         <p class="text-xs text-slate-400 mt-1" data-i18n="desc_text_rules">Automatically replace words, strip source @usernames/links, add branding footers, and apply Regex filters.</p>
                     </div>
                     <button onclick="openTransformModal()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-600/20 transition flex items-center space-x-1.5 rtl:space-x-reverse whitespace-nowrap">
-                        <span>➕</span>
+                        <svg class="w-3.5 h-3.5 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         <span data-i18n="btn_add_transform">Add Transformation</span>
                     </button>
                 </div>
@@ -483,7 +491,7 @@
                             استبدال كلمة أو رابط محدد بنص بديل بدقة تامة.
                         </p>
                         <div class="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-slate-300">
-                            <span class="text-rose-400">@old_channel</span> ➔ <span class="text-emerald-400 font-bold">@new_channel</span>
+                            <span class="text-rose-400">@old_channel</span> <svg class="w-3.5 h-3.5 inline text-slate-500 mx-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg> <span class="text-emerald-400 font-bold">@new_channel</span>
                         </div>
                     </div>
 
@@ -513,7 +521,7 @@
                             مسح وحذف عبارات الإعلانات والروابط المزعجة من الرسالة دون ترك أثر.
                         </p>
                         <div class="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-slate-300">
-                            Target: <span class="text-rose-400">"اشترك في القناة"</span> ➔ <span class="text-slate-500">(حذف)</span>
+                            Target: <span class="text-rose-400">"اشترك في القناة"</span> <svg class="w-3.5 h-3.5 inline text-slate-500 mx-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"></line><polyline points="12 5 19 12 12 19"></polyline></svg> <span class="text-slate-500">(حذف)</span>
                         </div>
                     </div>
 
@@ -528,7 +536,7 @@
                             إضافة توقيع وقنوات التواصل في نهاية كل منشور مع سطرين فارغين تلقائياً.
                         </p>
                         <div class="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-emerald-400">
-                            \n\n📢 تابعنا: @my_channel
+                            \n\nتابعنا: @my_channel
                         </div>
                     </div>
 
@@ -543,7 +551,7 @@
                             وضع كلمة ترويجية أو عنوان رئيسي في السطر الأول أعلى المنشور.
                         </p>
                         <div class="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-amber-300">
-                            ⚡ عاجل | \n(نص الخبر)
+                            عاجل | \n(نص الخبر)
                         </div>
                     </div>
                 </div>
@@ -720,13 +728,13 @@
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
                     <div>
                         <h2 class="text-lg font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
-                            <span>🚫</span>
+                            <svg class="w-5 h-5 text-rose-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"></line></svg>
                             <span data-i18n="title_blacklist">Channel Blacklist</span>
                         </h2>
                         <p class="text-xs text-slate-400 mt-1" data-i18n="desc_blacklist">Blocked channels whose messages will never be forwarded.</p>
                     </div>
                     <button onclick="openBlacklistModal()" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-rose-600/20 transition flex items-center space-x-1.5 rtl:space-x-reverse">
-                        <span>➕</span>
+                        <svg class="w-3.5 h-3.5 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         <span data-i18n="btn_add_blacklist">Add to Blacklist</span>
                     </button>
                 </div>
@@ -757,7 +765,7 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
                     <div>
                         <h2 class="text-lg font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
-                            <span>📜</span>
+                            <svg class="w-5 h-5 text-amber-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                             <span data-i18n="title_logs">Real-Time Operational Logs</span>
                         </h2>
                         <p class="text-xs text-slate-400 mt-0.5" data-i18n="desc_logs">Live feed of all forwarding events, post transformations, and connection states.</p>
@@ -781,12 +789,12 @@
 
                         <!-- Refresh -->
                         <button onclick="loadLogs(true)" class="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition" title="Refresh">
-                            🔄
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
                         </button>
 
                         <!-- Clear Logs -->
                         <button onclick="clearLogs()" class="px-3 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 text-xs font-semibold rounded-xl transition flex items-center space-x-1 rtl:space-x-reverse">
-                            <span>🗑️</span>
+                            <svg class="w-3.5 h-3.5 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                             <span data-i18n="btn_clear_logs">Clear</span>
                         </button>
                     </div>
@@ -805,7 +813,7 @@
                 <!-- System Diagnostics -->
                 <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-4">
                     <h3 class="font-bold text-white border-b border-slate-800 pb-3 flex items-center space-x-2 rtl:space-x-reverse">
-                        <span>🩺</span>
+                        <svg class="w-4 h-4 text-cyan-400 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
                         <span data-i18n="sec_diagnostics">System & Cloud Diagnostics</span>
                     </h3>
                     <div id="diag-container" class="space-y-3 text-sm">
@@ -831,7 +839,7 @@
                 <!-- Forwarder Performance Configuration -->
                 <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-4">
                     <h3 class="font-bold text-white border-b border-slate-800 pb-3 flex items-center space-x-2 rtl:space-x-reverse">
-                        <span>⚡</span>
+                        <svg class="w-4 h-4 text-amber-400 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"></polygon></svg>
                         <span data-i18n="sec_engine_config">Engine Optimization & Specs</span>
                     </h3>
                     <div class="space-y-3 text-sm">
@@ -841,15 +849,15 @@
                         </div>
                         <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
                             <span class="text-slate-400" data-i18n="lbl_media_support">Media Forwarding:</span>
-                            <span class="text-emerald-400 font-semibold">✅ Full (Photos, Videos, Files)</span>
+                            <span class="text-emerald-400 font-semibold"><svg class="w-3.5 h-3.5 text-emerald-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Full (Photos, Videos, Files)</span>
                         </div>
                         <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
                             <span class="text-slate-400" data-i18n="lbl_flood_wait">FloodWait Protection:</span>
-                            <span class="text-emerald-400 font-semibold">✅ Automated Backoff + Buffer</span>
+                            <span class="text-emerald-400 font-semibold"><svg class="w-3.5 h-3.5 text-emerald-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Automated Backoff + Buffer</span>
                         </div>
                         <div class="flex justify-between items-center py-1 border-b border-slate-800/40">
                             <span class="text-slate-400" data-i18n="lbl_dedup">Duplicate Prevention:</span>
-                            <span class="text-emerald-400 font-semibold">✅ Persistent Unique Post Keys</span>
+                            <span class="text-emerald-400 font-semibold"><svg class="w-3.5 h-3.5 text-emerald-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg> Persistent Unique Post Keys</span>
                         </div>
                     </div>
                 </div>
@@ -868,7 +876,7 @@
                     <h3 id="rule-modal-title" class="font-bold text-white text-lg">Add New Forwarding Pipeline</h3>
                     <p class="text-xs text-slate-400 mt-0.5">Configure 1-to-many source and target channels & select media types</p>
                 </div>
-                <button onclick="closeRuleModal()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 transition">✕</button>
+                <button onclick="closeRuleModal()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800/80 text-slate-400 hover:text-white hover:bg-slate-700 transition"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
             
             <form id="rule-form" onsubmit="saveRule(event)" class="space-y-4">
@@ -883,7 +891,7 @@
                 <div class="space-y-3.5 pt-1">
                     <div class="p-3.5 bg-brand-500/10 border border-brand-500/25 rounded-xl text-xs space-y-1.5">
                         <div class="flex items-center space-x-2 rtl:space-x-reverse font-bold text-brand-300">
-                            <span class="text-sm">💡</span>
+                            <svg class="w-4 h-4 text-amber-400 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
                             <span>نصيحة هامة لتفادي فترات الانتظار (FloodWait):</span>
                         </div>
                         <p class="text-slate-300 text-[11px] leading-relaxed">
@@ -895,10 +903,10 @@
                     <div id="channels-picker-panel" class="hidden p-3.5 bg-slate-950/90 border border-brand-500/40 rounded-xl space-y-2.5 shadow-lg">
                         <div class="flex items-center justify-between border-b border-slate-800 pb-2">
                             <div class="flex items-center space-x-2 rtl:space-x-reverse text-xs font-bold text-brand-300">
-                                <span>📋</span>
+                                <svg class="w-3.5 h-3.5 text-indigo-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
                                 <span>قنواتك المشترك بها حساب التوجيه:</span>
                             </div>
-                            <button type="button" onclick="closeChannelsPicker()" class="text-xs text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">إغلاق ✕</button>
+                            <button type="button" onclick="closeChannelsPicker()" class="text-xs text-slate-400 hover:text-white px-2 py-0.5 bg-slate-800 rounded">إغلاق <svg class="w-3 h-3 inline ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
                         </div>
                         <div id="channels-picker-list" class="space-y-1.5 max-h-48 overflow-y-auto pr-1"></div>
                     </div>
@@ -908,13 +916,13 @@
                         <div class="flex items-center justify-between mb-1.5">
                             <label class="block text-xs font-semibold text-slate-300" data-i18n="form_source_channel">Source Channel (ID or @username)</label>
                             <button type="button" onclick="toggleChannelsPicker()" class="inline-flex items-center space-x-1 rtl:space-x-reverse text-xs text-brand-400 hover:text-brand-300 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/30 px-2.5 py-1 rounded-lg transition font-medium">
-                                <span>📋</span>
+                                <svg class="w-3.5 h-3.5 text-indigo-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
                                 <span>عرض قنوات الحساب المتاحة</span>
                             </button>
                         </div>
                         <div class="relative">
                             <input type="text" id="rule-form-source" required placeholder="e.g. @source_news or -1001234567890" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-brand-500 focus:ring-1 focus:ring-brand-500/30 pl-9 rtl:pr-9 font-mono">
-                            <span class="absolute left-3 rtl:right-3 top-3 text-sm text-brand-400">📥</span>
+                            <span class="absolute left-3 rtl:right-3 top-3 text-sm text-brand-400"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="8 17 12 21 16 17"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.88 18.09A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.29"></path></svg></span>
                         </div>
                     </div>
 
@@ -922,11 +930,11 @@
                     <div>
                         <div class="flex items-center justify-between mb-1.5">
                             <label class="block text-xs font-semibold text-slate-300" data-i18n="form_target_channels">Target Channels (One or Multiple separated by comma ,)</label>
-                            <span class="text-[10px] text-cyan-400 font-mono bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full">1 ➔ Many Supported</span>
+                            <span class="text-[10px] text-cyan-400 font-mono bg-cyan-950/60 border border-cyan-500/30 px-2 py-0.5 rounded-full">1 -> Many Supported</span>
                         </div>
                         <div class="relative">
                             <input type="text" id="rule-form-target" oninput="updateTargetTagsPreview()" required placeholder="e.g. @channel1, @channel2, -1009876543210" class="w-full bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-slate-100 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 pl-9 rtl:pr-9 font-mono">
-                            <span class="absolute left-3 rtl:right-3 top-3 text-sm text-cyan-400">📤</span>
+                            <span class="absolute left-3 rtl:right-3 top-3 text-sm text-cyan-400"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line><path d="M20.39 18.39A5 5 0 0 0 18 9h-1.26A8 8 0 1 0 3 16.3"></path><polyline points="16 16 12 12 8 16"></polyline></svg></span>
                         </div>
                         <!-- Live Target Tags Preview -->
                         <div id="target-tags-preview" class="flex flex-wrap gap-1.5 pt-2"></div>
@@ -947,7 +955,7 @@
                         <!-- Photo Chip -->
                         <div onclick="toggleMediaChip('photo')" id="chip-photo" class="media-chip active flex items-center justify-between p-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
                             <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
-                                <span class="text-lg flex-shrink-0">📷</span>
+                                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>
                                 <span class="text-xs font-bold" data-i18n="media_photo">الصور</span>
                             </div>
                             <span class="chip-status-dot flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
@@ -956,7 +964,7 @@
                         <!-- Video Chip -->
                         <div onclick="toggleMediaChip('video')" id="chip-video" class="media-chip active flex items-center justify-between p-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
                             <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
-                                <span class="text-lg flex-shrink-0">🎥</span>
+                                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2" ry="2"></rect></svg>
                                 <span class="text-xs font-bold" data-i18n="media_video">الفيديوهات</span>
                             </div>
                             <span class="chip-status-dot flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
@@ -965,7 +973,7 @@
                         <!-- Document Chip -->
                         <div onclick="toggleMediaChip('document')" id="chip-document" class="media-chip active flex items-center justify-between p-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
                             <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
-                                <span class="text-lg flex-shrink-0">📄</span>
+                                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
                                 <span class="text-xs font-bold" data-i18n="media_doc">الملفات والمستندات</span>
                             </div>
                             <span class="chip-status-dot flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
@@ -974,7 +982,7 @@
                         <!-- Audio Chip -->
                         <div onclick="toggleMediaChip('audio')" id="chip-audio" class="media-chip active flex items-center justify-between p-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
                             <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
-                                <span class="text-lg flex-shrink-0">🎵</span>
+                                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
                                 <span class="text-xs font-bold" data-i18n="media_audio">الصوتيات والمقاطع</span>
                             </div>
                             <span class="chip-status-dot flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
@@ -983,7 +991,7 @@
                         <!-- Text Chip -->
                         <div onclick="toggleMediaChip('text')" id="chip-text" class="media-chip active flex items-center justify-between p-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
                             <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
-                                <span class="text-lg flex-shrink-0">💬</span>
+                                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>
                                 <span class="text-xs font-bold" data-i18n="media_text">الرسائل النصية</span>
                             </div>
                             <span class="chip-status-dot flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
@@ -992,7 +1000,7 @@
                         <!-- Sticker Chip -->
                         <div onclick="toggleMediaChip('sticker')" id="chip-sticker" class="media-chip active flex items-center justify-between p-3 rounded-xl border border-emerald-500 bg-emerald-500/15 text-emerald-300 ring-1 ring-emerald-500/40 shadow-[0_0_12px_rgba(16,185,129,0.25)] transition-all cursor-pointer select-none">
                             <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
-                                <span class="text-lg flex-shrink-0">🎭</span>
+                                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path><line x1="9" y1="9" x2="9.01" y2="9"></line><line x1="15" y1="9" x2="15.01" y2="9"></line></svg>
                                 <span class="text-xs font-bold" data-i18n="media_sticker">الملصقات والمتحركات</span>
                             </div>
                             <span class="chip-status-dot flex-shrink-0 w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
@@ -1018,7 +1026,7 @@
         <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-fade-in">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 id="transform-modal-title" class="font-bold text-white text-base">Add Text Transformation Rule</h3>
-                <button onclick="closeTransformModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+                <button onclick="closeTransformModal()" class="text-slate-400 hover:text-white"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
             <form id="transform-form" onsubmit="saveTransformRule(event)" class="space-y-4">
                 <input type="hidden" id="transform-form-id">
@@ -1072,7 +1080,7 @@
         <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-fade-in">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 class="font-bold text-white text-base" data-i18n="modal_add_blacklist">Add Channel to Blacklist</h3>
-                <button onclick="closeBlacklistModal()" class="text-slate-400 hover:text-white text-lg">✕</button>
+                <button onclick="closeBlacklistModal()" class="text-slate-400 hover:text-white"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
             <form id="blacklist-form" onsubmit="saveBlacklist(event)" class="space-y-4">
                 <div>
@@ -1307,8 +1315,13 @@
                 warning: 'bg-amber-600/95 border-amber-500 text-white',
                 info: 'bg-brand-600/95 border-brand-500 text-white',
             };
-            toast.className = `px-4 py-3 rounded-xl border text-xs font-semibold shadow-xl flex items-center space-x-2 rtl:space-x-reverse pointer-events-auto transform transition-all duration-300 translate-y-2 opacity-0 ${colors[type] || colors.info}`;
-            toast.innerHTML = `<span>${type === 'success' ? '✅' : type === 'error' ? '❌' : 'ℹ️'}</span><span>${msg}</span>`;
+            const icons = {
+                success: `<svg class="w-4 h-4 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
+                error: `<svg class="w-4 h-4 text-rose-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
+                warning: `<svg class="w-4 h-4 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
+                info: `<svg class="w-4 h-4 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`
+            };
+            toast.innerHTML = `<span class="flex-shrink-0">${icons[type] || icons.info}</span><span>${msg}</span>`;
             container.appendChild(toast);
 
             setTimeout(() => {
@@ -1373,7 +1386,7 @@
                 dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
                 text.textContent = i18n[currentLang].status_running;
                 quickBtn.className = 'flex items-center space-x-1.5 rtl:space-x-reverse px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all';
-                quickIcon.textContent = '⏹';
+                quickIcon.innerHTML = '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"></rect></svg>';
                 quickText.textContent = i18n[currentLang].btn_stop;
                 if (overviewBadge) {
                     overviewBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
@@ -1383,7 +1396,7 @@
                 dot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
                 text.textContent = i18n[currentLang].status_stopped;
                 quickBtn.className = 'flex items-center space-x-1.5 rtl:space-x-reverse px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all';
-                quickIcon.textContent = '▶';
+                quickIcon.innerHTML = '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
                 quickText.textContent = i18n[currentLang].btn_start;
                 if (overviewBadge) {
                     overviewBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20';
@@ -1483,7 +1496,7 @@
             }
             container.innerHTML = targets.map(t => `
                 <span class="inline-flex items-center space-x-1 rtl:space-x-reverse px-2.5 py-0.5 rounded-lg text-[11px] font-mono font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 animate-fade-in">
-                    <span>📤</span>
+                    <svg class="w-3 h-3 text-cyan-400 inline ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line></svg>
                     <span>${t}</span>
                 </span>
             `).join('');
@@ -1502,18 +1515,19 @@
 
             if (forwardRules.length === 0) {
                 container.innerHTML = `<div class="col-span-full p-8 text-center bg-slate-950/60 border border-dashed border-slate-800 rounded-2xl text-slate-400 text-xs">
-                    <p class="text-base mb-2">📭 ${currentLang === 'ar' ? 'لا توجد مسارات توجيه بعد' : 'No forwarding pipelines yet'}</p>
+                    <svg class="w-10 h-10 text-slate-600 mx-auto mb-2" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path><line x1="9" y1="14" x2="15" y2="14"></line></svg>
+                    <p class="text-sm font-bold text-slate-300 mb-1">${currentLang === 'ar' ? 'لا توجد مسارات توجيه بعد' : 'No forwarding pipelines yet'}</p>
                     <p class="mb-4 text-slate-500">${currentLang === 'ar' ? 'اضغط أدناه لإنشاء أول مسار لنقل المنشورات من قناة إلى عدة قنوات.' : 'Create your first pipeline to start monitoring channels.'}</p>
-                    <button onclick="openRuleModal()" class="px-4 py-2 bg-brand-600 text-white rounded-xl text-xs font-semibold">+ ${currentLang === 'ar' ? 'إضافة مسار' : 'Add Pipeline'}</button>
+                    <button onclick="openRuleModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-brand-600/20 transition inline-flex items-center gap-1.5"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg> <span>${currentLang === 'ar' ? 'إضافة مسار جديد' : 'Add Pipeline'}</span></button>
                 </div>`;
             } else {
                 const mediaIcons = {
-                    photo: '📷',
-                    video: '🎥',
-                    document: '📄',
-                    audio: '🎵',
-                    text: '💬',
-                    sticker: '🎭'
+                    photo: '<svg class="w-3 h-3 inline text-emerald-400 ml-0.5 rtl:mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>',
+                    video: '<svg class="w-3 h-3 inline text-emerald-400 ml-0.5 rtl:mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg>',
+                    document: '<svg class="w-3 h-3 inline text-emerald-400 ml-0.5 rtl:mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path></svg>',
+                    audio: '<svg class="w-3 h-3 inline text-emerald-400 ml-0.5 rtl:mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle></svg>',
+                    text: '<svg class="w-3 h-3 inline text-emerald-400 ml-0.5 rtl:mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg>',
+                    sticker: '<svg class="w-3 h-3 inline text-emerald-400 ml-0.5 rtl:mr-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M8 14s1.5 2 4 2 4-2 4-2"></path></svg>'
                 };
 
                 container.innerHTML = forwardRules.map(rule => {
@@ -1527,13 +1541,13 @@
 
                     const mediaBadges = mediaTypes.map(m => `
                         <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] bg-slate-800 text-slate-300 border border-slate-700 font-medium" title="${m}">
-                            ${mediaIcons[m] || '📁'} ${m}
+                            ${mediaIcons[m] || ''} ${m}
                         </span>
                     `).join('');
 
                     const targetBadges = targets.map(t => `
                         <span class="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 font-mono font-semibold rounded-lg text-xs truncate max-w-[130px]" title="${t}">
-                            📤 ${t}
+                            <svg class='w-3 h-3 inline text-cyan-400 ml-0.5 rtl:mr-0.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='16 16 12 12 8 16'></polyline><line x1='12' y1='12' x2='12' y2='21'></line></svg> ${t}
                         </span>
                     `).join('');
 
@@ -1543,7 +1557,7 @@
                             <div>
                                 <h4 class="font-bold text-white text-sm flex items-center space-x-2 rtl:space-x-reverse">
                                     <span>${rule.name || 'Pipeline'}</span>
-                                    <span class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">${targets.length > 1 ? `1 ➔ ${targets.length}` : '1 ➔ 1'}</span>
+                                    <span class="px-1.5 py-0.5 text-[10px] font-mono rounded bg-brand-500/10 text-brand-400 border border-brand-500/20">${targets.length > 1 ? `1 -> ${targets.length}` : '1 -> 1'}</span>
                                 </h4>
                                 <span class="text-[11px] text-slate-500 font-mono">ID: ${rule._id}</span>
                             </div>
@@ -1558,7 +1572,7 @@
                             <div class="flex items-center space-x-2 rtl:space-x-reverse">
                                 <span class="text-[10px] text-slate-500 font-semibold uppercase">Source:</span>
                                 <span class="px-2.5 py-1 bg-brand-500/10 text-brand-400 font-mono font-semibold rounded-lg truncate max-w-[180px]" title="${rule.source_id}">
-                                    📥 ${rule.source_id}
+                                    <svg class='w-3 h-3 inline text-brand-400 ml-0.5 rtl:mr-0.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='8 17 12 21 16 17'></polyline><line x1='12' y1='12' x2='12' y2='21'></line></svg> ${rule.source_id}
                                 </span>
                             </div>
                             <div class="flex items-start space-x-2 rtl:space-x-reverse pt-1 border-t border-slate-900">
@@ -1580,8 +1594,8 @@
                         <div class="flex items-center justify-between pt-2 border-t border-slate-800/80 text-xs">
                             <span class="text-slate-500">Priority: ${rule.priority || 0}</span>
                             <div class="flex space-x-2 rtl:space-x-reverse">
-                                <button onclick="editRule('${rule._id}')" class="text-slate-400 hover:text-white px-2.5 py-1 bg-slate-800 hover:bg-slate-700 rounded-lg transition">✏️ Edit</button>
-                                <button onclick="deleteRule('${rule._id}')" class="text-rose-400 hover:text-rose-300 px-2.5 py-1 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg transition">🗑️ Delete</button>
+                                <button onclick="editRule('${rule._id}')" class="text-slate-300 hover:text-white px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg transition inline-flex items-center gap-1.5 font-medium text-xs"><svg class='w-3.5 h-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7'></path><path d='M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z'></path></svg> ${currentLang === 'ar' ? 'تعديل' : 'Edit'}</button>
+                                <button onclick="deleteRule('${rule._id}')" class="text-rose-400 hover:text-rose-300 px-2.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg transition inline-flex items-center gap-1.5 font-medium text-xs"><svg class='w-3.5 h-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='3 6 5 6 21 6'></polyline><path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'></path></svg> ${currentLang === 'ar' ? 'حذف' : 'Delete'}</button>
                             </div>
                         </div>
                     </div>
@@ -1607,7 +1621,7 @@
                                 </div>
                             </div>
                             <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                                <button onclick="deleteRule('${r._id}')" class="text-rose-400 hover:text-rose-300 px-2.5 py-1.5 bg-rose-500/10 rounded-lg">🗑️</button>
+                                <button onclick="deleteRule('${r._id}')" class="text-rose-400 hover:text-rose-300 px-2.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg inline-flex items-center gap-1 font-medium text-xs"><svg class='w-3.5 h-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='3 6 5 6 21 6'></polyline><path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'></path></svg> ${currentLang === 'ar' ? 'حذف' : 'Delete'}</button>
                             </div>
                         </div>
                     `).join('');
@@ -1660,7 +1674,7 @@
             list.innerHTML = channels.map(c => `
                 <div class="flex items-center justify-between p-2.5 rounded-lg bg-surface-850 border border-slate-800 hover:border-slate-700 transition">
                     <div class="flex items-center space-x-2.5 rtl:space-x-reverse min-w-0">
-                        <span class="text-lg">${c.is_channel ? '📢' : '👥'}</span>
+                        <span class="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700 flex items-center justify-center flex-shrink-0">${c.is_channel ? '<svg class=\'w-3.5 h-3.5 text-indigo-400\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><path d=\'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z\'></path></svg>' : '<svg class=\'w-3.5 h-3.5 text-cyan-400\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'currentColor\' stroke-width=\'2\'><path d=\'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2\'></path><circle cx=\'9\' cy=\'7\' r=\'4\'></circle><path d=\'M23 21v-2a4 4 0 0 0-3-3.87\'></path><path d=\'M16 3.13a4 4 0 0 1 0 7.75\'></path></svg>'}</span>
                         <div class="truncate">
                             <p class="text-xs font-bold text-white truncate max-w-[200px]">${c.title}</p>
                             <p class="text-[11px] text-slate-400 font-mono">${c.id} ${c.username ? `(${c.username})` : ''}</p>
@@ -1668,10 +1682,10 @@
                     </div>
                     <div class="flex items-center space-x-1.5 rtl:space-x-reverse flex-shrink-0">
                         <button type="button" onclick="selectQuickChannel('rule-form-source', '${c.id}')" class="px-2.5 py-1.5 text-xs font-semibold bg-brand-600/25 hover:bg-brand-600/45 text-brand-300 border border-brand-500/30 rounded-lg transition">
-                            📥 كمصدر
+                            <svg class='w-3.5 h-3.5 inline ml-1 rtl:mr-1' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='8 17 12 21 16 17'></polyline><line x1='12' y1='12' x2='12' y2='21'></line></svg> كمصدر
                         </button>
                         <button type="button" onclick="selectQuickChannel('rule-form-target', '${c.id}')" class="px-2.5 py-1.5 text-xs font-semibold bg-cyan-600/25 hover:bg-cyan-600/45 text-cyan-300 border border-cyan-500/30 rounded-lg transition">
-                            📤 كهدف
+                            <svg class='w-3.5 h-3.5 inline ml-1 rtl:mr-1' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='16 16 12 12 8 16'></polyline><line x1='12' y1='12' x2='12' y2='21'></line></svg> كهدف
                         </button>
                     </div>
                 </div>
@@ -1818,7 +1832,7 @@
 
             if (type === 'footer') {
                 pLabel.textContent = 'Trigger Pattern (leave empty to append to all messages)';
-                rLabel.textContent = 'Footer Content (e.g. 📢 Follow @MyChannel)';
+                rLabel.textContent = 'Footer Content (e.g. Follow @MyChannel)';
             } else if (type === 'prefix') {
                 pLabel.textContent = 'Trigger Pattern (leave empty for all messages)';
                 rLabel.textContent = 'Prefix Content to add at the top';
@@ -1974,7 +1988,7 @@
                 clearInterval(logsPollInterval);
                 logsPollInterval = null;
                 btn.className = 'px-3 py-1.5 bg-slate-800 text-xs font-medium rounded-xl text-slate-400 border border-slate-700 transition';
-                btn.innerHTML = `<span>⏸️</span> <span>${currentLang === 'ar' ? 'متوقف مؤقتاً' : 'Paused'}</span>`;
+                btn.innerHTML = `<svg class='w-3.5 h-3.5 inline ml-1 rtl:mr-1' viewBox='0 0 24 24' fill='currentColor'><rect x='6' y='4' width='4' height='16'></rect><rect x='14' y='4' width='4' height='16'></rect></svg> <span>${currentLang === 'ar' ? 'متوقف مؤقتاً' : 'Paused'}</span>`;
             } else {
                 logsPollInterval = setInterval(loadLogs, 3000);
                 btn.className = 'px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-xl text-emerald-400 border border-emerald-500/20 transition flex items-center space-x-1 rtl:space-x-reverse';

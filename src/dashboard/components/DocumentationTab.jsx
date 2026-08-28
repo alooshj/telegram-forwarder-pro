@@ -252,7 +252,7 @@ const DocumentationTab = () => {
               استبدال كلمة أو رابط محدد بنص بديل بدقة تامة.
             </p>
             <div className="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-slate-300">
-              <span className="text-rose-400">@old_channel</span> ➔ <span className="text-emerald-400">@new_channel</span>
+              <span className="text-rose-400">@old_channel</span> -> <span className="text-emerald-400">@new_channel</span>
             </div>
           </div>
 
@@ -282,7 +282,7 @@ const DocumentationTab = () => {
               مسح وحذف عبارات الإعلانات والروابط المزعجة من الرسالة دون ترك أثر.
             </p>
             <div className="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-slate-300">
-              Target: <span className="text-rose-400">"اشترك في القناة"</span> ➔ <span className="text-slate-500">(حذف)</span>
+              Target: <span className="text-rose-400">"اشترك في القناة"</span> -> <span className="text-slate-500">(حذف)</span>
             </div>
           </div>
 
@@ -297,7 +297,7 @@ const DocumentationTab = () => {
               إضافة توقيع وقنوات التواصل في نهاية كل منشور مع سطرين فارغين تلقائياً.
             </p>
             <div className="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-emerald-400">
-              \n\n📢 تابعنا: @my_channel
+              \n\nتابعنا: @my_channel
             </div>
           </div>
 
@@ -312,7 +312,7 @@ const DocumentationTab = () => {
               وضع كلمة ترويجية أو عنوان رئيسي في السطر الأول أعلى المنشور.
             </p>
             <div className="text-[11px] font-mono bg-slate-900 p-2 rounded border border-slate-800 text-amber-300">
-              ⚡ عاجل | \n(نص الخبر)
+              عاجل | \n(نص الخبر)
             </div>
           </div>
         </div>
