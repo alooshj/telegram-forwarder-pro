@@ -100,13 +100,16 @@ async def verify_telegram_login_code(
     """
     phone_clean = (phone_number or "").strip().replace(" ", "").replace("-", "")
 
-    # Look up pending auth in database
+    # Look up pending auth in database strictly matching BOTH phone and user_id
     auth_doc = None
     if db and hasattr(db, "pending_auth"):
-        if phone_clean:
+        user_id_str = str(user_id) if user_id else ""
+        if phone_clean and user_id_str:
+            auth_doc = db.pending_auth.find_one({"phone": phone_clean, "user_id": user_id_str})
+        elif phone_clean:
             auth_doc = db.pending_auth.find_one({"phone": phone_clean})
-        if not auth_doc:
-            auth_doc = db.pending_auth.find_one({"user_id": user_id})
+        elif user_id_str:
+            auth_doc = db.pending_auth.find_one({"user_id": user_id_str})
 
     if not auth_doc:
         return {"success": False, "error": "Login session not found or expired. Please request a new code."}

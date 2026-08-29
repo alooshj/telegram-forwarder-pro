@@ -24,6 +24,9 @@ class BillingWebhookTestCase(unittest.TestCase):
         self.db = SQLiteDB(":memory:")
         app.config["TESTING"] = True
         self.client = app.test_client()
+        os.environ["NOWPAYMENTS_IPN_SECRET"] = "c37ecbc1-6a5a-4e56-917b-3c77672a812b"
+        os.environ["PAYMENT_WEBHOOK_SECRET"] = "c37ecbc1-6a5a-4e56-917b-3c77672a812b"
+        os.environ["SECRET_KEY"] = "test_super_secret_key_32_bytes"
 
     def test_plans_pricing_and_durations(self):
         """Verify all 5 plans exist with exact required durations and pricing."""

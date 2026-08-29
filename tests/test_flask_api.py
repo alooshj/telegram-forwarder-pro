@@ -209,7 +209,11 @@ class FlaskApiTestCase(unittest.TestCase):
         self.assertTrue(data["active"])
 
     def test_rules_test_endpoint(self):
-        # Create a replace rule
+        # 1. Unauthenticated test request must return 401
+        res_unauth = self.client.post("/api/rules/test", json={"text": "I love Apple"})
+        self.assertEqual(res_unauth.status_code, 401)
+
+        # 2. Authenticated test request applies user's rules
         self.client.post("/api/rules", headers=self.auth_headers, json={
             "name": "Test Replace",
             "type": "replace",
@@ -217,7 +221,7 @@ class FlaskApiTestCase(unittest.TestCase):
             "replacement": "Orange",
             "active": True
         })
-        resp = self.client.post("/api/rules/test", json={"text": "I love Apple"})
+        resp = self.client.post("/api/rules/test", headers=self.auth_headers, json={"text": "I love Apple"})
         self.assertEqual(resp.status_code, 200)
         data = resp.get_json()
         self.assertTrue(data["success"])

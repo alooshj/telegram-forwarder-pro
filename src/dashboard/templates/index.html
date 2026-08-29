@@ -1992,7 +1992,18 @@
             }
         });
 
-                // ==================== I18N DICTIONARY ====================
+                // Global HTML sanitization helper to prevent Stored & DOM XSS
+        function escapeHtml(str) {
+            if (str === null || str === undefined) return '';
+            return String(str)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#039;');
+        }
+
+        // ==================== I18N DICTIONARY ====================
         const i18n = {
             ar: {
                 app_subtitle: "نظام التوجيه والتحويل التلقائي لمنشورات تليجرام 24/7",
@@ -2768,17 +2779,17 @@
 
                 let actionHtml = '';
                 if (action && action.label) {
-                    actionHtml = `<button class="mt-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 transition toast-act-btn">${action.label}</button>`;
+                    actionHtml = `<button class="mt-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 transition toast-act-btn">${escapeHtml(action.label)}</button>`;
                 }
 
                 card.innerHTML = `
                     ${iconBadges[type] || iconBadges.info}
                     <div class="flex-1 min-w-0 pr-2 rtl:pr-0 rtl:pl-2">
                         <div class="flex items-center justify-between">
-                            <h5 class="font-bold text-white text-xs truncate">${title}</h5>
+                            <h5 class="font-bold text-white text-xs truncate">${escapeHtml(title)}</h5>
                             <button class="text-slate-400 hover:text-white text-xs p-0.5 toast-close-btn">✕</button>
                         </div>
-                        <p class="text-[11px] text-slate-300 mt-0.5 leading-snug break-words">${msg}</p>
+                        <p class="text-[11px] text-slate-300 mt-0.5 leading-snug break-words">${escapeHtml(msg)}</p>
                         ${actionHtml}
                     </div>
                     <div class="toast-progress" style="animation-duration: ${duration}ms;"></div>
@@ -2858,13 +2869,17 @@
 
                 container.innerHTML = filtered.map(n => {
                     const timeAgo = formatTimeAgo(n.timestamp);
+                    const safeId = escapeHtml(n.id);
+                    const safeTab = escapeHtml(n.actionTab || '');
+                    const safeTitle = escapeHtml(n.title);
+                    const safeMsg = escapeHtml(n.message);
                     return `
-                        <div onclick="NotificationSystem.handleNotifClick('${n.id}', '${n.actionTab || ''}')" class="p-2.5 rounded-xl ${n.read ? 'bg-slate-950/40 opacity-75' : 'bg-slate-800/80 border border-slate-700/80'} hover:bg-slate-800 transition cursor-pointer flex items-start justify-between gap-2">
+                        <div onclick="NotificationSystem.handleNotifClick('${safeId}', '${safeTab}')" class="p-2.5 rounded-xl ${n.read ? 'bg-slate-950/40 opacity-75' : 'bg-slate-800/80 border border-slate-700/80'} hover:bg-slate-800 transition cursor-pointer flex items-start justify-between gap-2">
                             <div class="flex items-start space-x-2 rtl:space-x-reverse min-w-0">
                                 <span class="text-xs font-bold ${n.type === 'forward' ? 'text-accent-cyan' : n.type === 'success' ? 'text-accent-emerald' : n.type === 'error' ? 'text-rose-400' : 'text-indigo-400'}">${iconMini[n.type] || '●'}</span>
                                 <div class="space-y-0.5 min-w-0">
-                                    <p class="font-bold text-white text-[11px] truncate">${n.title}</p>
-                                    <p class="text-[10px] text-slate-300 line-clamp-2 leading-relaxed">${n.message}</p>
+                                    <p class="font-bold text-white text-[11px] truncate">${safeTitle}</p>
+                                    <p class="text-[10px] text-slate-300 line-clamp-2 leading-relaxed">${safeMsg}</p>
                                 </div>
                             </div>
                             <span class="text-[9px] font-mono text-slate-500 whitespace-nowrap">${timeAgo}</span>
@@ -3192,7 +3207,7 @@
             container.innerHTML = targets.map(t => `
                 <span class="inline-flex items-center space-x-1 rtl:space-x-reverse px-2.5 py-0.5 rounded-lg text-[11px] font-mono font-semibold bg-cyan-500/10 text-cyan-400 border border-cyan-500/25 animate-fade-in">
                     <svg class="w-3 h-3 text-cyan-400 inline ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="16 16 12 12 8 16"></polyline><line x1="12" y1="12" x2="12" y2="21"></line></svg>
-                    <span>${t}</span>
+                    <span>${escapeHtml(t)}</span>
                 </span>
             `).join('');
         }
@@ -3339,16 +3354,16 @@
                         <div class="flex items-center justify-between bg-surface-850 border border-slate-800 p-4 rounded-xl text-xs">
                             <div class="space-y-1">
                                 <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                                    <span class="px-2 py-0.5 font-bold uppercase rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">${r.type || 'replace'}</span>
-                                    <span class="font-bold text-white text-sm">${r.name || 'Rule'}</span>
+                                    <span class="px-2 py-0.5 font-bold uppercase rounded bg-purple-500/10 text-purple-400 border border-purple-500/20">${escapeHtml(r.type || 'replace')}</span>
+                                    <span class="font-bold text-white text-sm">${escapeHtml(r.name || 'Rule')}</span>
                                 </div>
                                 <div class="text-slate-400 font-mono">
-                                    <span>Match: <strong class="text-slate-200">"${r.pattern || '*'}"</strong></span>
-                                    ${r.replacement ? ` → Replace: <strong class="text-emerald-400">"${r.replacement}"</strong>` : ''}
+                                    <span>Match: <strong class="text-slate-200">"${escapeHtml(r.pattern || '*')}"</strong></span>
+                                    ${r.replacement ? ` → Replace: <strong class="text-emerald-400">"${escapeHtml(r.replacement)}"</strong>` : ''}
                                 </div>
                             </div>
                             <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                                <button onclick="deleteRule('${r._id}')" class="text-rose-400 hover:text-rose-300 px-2.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg inline-flex items-center gap-1 font-medium text-xs"><svg class='w-3.5 h-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='3 6 5 6 21 6'></polyline><path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'></path></svg> ${currentLang === 'ar' ? 'حذف' : 'Delete'}</button>
+                                <button onclick="deleteRule('${escapeHtml(r._id)}')" class="text-rose-400 hover:text-rose-300 px-2.5 py-1.5 bg-rose-500/10 hover:bg-rose-500/20 rounded-lg inline-flex items-center gap-1 font-medium text-xs"><svg class='w-3.5 h-3.5' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><polyline points='3 6 5 6 21 6'></polyline><path d='M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2'></path></svg> ${currentLang === 'ar' ? 'حذف' : 'Delete'}</button>
                             </div>
                         </div>
                     `).join('');
@@ -3667,11 +3682,11 @@
             } else {
                 tbody.innerHTML = list.map(item => `
                     <tr class="hover:bg-slate-800/40 transition">
-                        <td class="py-3 px-4 font-mono font-semibold text-rose-400">${item.channel_id}</td>
-                        <td class="py-3 px-4 text-slate-300">${item.reason || 'Blocked'}</td>
+                        <td class="py-3 px-4 font-mono font-semibold text-rose-400">${escapeHtml(item.channel_id)}</td>
+                        <td class="py-3 px-4 text-slate-300">${escapeHtml(item.reason || 'Blocked')}</td>
                         <td class="py-3 px-4 text-slate-500 text-xs">${item.added_at ? new Date(item.added_at).toLocaleDateString() : '-'}</td>
                         <td class="py-3 px-4 text-center">
-                            <button onclick="removeBlacklist('${item.channel_id}')" class="px-2 py-1 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-lg text-xs">Remove</button>
+                            <button onclick="removeBlacklist('${escapeHtml(item.channel_id)}')" class="px-2 py-1 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 rounded-lg text-xs">Remove</button>
                         </td>
                     </tr>
                 `).join('');
@@ -3805,7 +3820,7 @@
                 let userBadge = '';
                 if (logsScope === 'all' && l.user_id) {
                     const isSys = l.user_id === 'system';
-                    userBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono ${isSys ? 'bg-slate-800 text-slate-400' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'}">${isSys ? 'SYS' : 'USR:' + l.user_id.substring(0, 6)}</span>`;
+                    userBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono ${isSys ? 'bg-slate-800 text-slate-400' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'}">${isSys ? 'SYS' : 'USR:' + escapeHtml(l.user_id.substring(0, 6))}</span>`;
                 }
 
                 // Clean up message text
@@ -3815,10 +3830,10 @@
                     .trim();
 
                 return `<div class="py-2 px-2.5 rounded-lg mb-1 border-b border-slate-900/80 flex items-start space-x-2.5 rtl:space-x-reverse ${rowBg} transition">
-                    <span class="text-slate-500 font-mono text-[11px] whitespace-nowrap pt-0.5">${ts}</span>
+                    <span class="text-slate-500 font-mono text-[11px] whitespace-nowrap pt-0.5">${escapeHtml(ts)}</span>
                     <span class="whitespace-nowrap">${badge}</span>
                     ${userBadge ? `<span class="whitespace-nowrap">${userBadge}</span>` : ''}
-                    <span class="text-slate-200 text-xs font-mono break-all leading-relaxed">${msg}</span>
+                    <span class="text-slate-200 text-xs font-mono break-all leading-relaxed">${escapeHtml(msg)}</span>
                 </div>`;
             }).join('');
         }
@@ -3944,7 +3959,7 @@
                     
                     if (currentUser.telegram_connected) {
                         const tgName = currentUser.telegram_username ? '@' + currentUser.telegram_username : (currentUser.telegram_first_name || 'Connected');
-                        if (accEl) accEl.innerHTML = `<span class="text-emerald-400 font-bold">${tgName}</span>`;
+                        if (accEl) accEl.innerHTML = `<span class="text-emerald-400 font-bold">${escapeHtml(tgName)}</span>`;
                         if (sessEl) sessEl.innerHTML = `<span class="text-emerald-400 font-mono text-xs bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">StringSession (Active)</span>`;
                         if (tgBtnText) tgBtnText.textContent = currentLang === 'ar' ? 'إدارة اتصال تليجرام (متصل)' : 'Manage Telegram (Connected)';
                     } else {
@@ -4715,6 +4730,11 @@
             const isCurrentSuper = currentUser && (currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com');
 
             tbody.innerHTML = users.map(u => {
+                const safeId = escapeHtml(u._id);
+                const safeEmail = escapeHtml(u.email);
+                const safeName = escapeHtml(u.name || '--');
+                const safePlan = escapeHtml(u.plan || 'trial');
+                const safeRole = escapeHtml(u.role || 'client');
                 const isSuper = u.role === 'super_admin' || u.email === 'alooshpal@gmail.com';
                 const roleBadge = isSuper 
                     ? `<span class="px-2 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold border border-purple-500/40">👑 SUPER ADMIN</span>`
@@ -4723,7 +4743,7 @@
                         : `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-300 font-medium">CLIENT</span>`);
 
                 const tgBadge = u.telegram_connected 
-                    ? `<span class="text-cyan-400 font-mono">@${u.telegram_username || 'Connected'}</span>`
+                    ? `<span class="text-cyan-400 font-mono">@${escapeHtml(u.telegram_username || 'Connected')}</span>`
                     : `<span class="text-slate-500">غير متصل</span>`;
 
                 let statusBadge = '';
@@ -4742,19 +4762,19 @@
                     : '--';
 
                 const freezeBtn = isSuper ? '' : `
-                    <button onclick="toggleFreezeUser('${u._id}', ${u.is_frozen ? 'true' : 'false'}, '${u.email}')" class="px-2.5 py-1 rounded-lg text-xs font-bold ${u.is_frozen ? 'bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/30 border border-emerald-500/30' : 'bg-rose-600/20 text-rose-300 hover:bg-rose-600/30 border border-rose-500/30'} transition">
+                    <button onclick="toggleFreezeUser('${safeId}', ${u.is_frozen ? 'true' : 'false'}, '${safeEmail}')" class="px-2.5 py-1 rounded-lg text-xs font-bold ${u.is_frozen ? 'bg-emerald-600/20 text-emerald-300 hover:bg-emerald-600/30 border border-emerald-500/30' : 'bg-rose-600/20 text-rose-300 hover:bg-rose-600/30 border border-rose-500/30'} transition">
                         ${u.is_frozen ? '🔥 فك التجميد' : '❄️ تجميد'}
                     </button>
                 `;
 
                 const extendBtn = `
-                    <button onclick="openAdminExtendModal('${u._id}', '${u.email}', '${u.plan}')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 transition">
+                    <button onclick="openAdminExtendModal('${safeId}', '${safeEmail}', '${safePlan}')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-500/20 text-amber-300 hover:bg-amber-500/30 border border-amber-500/30 transition">
                         📅 تمديد
                     </button>
                 `;
 
                 const roleBtn = isCurrentSuper && !isSuper ? `
-                    <button onclick="openAdminRoleModal('${u._id}', '${u.email}', '${u.role}')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-500/30 transition">
+                    <button onclick="openAdminRoleModal('${safeId}', '${safeEmail}', '${safeRole}')" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-purple-500/20 text-purple-300 hover:bg-purple-500/30 border border-purple-500/30 transition">
                         👑 رتبة
                     </button>
                 ` : '';
@@ -4762,13 +4782,13 @@
                 return `
                     <tr class="hover:bg-slate-800/30 transition">
                         <td class="p-3">
-                            <div class="font-bold text-white">${u.email}</div>
-                            <div class="text-[11px] text-slate-400">${u.name || '--'} &bull; ${u.rules_count || 0} rules</div>
+                            <div class="font-bold text-white">${safeEmail}</div>
+                            <div class="text-[11px] text-slate-400">${safeName} &bull; ${u.rules_count || 0} rules</div>
                         </td>
                         <td class="p-3">${roleBadge}</td>
                         <td class="p-3">${tgBadge}</td>
                         <td class="p-3">
-                            <span class="font-bold uppercase text-slate-200">${u.plan || 'trial'}</span>
+                            <span class="font-bold uppercase text-slate-200">${safePlan}</span>
                             <span class="text-[10px] text-slate-400 block">${u.max_target_channels >= 999 ? 'Unlimited Targets' : `Max ${u.max_target_channels} Targets`}</span>
                         </td>
                         <td class="p-3">${statusBadge}</td>
@@ -4795,6 +4815,11 @@
             }
 
             tbody.innerHTML = keys.map(k => {
+                const safeKeyCode = escapeHtml(k.key_code);
+                const safePlanName = escapeHtml(k.plan_name);
+                const safeRedeemedBy = escapeHtml(k.redeemed_by || '--');
+                const safeNotes = escapeHtml(k.notes || '--');
+                const safeId = escapeHtml(k.id || k._id);
                 const statusBadge = k.is_redeemed
                     ? `<span class="px-2 py-0.5 rounded bg-slate-800 text-slate-400 text-[10px] font-bold">مستخدم ✅</span>`
                     : `<span class="px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 text-[10px] font-bold border border-emerald-500/30">متاح (Unused)</span>`;
@@ -4803,21 +4828,21 @@
                     <tr class="hover:bg-slate-800/30 transition">
                         <td class="p-2.5">
                             <div class="flex items-center space-x-1.5 rtl:space-x-reverse">
-                                <span class="font-mono font-bold text-amber-300 select-all">${k.key_code}</span>
-                                <button onclick="navigator.clipboard.writeText('${k.key_code}'); showToast('تم نسخ الكود!', 'info');" class="text-slate-400 hover:text-white p-1 rounded bg-slate-800 text-[10px]">
+                                <span class="font-mono font-bold text-amber-300 select-all">${safeKeyCode}</span>
+                                <button onclick="navigator.clipboard.writeText('${safeKeyCode}'); showToast('تم نسخ الكود!', 'info');" class="text-slate-400 hover:text-white p-1 rounded bg-slate-800 text-[10px]">
                                     نسخ
                                 </button>
                             </div>
                         </td>
                         <td class="p-2.5">
-                            <span class="font-bold text-slate-200">${k.plan_name}</span>
+                            <span class="font-bold text-slate-200">${safePlanName}</span>
                             <span class="text-[10px] text-slate-400 block">${k.duration_days} days</span>
                         </td>
                         <td class="p-2.5">${statusBadge}</td>
-                        <td class="p-2.5 text-[11px] text-slate-300 font-mono">${k.redeemed_by || '--'}</td>
-                        <td class="p-2.5 text-[11px] text-slate-400">${k.notes || '--'}</td>
+                        <td class="p-2.5 text-[11px] text-slate-300 font-mono">${safeRedeemedBy}</td>
+                        <td class="p-2.5 text-[11px] text-slate-400">${safeNotes}</td>
                         <td class="p-2.5 text-center">
-                            <button onclick="deleteAdminKey('${k.id}')" class="text-rose-400 hover:text-rose-300 p-1 rounded hover:bg-rose-500/10 transition">
+                            <button onclick="deleteAdminKey('${safeId}')" class="text-rose-400 hover:text-rose-300 p-1 rounded hover:bg-rose-500/10 transition">
                                 <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
                             </button>
                         </td>

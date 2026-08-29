@@ -219,6 +219,89 @@ class SecurityVulnerabilityPatchesTestCase(unittest.TestCase):
             )
             self.assertEqual(res_del_own.status_code, 200)
 
+    def test_sec01_rules_engine_user_id_isolation(self):
+        """SEC-01: Verify RulesEngine only loads rules belonging to its assigned user_id."""
+        from src.rules.engine import RulesEngine
+        # Insert rules for User 1 and User 2
+        self.db.rules.insert_one({"_id": "r1", "name": "User 1 Rule", "user_id": "user_1", "active": True})
+        self.db.rules.insert_one({"_id": "r2", "name": "User 2 Rule", "user_id": "user_2", "active": True})
+
+        engine1 = RulesEngine(db=self.db, user_id="user_1")
+        rules1 = engine1.load_rules()
+        self.assertEqual(len(rules1), 1)
+        self.assertEqual(rules1[0]["user_id"], "user_1")
+
+        engine2 = RulesEngine(db=self.db, user_id="user_2")
+        rules2 = engine2.load_rules()
+        self.assertEqual(len(rules2), 1)
+        self.assertEqual(rules2[0]["user_id"], "user_2")
+
+    def test_sec03_telegram_auth_session_binding(self):
+        """SEC-03: Verify verify_telegram_login_code requires matching phone AND user_id."""
+        import asyncio
+        from src.web.telegram_auth import verify_telegram_login_code
+
+        # Seed pending auth for Victim User
+        self.db.pending_auth.insert_one({
+            "_id": "victim_user_+1234567890",
+            "user_id": "victim_user",
+            "phone": "+1234567890",
+            "phone_code_hash": "hash123",
+            "temp_session": "session123",
+            "created_at": time.time()
+        })
+
+        # Attacker user tries to verify victim's pending phone code
+        result = asyncio.run(verify_telegram_login_code(
+            db=self.db,
+            api_id=12345,
+            api_hash="fakehash",
+            user_id="attacker_user",
+            code="12345",
+            phone_number="+1234567890"
+        ))
+        self.assertFalse(result["success"])
+        self.assertIn("not found or expired", result["error"])
+
+    def test_sec04_rules_test_endpoint_requires_auth(self):
+        """SEC-04: Verify POST /api/rules/test is protected with @require_auth and scopes to user rules."""
+        user_a = UserManager.create_user(self.db, "user_test_a@test.com", "pass123")
+        token_a = generate_auth_token(user_a["_id"], user_a["email"])
+
+        with patch("src.web.api.get_db", return_value=self.db):
+            # Unauthenticated -> 401
+            res_unauth = self.client.post("/api/rules/test", json={"text": "Hello"})
+            self.assertEqual(res_unauth.status_code, 401)
+
+            # Authenticated User A
+            self.client.post("/api/rules", headers={"Authorization": f"Bearer {token_a}"}, json={
+                "name": "Replace Hello",
+                "type": "replace",
+                "pattern": "Hello",
+                "replacement": "Greetings",
+                "active": True
+            })
+
+            res_auth = self.client.post(
+                "/api/rules/test",
+                headers={"Authorization": f"Bearer {token_a}"},
+                json={"text": "Hello World"}
+            )
+            self.assertEqual(res_auth.status_code, 200)
+            data = res_auth.get_json()
+            self.assertTrue(data["success"])
+            self.assertEqual(data["transformed"], "Greetings World")
+
+    def test_sec05_nowpayments_raises_on_missing_env_in_production(self):
+        """SEC-05: Verify NOWPayments raises RuntimeError on missing secrets in production."""
+        from src.billing.nowpayments import NOWPaymentsGateway
+        with patch.dict(os.environ, {"FLASK_ENV": "production", "DEBUG": "false", "TESTING": "false", "NOWPAYMENTS_API_KEY": "", "NOWPAYMENTS_IPN_SECRET": "", "PAYMENT_WEBHOOK_SECRET": ""}):
+            with self.assertRaises(RuntimeError):
+                NOWPaymentsGateway.get_api_key()
+
+            with self.assertRaises(RuntimeError):
+                NOWPaymentsGateway.get_ipn_secret()
+
 
 if __name__ == "__main__":
     unittest.main()

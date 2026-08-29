@@ -17,8 +17,9 @@ logger = logging.getLogger(__name__)
 class RulesEngine:
     """Apply configurable text transformation rules to post content."""
 
-    def __init__(self, db=None):
+    def __init__(self, db=None, user_id=None):
         self.db = db
+        self.user_id = str(user_id) if user_id is not None else None
         self.pipeline = TransformationPipeline()
 
     def load_rules(self, source_id=None, target_id=None) -> list:
@@ -26,7 +27,11 @@ class RulesEngine:
         if self.db is None:
             return []
 
-        all_rules = list(self.db.rules.find({"active": True}))
+        query = {"active": True}
+        if self.user_id:
+            query["user_id"] = self.user_id
+
+        all_rules = list(self.db.rules.find(query))
         if not source_id and not target_id:
             return all_rules
 

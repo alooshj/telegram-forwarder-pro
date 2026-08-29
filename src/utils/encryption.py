@@ -18,7 +18,13 @@ _DEFAULT_SALT = b"tg_forwarder_salt_2026"
 
 def _get_fernet() -> Fernet:
     """Derive a deterministic Fernet key from the application SECRET_KEY."""
-    secret = os.environ.get("SECRET_KEY") or os.environ.get("AUTH_SECRET_KEY") or "teletips_encryption_root_key"
+    secret = (os.environ.get("SECRET_KEY") or os.environ.get("AUTH_SECRET_KEY") or "").strip()
+    if not secret:
+        is_debug = os.environ.get("DEBUG", "").lower() in ("true", "1") or os.environ.get("FLASK_ENV") == "development"
+        is_testing = os.environ.get("TESTING") == "true" or os.environ.get("FLASK_ENV") == "testing"
+        if not is_debug and not is_testing and (os.environ.get("FLASK_ENV") == "production" or os.environ.get("RENDER") == "true"):
+            raise RuntimeError("Missing required environment variable: SECRET_KEY for session encryption")
+        secret = "dev_temporary_fallback_secret_32_bytes_len"
     derived_key = hashlib.sha256(secret.encode("utf-8") + _DEFAULT_SALT).digest()
     urlsafe_key = base64.urlsafe_b64encode(derived_key)
     return Fernet(urlsafe_key)

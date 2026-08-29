@@ -18,8 +18,6 @@ from typing import Dict, Optional, Tuple
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_NOWPAYMENTS_API_KEY = "1W5AC5M-NYBM2NJ-NQN36B4-C338EH5"
-DEFAULT_NOWPAYMENTS_IPN_SECRET = "c37ecbc1-6a5a-4e56-917b-3c77672a812b"
 DEFAULT_NOWPAYMENTS_BASE_URL = "https://api.nowpayments.io/v1"
 
 
@@ -29,12 +27,24 @@ class NOWPaymentsGateway:
     @staticmethod
     def get_api_key() -> str:
         """Fetch NOWPayments API key."""
-        return os.environ.get("NOWPAYMENTS_API_KEY") or DEFAULT_NOWPAYMENTS_API_KEY
+        key = os.environ.get("NOWPAYMENTS_API_KEY", "").strip()
+        if not key:
+            is_debug = os.environ.get("DEBUG", "").lower() in ("true", "1") or os.environ.get("FLASK_ENV") == "development"
+            is_testing = os.environ.get("TESTING") == "true" or os.environ.get("FLASK_ENV") == "testing"
+            if not is_debug and not is_testing and (os.environ.get("FLASK_ENV") == "production" or os.environ.get("RENDER") == "true"):
+                raise RuntimeError("Missing required environment variable: NOWPAYMENTS_API_KEY")
+        return key
 
     @staticmethod
     def get_ipn_secret() -> str:
         """Fetch NOWPayments IPN secret key for HMAC-SHA512 verification."""
-        return os.environ.get("NOWPAYMENTS_IPN_SECRET") or os.environ.get("NOWPAYMENTS_PUBLIC_KEY") or DEFAULT_NOWPAYMENTS_IPN_SECRET
+        secret = (os.environ.get("NOWPAYMENTS_IPN_SECRET") or os.environ.get("PAYMENT_WEBHOOK_SECRET") or "").strip()
+        if not secret:
+            is_debug = os.environ.get("DEBUG", "").lower() in ("true", "1") or os.environ.get("FLASK_ENV") == "development"
+            is_testing = os.environ.get("TESTING") == "true" or os.environ.get("FLASK_ENV") == "testing"
+            if not is_debug and not is_testing and (os.environ.get("FLASK_ENV") == "production" or os.environ.get("RENDER") == "true"):
+                raise RuntimeError("Missing required environment variable: NOWPAYMENTS_IPN_SECRET")
+        return secret
 
     @staticmethod
     def get_base_url() -> str:

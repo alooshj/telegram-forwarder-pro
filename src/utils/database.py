@@ -180,12 +180,18 @@ class SQLiteDB:
                     );
                     CREATE TABLE IF NOT EXISTS pending_auth (
                         _id TEXT PRIMARY KEY,
+                        user_id TEXT,
                         phone TEXT,
                         phone_code_hash TEXT,
                         temp_session TEXT,
                         created_at REAL
                     );
                 """)
+                # Migrations for pending_auth
+                try:
+                    conn.execute("ALTER TABLE pending_auth ADD COLUMN user_id TEXT;")
+                except sqlite3.OperationalError:
+                    pass
                 # Migrations for forwarding_rules
                 for col in ["target_ids", "media_types", "user_id", "forward_mode", "forward_delay", "whitelist_keywords", "blacklist_keywords", "strip_mentions", "strip_links", "header_template", "footer_template"]:
                     try:

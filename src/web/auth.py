@@ -19,16 +19,26 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 logger = logging.getLogger(__name__)
 
-# Secret key for token signing (falls back to a persistent or generated key)
-AUTH_SECRET_KEY = os.getenv("AUTH_SECRET_KEY") or os.getenv("SECRET_KEY") or "teletips-pro-auth-secret-key-2026"
+
+def get_auth_secret_key() -> str:
+    """Retrieve auth secret key, requiring explicit environment configuration in production."""
+    key = (os.getenv("AUTH_SECRET_KEY") or os.getenv("SECRET_KEY") or "").strip()
+    if not key:
+        is_debug = os.environ.get("DEBUG", "").lower() in ("true", "1") or os.environ.get("FLASK_ENV") == "development"
+        is_testing = os.environ.get("TESTING") == "true" or os.environ.get("FLASK_ENV") == "testing"
+        if not is_debug and not is_testing and (os.environ.get("FLASK_ENV") == "production" or os.environ.get("RENDER") == "true"):
+            raise RuntimeError("Missing required environment variable: AUTH_SECRET_KEY / SECRET_KEY")
+        key = "dev_auth_temporary_secret_key_32_bytes"
+    return key
 
 
 def generate_auth_token(user_id: str, email: str = "") -> str:
     """Generate a signed, timestamped authentication token."""
     timestamp = int(time.time())
     payload = f"{user_id}:{email}:{timestamp}"
+    secret = get_auth_secret_key()
     signature = hmac.new(
-        AUTH_SECRET_KEY.encode(),
+        secret.encode(),
         payload.encode(),
         hashlib.sha256
     ).hexdigest()
@@ -58,8 +68,9 @@ def verify_auth_token(token: str, max_age_seconds: int = 30 * 86400) -> dict:
 
         # Verify signature
         expected_payload = f"{user_id}:{email}:{timestamp}"
+        secret = get_auth_secret_key()
         expected_signature = hmac.new(
-            AUTH_SECRET_KEY.encode(),
+            secret.encode(),
             expected_payload.encode(),
             hashlib.sha256
         ).hexdigest()

@@ -32,7 +32,7 @@ class ForwarderEngine:
         self.config = config
         self.db = db
         self.user_id = str(user_id) if user_id else (str(config.get("USER_ID")) if config.get("USER_ID") else None)
-        self.rules_engine = RulesEngine(db)
+        self.rules_engine = RulesEngine(db, user_id=self.user_id)
         self.album_collector = MediaGroupCollector(debounce_seconds=1.2)
 
         self._running = False

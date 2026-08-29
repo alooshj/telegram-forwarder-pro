@@ -724,15 +724,20 @@ def api_toggle_rule(rule_id):
 
 
 @app.route("/api/rules/test", methods=["POST"])
+@require_auth
 def api_test_rule():
-    """Test text transformation against configured rules."""
+    """Test text transformation against configured rules for authenticated user."""
+    from flask import g
+    user = getattr(g, "current_user", None) or {}
+    user_id = str(user.get("_id", "")) if user.get("_id") else None
+
     db = get_db()
     data = request.get_json() or {}
     text = data.get("text", "")
     source_id = data.get("source_id")
     target_id = data.get("target_id")
     from src.rules.engine import RulesEngine
-    engine = RulesEngine(db=db)
+    engine = RulesEngine(db=db, user_id=user_id)
     transformed = engine.apply_rules(text, source_id, target_id)
     return jsonify({
         "success": True,
