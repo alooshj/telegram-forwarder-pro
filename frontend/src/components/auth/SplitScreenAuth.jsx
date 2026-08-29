@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { SignIn, SignUp, useAuth, useClerk } from '@clerk/clerk-react';
 import { Navigate, Link } from 'react-router-dom';
 import { teletipsClerkAppearance } from '../../theme/clerkTheme';
@@ -10,13 +10,13 @@ const strings = {
     title1: 'تحكم كامل في مسارات ',
     titleHighlight: 'التوجيه المباشر',
     title2: ' بدقة فائقة',
-    desc: 'منصة سحابية متطورة تتيح لك توجيه المنشورات والألبومات فورياً بين القنوات والمجموعات مع تنظيف الروابط، وتطبيق فلاتر الكلمات المتقدمة، وتشفير الجلسات بأعلى معايير الأمان.',
-    feat1Title: 'سرعة فائقة < 1 ثانية',
-    feat1Desc: 'توجيه فوري لحظة النشر بدون أي تأخير.',
+    desc: 'نظام سحابي فائق السرعة والأمان لإدارة ومزامنة القنوات والمجموعات مع تحكم دقيق بفلاتر النصوص وتشفير الجلسات بأعلى المعايير.',
+    feat1Title: 'توجيه فوري < 1 ثانية',
+    feat1Desc: 'توجيه فوري للمنشورات والألبومات بدون أي تأخير.',
     feat2Title: 'عزل سحابي متعدد',
-    feat2Desc: 'عزل كامل لبيانات وسجلات وقواعد كل مشترك.',
+    feat2Desc: 'عزل مستقل لبيانات وسجلات وقواعد كل مشترك.',
     feat3Title: 'استبدال وفلترة النصوص',
-    feat3Desc: 'حذف الروابط، استبدال المعرفات، وتخصيص الفوتر.',
+    feat3Desc: 'تنظيف الروابط وتعديل النصوص والمعرفات بذكاء.',
     feat4Title: 'تشفير AES-256',
     feat4Desc: 'حماية وتشفير الجلسات بأعلى المعايير الأمنية.',
     cardSignInTitle: 'تسجيل الدخول إلى TeleTips',
@@ -35,18 +35,18 @@ const strings = {
   en: {
     langBtn: 'العربية',
     badge: 'Advanced 24/7 Cloud Automation Active',
-    title1: 'Total Control Over ',
-    titleHighlight: 'Live Forwarding Pipelines',
-    title2: ' with Precision',
-    desc: 'High-speed cloud system to forward posts and media albums instantly between channels and groups with link cleaning, advanced keyword filters, and AES-256 session encryption.',
-    feat1Title: 'Instant Speed < 1s',
-    feat1Desc: 'Zero-delay forwarding the moment posts are published.',
+    title1: 'Automate Channels with ',
+    titleHighlight: 'TeleTips Pro',
+    title2: ' Cloud Forwarder',
+    desc: 'High-speed secure cloud platform to manage and synchronize channels and groups with precision text filters and top-tier session encryption.',
+    feat1Title: 'Instant Forwarding < 1s',
+    feat1Desc: 'Instant delivery for posts and media albums with zero latency.',
     feat2Title: 'Multi-Tenant Isolation',
-    feat2Desc: 'Dedicated isolated storage for logs, rules, and user sessions.',
-    feat3Title: 'Smart Text Filters',
-    feat3Desc: 'Strip links, replace @mentions, and customize header/footers.',
+    feat2Desc: 'Isolated storage and pipelines for each subscriber\'s data and rules.',
+    feat3Title: 'Text & Link Filtering',
+    feat3Desc: 'Clean links, transform mentions, and customize post formats.',
     feat4Title: 'AES-256 Encryption',
-    feat4Desc: 'Military-grade cryptographic protection for user sessions.',
+    feat4Desc: 'Military-grade encryption for all user credentials and sessions.',
     cardSignInTitle: 'Sign In to TeleTips',
     cardSignUpTitle: 'Create TeleTips Account',
     cardSignInSub: 'Welcome back! Sign in to manage your forwarding routes',
@@ -70,6 +70,11 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
   const [lang, setLang] = useState(() => localStorage.getItem('tp_lang') || 'ar');
 
   const t = strings[lang] || strings.ar;
+
+  useEffect(() => {
+    document.documentElement.lang = lang;
+    document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr';
+  }, [lang]);
 
   const toggleLanguage = () => {
     const nextLang = lang === 'ar' ? 'en' : 'ar';
@@ -146,7 +151,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
             onClick={toggleLanguage}
             className="px-3.5 py-2 rounded-xl bg-[#151c28]/85 hover:bg-[#1c2536] border border-white/20 hover:border-[#00e5ff]/50 text-slate-100 hover:text-white font-bold text-xs flex items-center gap-2 backdrop-blur-xl shadow-xl transition duration-200 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/40"
           >
-            <svg className="w-4 h-4 text-[#00e5ff] group-hover:rotate-12 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg className="w-4 h-4 text-[#00e5ff] group-hover:rotate-12 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
               <line x1="2" y1="12" x2="22" y2="12" />
               <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -170,42 +175,42 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
             {t.title2}
           </h2>
 
-          <p className="text-sm text-slate-200 leading-relaxed font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
+          <p className="text-sm text-slate-200/90 leading-relaxed font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]">
             {t.desc}
           </p>
 
-          {/* Feature Grid Chips */}
-          <div className="grid grid-cols-2 gap-3.5 pt-2">
-            <div className="p-4 bg-[#0f172a]/85 backdrop-blur-xl rounded-2xl border border-white/15 hover:border-[#00e5ff]/50 transition group shadow-2xl">
-              <div className="w-8 h-8 rounded-xl bg-[#00e5ff]/15 text-[#00e5ff] flex items-center justify-center text-base mb-2 group-hover:scale-110 transition shadow-inner">
+          {/* Feature Grid Chips with Transparent Frosted Glass */}
+          <div className="grid grid-cols-2 gap-4 pt-2">
+            <div className="p-4 sm:p-5 bg-[#0f172a]/40 hover:bg-[#0f172a]/65 backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-[#00e5ff]/60 shadow-[0_8px_32px_rgba(0,0,0,0.37)] hover:shadow-[0_0_25px_rgba(0,229,255,0.2)] transition-all duration-300 group">
+              <div className="w-9 h-9 rounded-xl bg-[#00e5ff]/20 text-[#00e5ff] border border-[#00e5ff]/30 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(0,229,255,0.25)]">
                 ⚡
               </div>
-              <h4 className="text-xs font-bold text-white mb-0.5">{t.feat1Title}</h4>
-              <p className="text-[11px] text-slate-300 leading-normal">{t.feat1Desc}</p>
+              <h4 className="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide">{t.feat1Title}</h4>
+              <p className="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed">{t.feat1Desc}</p>
             </div>
 
-            <div className="p-4 bg-[#0f172a]/85 backdrop-blur-xl rounded-2xl border border-white/15 hover:border-[#10b981]/50 transition group shadow-2xl">
-              <div className="w-8 h-8 rounded-xl bg-[#10b981]/15 text-[#10b981] flex items-center justify-center text-base mb-2 group-hover:scale-110 transition shadow-inner">
+            <div className="p-4 sm:p-5 bg-[#0f172a]/40 hover:bg-[#0f172a]/65 backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-[#10b981]/60 shadow-[0_8px_32px_rgba(0,0,0,0.37)] hover:shadow-[0_0_25px_rgba(16,185,129,0.2)] transition-all duration-300 group">
+              <div className="w-9 h-9 rounded-xl bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/30 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(16,185,129,0.25)]">
                 🛡️
               </div>
-              <h4 className="text-xs font-bold text-white mb-0.5">{t.feat2Title}</h4>
-              <p className="text-[11px] text-slate-300 leading-normal">{t.feat2Desc}</p>
+              <h4 className="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide">{t.feat2Title}</h4>
+              <p className="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed">{t.feat2Desc}</p>
             </div>
 
-            <div className="p-4 bg-[#0f172a]/85 backdrop-blur-xl rounded-2xl border border-white/15 hover:border-purple-500/50 transition group shadow-2xl">
-              <div className="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center text-base mb-2 group-hover:scale-110 transition shadow-inner">
+            <div className="p-4 sm:p-5 bg-[#0f172a]/40 hover:bg-[#0f172a]/65 backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-purple-400/60 shadow-[0_8px_32px_rgba(0,0,0,0.37)] hover:shadow-[0_0_25px_rgba(168,85,247,0.2)] transition-all duration-300 group">
+              <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(168,85,247,0.25)]">
                 ⚙️
               </div>
-              <h4 className="text-xs font-bold text-white mb-0.5">{t.feat3Title}</h4>
-              <p className="text-[11px] text-slate-300 leading-normal">{t.feat3Desc}</p>
+              <h4 className="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide">{t.feat3Title}</h4>
+              <p className="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed">{t.feat3Desc}</p>
             </div>
 
-            <div className="p-4 bg-[#0f172a]/85 backdrop-blur-xl rounded-2xl border border-white/15 hover:border-amber-500/50 transition group shadow-2xl">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-base mb-2 group-hover:scale-110 transition shadow-inner">
+            <div className="p-4 sm:p-5 bg-[#0f172a]/40 hover:bg-[#0f172a]/65 backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-amber-400/60 shadow-[0_8px_32px_rgba(0,0,0,0.37)] hover:shadow-[0_0_25px_rgba(251,191,36,0.2)] transition-all duration-300 group">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(251,191,36,0.25)]">
                 🔒
               </div>
-              <h4 className="text-xs font-bold text-white mb-0.5">{t.feat4Title}</h4>
-              <p className="text-[11px] text-slate-300 leading-normal">{t.feat4Desc}</p>
+              <h4 className="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide">{t.feat4Title}</h4>
+              <p className="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed">{t.feat4Desc}</p>
             </div>
           </div>
         </div>
@@ -236,7 +241,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
         <div className="w-full max-w-md space-y-6 my-auto pt-10 md:pt-0">
           
           {/* Main Glassmorphic Card */}
-          <div className="bg-[#0f172a]/92 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 sm:p-8 shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_40px_rgba(0,229,255,0.2)] space-y-6">
+          <div className="bg-[#0f172a]/75 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 sm:p-8 shadow-[0_30px_70px_rgba(0,0,0,0.8),0_0_40px_rgba(0,229,255,0.2)] space-y-6">
             
             {/* Header / Intro */}
             <div className="text-center space-y-2 pb-2 border-b border-white/10">
@@ -254,7 +259,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
             {/* Error Message Toast */}
             {errorMessage && (
               <div className="p-3.5 bg-rose-500/15 border border-rose-500/30 rounded-xl text-rose-300 text-xs flex items-center gap-2">
-                <svg className="w-4 h-4 flex-shrink-0 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <svg className="w-4 h-4 flex-shrink-0 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                   <circle cx="12" cy="12" r="10" />
                   <line x1="12" y1="8" x2="12" y2="12" />
                   <line x1="12" y1="16" x2="12.01" y2="16" />
@@ -384,7 +389,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
 
           {/* Secure Trust Badge */}
           <div className="flex items-center justify-center gap-2 text-[11px] text-slate-400 font-medium drop-shadow-md">
-            <svg className="w-3.5 h-3.5 text-[#10b981]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <svg className="w-3.5 h-3.5 text-[#10b981]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
             </svg>
             <span>{t.clerkBadge}</span>
