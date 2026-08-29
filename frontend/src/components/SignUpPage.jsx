@@ -1,7 +1,19 @@
 import React from 'react';
-import { SignUp } from '@clerk/clerk-react';
+import { SignUp, useAuth } from '@clerk/clerk-react';
+import { Navigate } from 'react-router-dom';
+import { LoadingSpinner } from './ProtectedRoute';
 
 export const SignUpPage = () => {
+  const { isLoaded, isSignedIn } = useAuth();
+
+  if (!isLoaded) {
+    return <LoadingSpinner />;
+  }
+
+  if (isSignedIn) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col justify-center items-center p-4 relative overflow-hidden">
       {/* Background Neon Glows */}
@@ -21,7 +33,7 @@ export const SignUpPage = () => {
 
       {/* Clerk SignUp Component */}
       <div className="z-10 w-full max-w-md">
-        <SignUp routing="path" path="/sign-up" signInUrl="/sign-in" redirectUrl="/dashboard" />
+        <SignUp routing="path" path="/sign-up" signInUrl="/sign-in" forceRedirectUrl="/dashboard" fallbackRedirectUrl="/dashboard" />
       </div>
     </div>
   );

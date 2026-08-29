@@ -13,16 +13,29 @@ export const createApiClient = (getToken) => {
       'Content-Type': 'application/json',
     };
 
-    // Inject Clerk session token if getToken is available
+    // 1. Inject Clerk session token if getToken is passed or available on window.Clerk
+    let token = null;
     if (typeof getToken === 'function') {
       try {
-        const token = await getToken();
-        if (token) {
-          headers['Authorization'] = `Bearer ${token}`;
-        }
+        token = await getToken();
       } catch (err) {
-        console.warn('Failed to retrieve Clerk JWT:', err);
+        console.warn('Failed to retrieve Clerk JWT from hook:', err);
       }
+    } else if (typeof window !== 'undefined' && window.Clerk?.session?.getToken) {
+      try {
+        token = await window.Clerk.session.getToken();
+      } catch (err) {
+        console.warn('Failed to retrieve Clerk JWT from window.Clerk:', err);
+      }
+    }
+
+    // 2. Fallback to localStorage auth token
+    if (!token && typeof localStorage !== 'undefined') {
+      token = localStorage.getItem('teletips_auth_token');
+    }
+
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
 
     const options = {
@@ -35,14 +48,27 @@ export const createApiClient = (getToken) => {
       options.body = JSON.stringify(body);
     }
 
-    const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
-    const data = await response.json().catch(() => ({}));
+    try {
+      const response = await fetch(`${API_BASE_URL}${endpoint}`, options);
+      const data = await response.json().catch(() => ({}));
 
-    if (!response.ok) {
-      throw new Error(data.error || `HTTP error! status: ${response.status}`);
+      if (!response.ok) {
+        return {
+          success: false,
+          status: response.status,
+          error: data.error || `HTTP error! status: ${response.status}`,
+          ...data,
+        };
+      }
+
+      return data;
+    } catch (err) {
+      console.error(`API request error on ${endpoint}:`, err);
+      return {
+        success: false,
+        error: err.message || 'Network error',
+      };
     }
-
-    return data;
   };
 
   return {

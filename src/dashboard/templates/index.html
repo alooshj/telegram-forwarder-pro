@@ -3036,8 +3036,18 @@
         }
 
         async function handleEmailSignIn() {
+            if (currentUser || (clerkInstance && clerkInstance.user)) {
+                closeAuthModal();
+                showToast(currentLang === 'ar' ? 'أنت مسجل الدخول بالفعل' : 'You are already signed in', 'info');
+                return;
+            }
             const clerk = await initClerk();
             if (clerk) {
+                if (clerk.user) {
+                    await syncClerkUser(clerk.user);
+                    closeAuthModal();
+                    return;
+                }
                 const target = document.getElementById('clerk-mount-target');
                 if (target) {
                     try {
@@ -3055,8 +3065,18 @@
         }
 
         async function handleEmailSignUp() {
+            if (currentUser || (clerkInstance && clerkInstance.user)) {
+                closeAuthModal();
+                showToast(currentLang === 'ar' ? 'أنت مسجل الدخول بالفعل' : 'You are already signed in', 'info');
+                return;
+            }
             const clerk = await initClerk();
             if (clerk) {
+                if (clerk.user) {
+                    await syncClerkUser(clerk.user);
+                    closeAuthModal();
+                    return;
+                }
                 const target = document.getElementById('clerk-mount-target');
                 if (target) {
                     try {
