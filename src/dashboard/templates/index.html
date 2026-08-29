@@ -3018,18 +3018,38 @@
         }
 
         async function handleGoogleSignIn() {
+            if (currentUser || (clerkInstance && clerkInstance.user)) {
+                closeAuthModal();
+                showToast(currentLang === 'ar' ? 'أنت مسجل الدخول بالفعل' : 'You are already signed in', 'info');
+                return;
+            }
             const clerk = await initClerk();
             if (clerk) {
                 closeAuthModal();
                 try {
-                    await clerk.authenticateWithRedirect({
-                        strategy: 'oauth_google',
-                        redirectUrl: window.location.origin + '/',
-                        redirectUrlComplete: window.location.origin + '/'
-                    });
+                    if (clerk.client && clerk.client.signIn && typeof clerk.client.signIn.authenticateWithRedirect === 'function') {
+                        await clerk.client.signIn.authenticateWithRedirect({
+                            strategy: 'oauth_google',
+                            redirectUrl: window.location.origin + '/',
+                            redirectUrlComplete: window.location.origin + '/'
+                        });
+                        return;
+                    }
                 } catch (e) {
-                    console.warn('Google direct redirect fallback:', e);
-                    try { clerk.openSignIn(); } catch (err) {}
+                    console.debug('Direct OAuth redirect notice:', e);
+                }
+
+                // Fallback to openSignIn modal
+                try {
+                    clerk.openSignIn();
+                } catch (err) {
+                    try {
+                        if (typeof clerk.redirectToSignIn === 'function') {
+                            clerk.redirectToSignIn({ redirectUrl: window.location.origin + '/' });
+                        }
+                    } catch (e2) {
+                        console.error('Clerk openSignIn error:', e2);
+                    }
                 }
             } else {
                 showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
@@ -3461,18 +3481,18 @@
                     api('/api/v1/admin/keys')
                 ]);
 
-                if (usersRes.success) {
+                if (usersRes && usersRes.success) {
                     adminUsersCache = usersRes.users || [];
                     renderAdminUsersTable(adminUsersCache);
                     updateAdminStats();
                 }
-                if (keysRes.success) {
+                if (keysRes && keysRes.success) {
                     adminKeysCache = keysRes.keys || [];
                     renderAdminKeysTable(adminKeysCache);
                     updateAdminStats();
                 }
             } catch (e) {
-                console.error('Failed to load admin data:', e);
+                console.debug('Failed to load admin data:', e);
             }
         }
 
@@ -3795,7 +3815,8 @@
             await loadUserSubscription();
             await fetchStatus();
             await loadRules();
-            if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com')) {
+            // Only load admin data if user is currently on the admin tab and authorized
+            if (currentTab === 'admin' && currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com')) {
                 loadAdminData();
             }
             logsPollInterval = setInterval(loadLogs, 3500);
