@@ -2936,6 +2936,7 @@
                     if (syncRes.token) {
                         localStorage.setItem('teletips_auth_token', syncRes.token);
                     }
+                    closeAuthModal();
                     await checkAuthStatus();
                     await fetchStatus();
                     await loadRules();
