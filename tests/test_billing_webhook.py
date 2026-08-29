@@ -160,13 +160,15 @@ class BillingWebhookTestCase(unittest.TestCase):
         user = UserManager.create_user(self.db, "idempotent@test.com", "pass123")
         _, checkout = WebhookEngine.create_checkout_order(self.db, user["_id"], "monthly")
         payload = {"order_id": checkout["order_id"], "status": "COMPLETED"}
+        raw_body = json.dumps(payload).encode("utf-8")
+        sig = WebhookEngine.generate_signature(raw_body)
 
         # 1st processing
-        ok1, res1 = WebhookEngine.process_webhook_payment(self.db, payload)
+        ok1, res1 = WebhookEngine.process_webhook_payment(self.db, payload, raw_body=raw_body, signature=sig)
         self.assertTrue(ok1)
 
         # 2nd processing
-        ok2, res2 = WebhookEngine.process_webhook_payment(self.db, payload)
+        ok2, res2 = WebhookEngine.process_webhook_payment(self.db, payload, raw_body=raw_body, signature=sig)
         self.assertTrue(ok2)
         self.assertTrue(res2.get("already_completed"))
 

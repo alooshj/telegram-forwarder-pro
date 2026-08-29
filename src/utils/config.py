@@ -47,7 +47,7 @@ def load_config():
         # Web dashboard settings
         "WEB_HOST": os.environ.get("WEB_HOST", "0.0.0.0"),
         "WEB_PORT": int(os.environ.get("WEB_PORT", "5000") or "5000"),
-        "SECRET_KEY": os.environ.get("SECRET_KEY", "dev-secret-key-change-me"),
+        "SECRET_KEY": os.environ.get("SECRET_KEY", ""),
 
         # Logging
         "LOG_LEVEL": os.environ.get("LOG_LEVEL", "INFO"),
@@ -58,8 +58,8 @@ def load_config():
         "RETRY_DELAY": int(os.environ.get("RETRY_DELAY", "10") or "10"),
 
         # NOWPayments Cryptocurrency Gateway
-        "NOWPAYMENTS_API_KEY": os.environ.get("NOWPAYMENTS_API_KEY", "1W5AC5M-NYBM2NJ-NQN36B4-C338EH5"),
-        "NOWPAYMENTS_IPN_SECRET": os.environ.get("NOWPAYMENTS_IPN_SECRET", "c37ecbc1-6a5a-4e56-917b-3c77672a812b"),
+        "NOWPAYMENTS_API_KEY": os.environ.get("NOWPAYMENTS_API_KEY", ""),
+        "NOWPAYMENTS_IPN_SECRET": os.environ.get("NOWPAYMENTS_IPN_SECRET", ""),
         "NOWPAYMENTS_API_URL": os.environ.get("NOWPAYMENTS_API_URL", "https://api.nowpayments.io/v1"),
 
         # SMTP & Transactional Email Settings (TeleTips Pro)
@@ -74,10 +74,10 @@ def load_config():
         "APP_URL": os.environ.get("APP_URL", ""),
 
         # Clerk Authentication & User Management
-        "CLERK_PUBLISHABLE_KEY": os.environ.get("CLERK_PUBLISHABLE_KEY") or os.environ.get("VITE_CLERK_PUBLISHABLE_KEY") or os.environ.get("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY") or "pk_test_b3JpZW50ZWQtbXVsbGV0LTU2ODEuY2xlcmsuYWNjb3VudHMuZGV2JA",
-        "CLERK_SECRET_KEY": os.environ.get("CLERK_SECRET_KEY") or "sk_test_UMdKlbF1HSgkZJzAmk3D1bBYsoqMwtXuBoPP5uYb2o",
+        "CLERK_PUBLISHABLE_KEY": os.environ.get("CLERK_PUBLISHABLE_KEY") or os.environ.get("VITE_CLERK_PUBLISHABLE_KEY") or os.environ.get("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY") or "",
+        "CLERK_SECRET_KEY": os.environ.get("CLERK_SECRET_KEY", ""),
         "CLERK_JWT_KEY": os.environ.get("CLERK_JWT_KEY", ""),
-        "CLERK_ISSUER": os.environ.get("CLERK_ISSUER") or "https://oriented-mullet-5681.clerk.accounts.dev",
+        "CLERK_ISSUER": os.environ.get("CLERK_ISSUER", ""),
     }
     return config
 
@@ -92,3 +92,23 @@ def get_config():
     if _config is None:
         _config = load_config()
     return _config
+
+
+def validate_environment(raise_on_missing: bool = False) -> list:
+    """
+    Validates environment configuration on application boot-up.
+    Identifies missing essential secrets to protect security.
+    """
+    config = get_config()
+    is_prod = os.environ.get("FLASK_ENV") == "production" or os.environ.get("RENDER") == "true" or os.environ.get("ENVIRONMENT") == "production"
+    missing = []
+
+    if not config.get("SECRET_KEY") and is_prod:
+        missing.append("SECRET_KEY")
+
+    if missing:
+        logger.warning(f"⚠️ Security Warning: Missing environment variables: {', '.join(missing)}")
+        if raise_on_missing:
+            raise RuntimeError(f"Startup aborted: Missing essential environment variables: {', '.join(missing)}")
+
+    return missing

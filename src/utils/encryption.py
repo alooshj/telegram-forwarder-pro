@@ -18,7 +18,7 @@ _DEFAULT_SALT = b"tg_forwarder_salt_2026"
 
 def _get_fernet() -> Fernet:
     """Derive a deterministic Fernet key from the application SECRET_KEY."""
-    secret = os.environ.get("SECRET_KEY", "dev-secret-key-change-me-forwarder-pro")
+    secret = os.environ.get("SECRET_KEY") or os.environ.get("AUTH_SECRET_KEY") or "teletips_encryption_root_key"
     derived_key = hashlib.sha256(secret.encode("utf-8") + _DEFAULT_SALT).digest()
     urlsafe_key = base64.urlsafe_b64encode(derived_key)
     return Fernet(urlsafe_key)

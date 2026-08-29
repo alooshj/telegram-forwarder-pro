@@ -68,25 +68,25 @@ class FlaskApiTestCase(unittest.TestCase):
         self.assertEqual(resp.status_code, 200)
 
     def test_debug_endpoint(self):
-        resp = self.client.get("/api/debug")
+        resp = self.client.get("/api/debug", headers=self.auth_headers)
         self.assertEqual(resp.status_code, 200)
         data = resp.get_json()
         self.assertIn("db_connected", data)
 
     def test_rules_endpoint(self):
-        resp = self.client.get("/api/rules")
+        resp = self.client.get("/api/rules", headers=self.auth_headers)
         self.assertEqual(resp.status_code, 200)
         data = resp.get_json()
         self.assertIn("rules", data)
 
     def test_blacklist_endpoint(self):
-        resp = self.client.get("/api/blacklist")
+        resp = self.client.get("/api/blacklist", headers=self.auth_headers)
         self.assertEqual(resp.status_code, 200)
         data = resp.get_json()
         self.assertIn("blacklist", data)
 
     def test_logs_endpoint(self):
-        resp = self.client.get("/api/logs")
+        resp = self.client.get("/api/logs", headers=self.auth_headers)
         self.assertEqual(resp.status_code, 200)
         data = resp.get_json()
         self.assertIn("logs", data)
@@ -167,7 +167,7 @@ class FlaskApiTestCase(unittest.TestCase):
         self.assertEqual(data["rule"]["media_types"], ["photo", "video", "text"])
 
     def test_blacklist_add_and_remove(self):
-        resp = self.client.post("/api/blacklist", json={
+        resp = self.client.post("/api/blacklist", headers=self.auth_headers, json={
             "channel_id": "-1001122334455",
             "reason": "Test Spam"
         })

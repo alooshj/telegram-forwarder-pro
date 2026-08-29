@@ -26,12 +26,16 @@ except ImportError:
 
 from dotenv import load_dotenv
 
-from src.utils.config import load_config, get_config
+from src.utils.config import load_config, get_config, validate_environment
+from src.web.auth import require_auth
 
 logger = logging.getLogger(__name__)
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "config", ".env"))
+
+# Run security environment verification on boot
+validate_environment(raise_on_missing=False)
 
 app = Flask(
     __name__,
@@ -39,6 +43,25 @@ app = Flask(
     static_folder=os.path.join(os.path.dirname(__file__), "..", "dashboard", "static"),
 )
 CORS(app, supports_credentials=True)
+
+# Rate Limiter setup
+try:
+    from flask_limiter import Limiter
+    from flask_limiter.util import get_remote_address
+    limiter = Limiter(
+        get_remote_address,
+        app=app,
+        default_limits=["1000 per hour", "200 per minute"],
+        storage_uri="memory://",
+    )
+except Exception as e:
+    logger.warning(f"Flask-Limiter could not be initialized: {e}")
+    class _DummyLimiter:
+        def limit(self, *args, **kwargs):
+            def decorator(f):
+                return f
+            return decorator
+    limiter = _DummyLimiter()
 
 # Global state
 forwarder_status = {"running": False, "connected": False, "last_update": None}
@@ -258,8 +281,15 @@ def api_status():
 
 
 @app.route("/api/debug")
+@require_auth
 def api_debug():
-    """Debug endpoint — shows config and DB connection status (development only)."""
+    """Debug endpoint — shows config and DB connection status (super_admin only)."""
+    from flask import g
+    user = getattr(g, "current_user", None) or {}
+    is_super = user.get("role") == "super_admin" or user.get("email") == "alooshpal@gmail.com"
+    if not is_super:
+        return jsonify({"success": False, "error": "Forbidden: Super Admin access required"}), 403
+
     db = get_db()
     db_type = "none"
     db_error = None
@@ -429,8 +459,11 @@ def api_delete_rule(rule_id):
     rule = db.rules.find_one({"_id": object_id})
     if not rule:
         return jsonify({"error": "Rule not found"}), 404
-    if rule.get("user_id") and rule.get("user_id") != user_id and user.get("role") != "admin":
-        return jsonify({"error": "Forbidden: You do not own this rule"}), 403
+    is_admin = user.get("role") in ("admin", "super_admin") or user.get("email") == "alooshpal@gmail.com"
+    rule_owner = rule.get("user_id")
+    if not is_admin:
+        if not rule_owner or str(rule_owner) != user_id:
+            return jsonify({"error": "Forbidden: You do not own this rule"}), 403
 
     db.rules.delete_one({"_id": object_id})
     _log_event(db, "INFO", f"Rule '{rule_id}' deleted")
@@ -456,8 +489,11 @@ def api_update_rule(rule_id):
     rule = db.rules.find_one({"_id": object_id})
     if not rule:
         return jsonify({"error": "Rule not found"}), 404
-    if rule.get("user_id") and rule.get("user_id") != user_id and user.get("role") != "admin":
-        return jsonify({"error": "Forbidden: You do not own this rule"}), 403
+    is_admin = user.get("role") in ("admin", "super_admin") or user.get("email") == "alooshpal@gmail.com"
+    rule_owner = rule.get("user_id")
+    if not is_admin:
+        if not rule_owner or str(rule_owner) != user_id:
+            return jsonify({"error": "Forbidden: You do not own this rule"}), 403
 
     update_data = {}
     for key in [
@@ -506,6 +542,7 @@ def api_get_my_channels():
 
 
 @app.route("/api/blacklist")
+@require_auth
 def api_get_blacklist():
     """Get all blacklisted channels."""
     db = get_db()
@@ -522,13 +559,14 @@ def api_get_blacklist():
 
 
 @app.route("/api/blacklist", methods=["POST"])
+@require_auth
 def api_add_blacklist():
     """Add a channel to the blacklist."""
     db = get_db()
     if not db:
         return jsonify({"error": "Database not connected"}), 500
 
-    data = request.get_json()
+    data = request.get_json() or {}
     raw_channel_id = data.get("channel_id")
     channel_id = int(raw_channel_id) if str(raw_channel_id).lstrip("-").isdigit() else raw_channel_id
 
@@ -544,6 +582,7 @@ def api_add_blacklist():
 
 
 @app.route("/api/blacklist/<channel_id>", methods=["DELETE"])
+@require_auth
 def api_remove_blacklist(channel_id):
     """Remove a channel from the blacklist."""
     db = get_db()
@@ -672,8 +711,11 @@ def api_toggle_rule(rule_id):
     rule = db.rules.find_one({"_id": object_id})
     if not rule:
         return jsonify({"error": "Rule not found"}), 404
-    if rule.get("user_id") and rule.get("user_id") != user_id and user.get("role") != "admin":
-        return jsonify({"error": "Forbidden: You do not own this rule"}), 403
+    is_admin = user.get("role") in ("admin", "super_admin") or user.get("email") == "alooshpal@gmail.com"
+    rule_owner = rule.get("user_id")
+    if not is_admin:
+        if not rule_owner or str(rule_owner) != user_id:
+            return jsonify({"error": "Forbidden: You do not own this rule"}), 403
 
     new_status = not rule.get("active", True)
     db.rules.update_one({"_id": object_id}, {"$set": {"active": new_status}})
@@ -765,8 +807,7 @@ def api_forwarder_status():
             rules = list(db.rules.find({"active": True, "source_id": {"$ne": None}, "target_id": {"$ne": None}}))
             info["active_forwarding_rules"] = len(rules)
             info["db_type"] = type(db).__name__
-        except Exception as e:
-            info["db_error"] = str(e)[:200]
+        except Exception:
             info["active_forwarding_rules"] = 0
             info["db_type"] = None
     else:
@@ -776,8 +817,15 @@ def api_forwarder_status():
 
 
 @app.route("/api/test-mongo")
+@require_auth
 def api_test_mongo():
-    """Test MongoDB connection and return detailed results."""
+    """Test MongoDB connection and return detailed results (super_admin only)."""
+    from flask import g
+    user = getattr(g, "current_user", None) or {}
+    is_super = user.get("role") == "super_admin" or user.get("email") == "alooshpal@gmail.com"
+    if not is_super:
+        return jsonify({"success": False, "error": "Forbidden: Super Admin access required"}), 403
+
     config = load_config()
     mongo_uri = config.get("MONGODB_URI", "")
     db_name = config.get("MONGO_DB", "telegram_forwarder")
@@ -885,32 +933,29 @@ def api_get_clerk_config():
 
 
 @app.route("/api/auth/clerk-sync", methods=["POST"])
+@limiter.limit("10 per minute")
 def api_auth_clerk_sync():
-    """Sync or provision a Clerk authenticated user and issue session token."""
+    """Sync or provision a Clerk authenticated user and issue session token from verified JWT."""
     db = get_db()
     if not db:
         return jsonify({"success": False, "error": "Database not connected"}), 500
 
-    data = request.get_json() or {}
-    clerk_id = data.get("clerk_id", "").strip()
-    email = data.get("email", "").strip().lower()
-    name = data.get("name", "").strip()
+    from src.web.auth import verify_clerk_token_or_payload, get_current_user_from_request
 
-    if not clerk_id and not email:
-        return jsonify({"success": False, "error": "clerk_id or email is required"}), 400
+    # 1. First attempt to extract user authenticated by Bearer / Cookie JWT
+    user = get_current_user_from_request(db)
+
+    # 2. If not already resolved, extract JWT token from request body
+    if not user:
+        data = request.get_json(silent=True) or {}
+        raw_token = data.get("token") or ""
+        if raw_token:
+            user = verify_clerk_token_or_payload(raw_token, db)
+
+    if not user:
+        return jsonify({"success": False, "error": "Unauthorized: Valid verified Clerk JWT token is required"}), 401
 
     try:
-        user = None
-        if clerk_id:
-            user = db.users.find_one({"_id": clerk_id}) or db.users.find_one({"clerk_id": clerk_id})
-        if not user and email:
-            user = db.users.find_one({"email": email})
-
-        if not user:
-            user = UserManager.create_user_from_clerk(db, clerk_id or str(uuid.uuid4()), email, name)
-        elif clerk_id and user.get("clerk_id") != clerk_id:
-            db.users.update_one({"_id": user["_id"]}, {"$set": {"clerk_id": clerk_id, "updated_at": datetime.now(timezone.utc)}})
-
         user_id = str(user["_id"])
         token = generate_auth_token(user_id, user["email"])
         is_super = (user.get("role") == "super_admin" or user.get("email") == "alooshpal@gmail.com")
@@ -937,6 +982,7 @@ def api_auth_clerk_sync():
 
 
 @app.route("/api/auth/register", methods=["POST"])
+@limiter.limit("10 per minute")
 def api_auth_register():
     """Register a new customer account and send verification email."""
     db = get_db()
@@ -1118,6 +1164,7 @@ def web_verify_email():
 
 
 @app.route("/api/auth/login", methods=["POST"])
+@limiter.limit("10 per minute")
 def api_auth_login():
     """Log in to user account."""
     db = get_db()
@@ -1203,6 +1250,7 @@ def api_auth_me():
 
 
 @app.route("/api/auth/telegram/send-code", methods=["POST"])
+@limiter.limit("5 per minute")
 def api_telegram_send_code():
     """Step 1: Send Telegram MTProto verification code to phone."""
     db = get_db()
@@ -1226,6 +1274,7 @@ def api_telegram_send_code():
 
 
 @app.route("/api/auth/telegram/verify-code", methods=["POST"])
+@limiter.limit("5 per minute")
 def api_telegram_verify_code():
     """Step 2: Verify Telegram MTProto login code and save session."""
     db = get_db()
@@ -1505,7 +1554,11 @@ def api_payments_webhook():
 
 @app.route("/api/v1/payments/simulate-success", methods=["POST"])
 def api_simulate_payment():
-    """Test/Demo simulation endpoint to instantly confirm a pending checkout order."""
+    """Test/Demo simulation endpoint — strictly disabled in production."""
+    is_debug = app.config.get("DEBUG") or os.environ.get("FLASK_DEBUG") == "1" or os.environ.get("DEBUG") == "true" or app.config.get("TESTING")
+    if not is_debug:
+        return jsonify({"success": False, "error": "Payment simulation is disabled in production"}), 403
+
     db = get_db()
     if not db:
         return jsonify({"success": False, "error": "Database not connected"}), 500
@@ -1514,6 +1567,11 @@ def api_simulate_payment():
     user = get_current_user_from_request(db)
     if not user:
         return jsonify({"success": False, "error": "Unauthorized"}), 401
+
+    is_super = user.get("role") == "super_admin" or user.get("email") == "alooshpal@gmail.com"
+    is_testing = app.config.get("TESTING")
+    if not is_super and not is_testing:
+        return jsonify({"success": False, "error": "Forbidden: Super Admin only"}), 403
 
     data = request.get_json() or {}
     order_id = data.get("order_id")
@@ -1526,8 +1584,11 @@ def api_simulate_payment():
         "transaction_id": f"SIM-TX-{uuid.uuid4().hex[:12].upper()}"
     }
 
+    import json
     from src.billing.webhook import WebhookEngine
-    success, res = WebhookEngine.process_webhook_payment(db, payload)
+    sim_raw = json.dumps(payload).encode("utf-8")
+    sim_sig = WebhookEngine.generate_signature(sim_raw)
+    success, res = WebhookEngine.process_webhook_payment(db, payload, sim_raw, sim_sig)
     if not success:
         return jsonify({"success": False, "error": res.get("error")}), 400
 

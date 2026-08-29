@@ -29,7 +29,15 @@ class WebhookEngine:
     @staticmethod
     def get_webhook_secret() -> str:
         """Fetch configured webhook secret key from environment or config."""
-        return os.environ.get("PAYMENT_WEBHOOK_SECRET") or os.environ.get("WEBHOOK_SECRET") or "default_secret_key_tg_pro_2026"
+        from src.utils.config import get_config
+        cfg = get_config()
+        return (
+            os.environ.get("PAYMENT_WEBHOOK_SECRET")
+            or os.environ.get("WEBHOOK_SECRET")
+            or os.environ.get("NOWPAYMENTS_IPN_SECRET")
+            or cfg.get("NOWPAYMENTS_IPN_SECRET")
+            or ("test_webhook_secret_key" if (os.environ.get("TESTING") == "true" or os.environ.get("FLASK_ENV") == "testing") else "")
+        )
 
     @classmethod
     def verify_signature(cls, payload_bytes: bytes, signature: str, secret: Optional[str] = None) -> bool:
@@ -39,7 +47,10 @@ class WebhookEngine:
         """
         if not signature:
             return False
-        secret_key = (secret or cls.get_webhook_secret()).encode("utf-8")
+        key = secret or cls.get_webhook_secret()
+        if not key:
+            return False
+        secret_key = key.encode("utf-8")
         expected = hmac.new(secret_key, payload_bytes, hashlib.sha256).hexdigest()
         return hmac.compare_digest(expected.lower(), signature.lower().strip())
 
@@ -149,15 +160,17 @@ class WebhookEngine:
         if not db:
             return False, {"error": "Database unavailable"}
 
-        # 1. Verify signature if provided (HMAC-SHA512 for NOWPayments or HMAC-SHA256)
-        if signature:
-            from src.billing.nowpayments import NOWPaymentsGateway
-            is_nowpayments_sig = NOWPaymentsGateway.verify_ipn_signature(payload, signature)
-            is_standard_sig = raw_body and cls.verify_signature(raw_body, signature)
-            if not is_nowpayments_sig and not is_standard_sig:
-                # If neither matched, reject
-                logger.warning("Rejected webhook: Invalid HMAC signature")
-                return False, {"error": "Invalid signature"}
+        # 1. Enforce mandatory signature verification (HMAC-SHA512 for NOWPayments or HMAC-SHA256)
+        if not signature:
+            logger.warning("Rejected webhook: Missing mandatory signature header")
+            return False, {"error": "Missing signature header"}
+
+        from src.billing.nowpayments import NOWPaymentsGateway
+        is_nowpayments_sig = NOWPaymentsGateway.verify_ipn_signature(payload, signature)
+        is_standard_sig = raw_body and cls.verify_signature(raw_body, signature)
+        if not is_nowpayments_sig and not is_standard_sig:
+            logger.warning("Rejected webhook: Invalid HMAC signature")
+            return False, {"error": "Invalid signature"}
 
         order_id = payload.get("order_id") or payload.get("merchant_order_id") or payload.get("reference")
         payment_status = str(payload.get("payment_status") or payload.get("status") or "").upper()

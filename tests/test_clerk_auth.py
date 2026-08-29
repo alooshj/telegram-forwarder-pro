@@ -59,14 +59,20 @@ class ClerkAuthTestCase(unittest.TestCase):
 
     def test_clerk_sync_endpoint(self):
         """Test /api/auth/clerk-sync creates a user and returns session token."""
+        token = jwt.encode(
+            {
+                "sub": "user_sync_789",
+                "email": "sync_user@example.com",
+                "name": "Sync User",
+                "exp": int(time.time()) + 3600,
+            },
+            "secret",
+            algorithm="HS256",
+        )
         with patch("src.web.api.get_db", return_value=self.db):
             res = self.client.post(
                 "/api/auth/clerk-sync",
-                json={
-                    "clerk_id": "user_sync_789",
-                    "email": "sync_user@example.com",
-                    "name": "Sync User",
-                },
+                headers={"Authorization": f"Bearer {token}"},
             )
             self.assertEqual(res.status_code, 200)
             data = res.get_json()
@@ -77,6 +83,18 @@ class ClerkAuthTestCase(unittest.TestCase):
             # Check that user is in DB
             db_user = self.db.users.find_one({"_id": "user_sync_789"})
             self.assertIsNotNone(db_user)
+
+    def test_clerk_sync_rejects_unverified_payload(self):
+        """Test /api/auth/clerk-sync rejects raw spoofed body without verified JWT."""
+        with patch("src.web.api.get_db", return_value=self.db):
+            res = self.client.post(
+                "/api/auth/clerk-sync",
+                json={
+                    "clerk_id": "spoofed_id",
+                    "email": "spoofed@example.com",
+                },
+            )
+            self.assertEqual(res.status_code, 401)
 
     def test_clerk_super_admin_assignment(self):
         """Test that alooshpal@gmail.com authenticated via Clerk gets super_admin role."""

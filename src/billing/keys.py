@@ -89,19 +89,40 @@ class LicenseKeyManager:
             return False, "Invalid redemption parameters", {}
 
         clean_code = key_code.strip().upper()
-        key_doc = keys_col.find_one({"key_code": clean_code})
-
-        if not key_doc:
-            return False, "كود التفعيل غير صالح أو غير موجود (Invalid Code)", {}
-
-        if key_doc.get("is_redeemed"):
-            return False, "تم استخدام كود التفعيل هذا مسبقاً (Code Already Redeemed)", {}
+        now = datetime.now(timezone.utc)
 
         user = users_col.find_one({"_id": user_id})
         if not user:
             return False, "المستخدم غير موجود (User Not Found)", {}
 
-        now = datetime.now(timezone.utc)
+        # Atomic find_one_and_update to prevent race conditions & double redemption
+        if hasattr(keys_col, "find_one_and_update"):
+            key_doc = keys_col.find_one_and_update(
+                {"key_code": clean_code, "is_redeemed": False},
+                {"$set": {
+                    "is_redeemed": True,
+                    "redeemed_by": user.get("email", user_id),
+                    "redeemed_at": now
+                }}
+            )
+        else:
+            key_doc = keys_col.find_one({"key_code": clean_code, "is_redeemed": False})
+            if key_doc:
+                keys_col.update_one(
+                    {"_id": key_doc["_id"]},
+                    {"$set": {
+                        "is_redeemed": True,
+                        "redeemed_by": user.get("email", user_id),
+                        "redeemed_at": now
+                    }}
+                )
+
+        if not key_doc:
+            existing = keys_col.find_one({"key_code": clean_code})
+            if existing and existing.get("is_redeemed"):
+                return False, "تم استخدام كود التفعيل هذا مسبقاً (Code Already Redeemed)", {}
+            return False, "كود التفعيل غير صالح أو غير موجود (Invalid Code)", {}
+
         duration_days = key_doc.get("duration_days", 30)
         plan_id = key_doc.get("plan_id", "monthly")
 
@@ -118,15 +139,6 @@ class LicenseKeyManager:
                 "is_frozen": False,
                 "frozen_reason": "",
                 "updated_at": now
-            }}
-        )
-
-        keys_col.update_one(
-            {"_id": key_doc["_id"]},
-            {"$set": {
-                "is_redeemed": True,
-                "redeemed_by": user.get("email", user_id),
-                "redeemed_at": now
             }}
         )
 

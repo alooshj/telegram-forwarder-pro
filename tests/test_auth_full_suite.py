@@ -36,9 +36,13 @@ class AuthAndLoginTestCase(unittest.TestCase):
         self.app = app
         self.app.config["TESTING"] = True
         self.client = self.app.test_client()
-        self.db = SQLiteDB(db_path=":memory:")
+        self.db = SQLiteDB(":memory:")
         api_module._db_cache = self.db
         api_module._db_initialized = True
+        os.environ["CLERK_PUBLISHABLE_KEY"] = "pk_test_b3JpZW50ZWQtbXVsbGV0LTU2ODEuY2xlcmsuYWNjb3VudHMuZGV2JA"
+        os.environ["CLERK_SECRET_KEY"] = "sk_test_secret_key_12345"
+        from src.utils import config as cfg_mod
+        cfg_mod._config = None
 
     def tearDown(self):
         api_module._db_cache = None
@@ -54,12 +58,14 @@ class AuthAndLoginTestCase(unittest.TestCase):
 
     def test_02_super_admin_clerk_login_and_sync(self):
         """Super Admin (alooshpal@gmail.com) login via Clerk sync."""
+        import jwt
         clerk_id = f"clerk_admin_{uuid.uuid4().hex[:8]}"
-        res = self.client.post("/api/auth/clerk-sync", json={
-            "clerk_id": clerk_id,
-            "email": "alooshpal@gmail.com",
-            "name": "Super Admin User"
-        })
+        clerk_jwt = jwt.encode(
+            {"sub": clerk_id, "email": "alooshpal@gmail.com", "name": "Super Admin User", "exp": int(time.time()) + 3600},
+            "sk_test_secret_key_12345",
+            algorithm="HS256"
+        )
+        res = self.client.post("/api/auth/clerk-sync", headers={"Authorization": f"Bearer {clerk_jwt}"})
         self.assertEqual(res.status_code, 200)
         data = res.get_json()
         self.assertTrue(data.get("success"))
@@ -85,13 +91,15 @@ class AuthAndLoginTestCase(unittest.TestCase):
 
     def test_03_regular_client_clerk_login_and_sync(self):
         """Regular Client login via Clerk sync."""
+        import jwt
         clerk_id = f"clerk_client_{uuid.uuid4().hex[:8]}"
         client_email = f"user_{uuid.uuid4().hex[:6]}@gmail.com"
-        res = self.client.post("/api/auth/clerk-sync", json={
-            "clerk_id": clerk_id,
-            "email": client_email,
-            "name": "Client User"
-        })
+        clerk_jwt = jwt.encode(
+            {"sub": clerk_id, "email": client_email, "name": "Client User", "exp": int(time.time()) + 3600},
+            "sk_test_secret_key_12345",
+            algorithm="HS256"
+        )
+        res = self.client.post("/api/auth/clerk-sync", headers={"Authorization": f"Bearer {clerk_jwt}"})
         self.assertEqual(res.status_code, 200)
         data = res.get_json()
         self.assertTrue(data.get("success"))
