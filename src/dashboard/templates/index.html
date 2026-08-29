@@ -3016,13 +3016,13 @@
         }
 
         // ==================== API HELPERS ====================
-        async function api(url, method = 'GET', body = null) {
+        async function api(url, method = 'GET', body = null, customHeaders = {}) {
             try {
-                const headers = { 'Content-Type': 'application/json' };
+                const headers = { 'Content-Type': 'application/json', ...customHeaders };
                 const localToken = localStorage.getItem('teletips_auth_token');
-                if (localToken) {
+                if (localToken && !headers['Authorization']) {
                     headers['Authorization'] = `Bearer ${localToken}`;
-                } else if (window.Clerk && window.Clerk.session) {
+                } else if (!headers['Authorization'] && window.Clerk && window.Clerk.session) {
                     try {
                         const clerkToken = await window.Clerk.session.getToken();
                         if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`;
@@ -3036,8 +3036,9 @@
                 if (contentType.includes('application/json')) {
                     const data = await res.json();
                     if (!res.ok && !data.error) {
-                        data.error = `HTTP ${res.status}: ${res.statusText || 'Error'}`;
+                        data.error = `HTTP ${res.status}: ${data.message || res.statusText || 'Error'}`;
                     }
+                    data.status = res.status;
                     return data;
                 } else {
                     const text = await res.text();
@@ -3047,7 +3048,7 @@
                             : `HTTP ${res.status}: ${res.statusText || 'Server Error'}`;
                         return { success: false, error: errorMsg, status: res.status };
                     }
-                    return { success: true, text };
+                    return { success: true, text, status: res.status };
                 }
             } catch (err) {
                 console.warn(`Network/API issue on ${url}:`, err);
@@ -4062,16 +4063,43 @@
             return 'oriented-mullet-5681.clerk.accounts.dev';
         }
 
+        let isSyncingClerk = false;
+        let lastSyncAttempt = 0;
+
         async function syncClerkUser(user) {
             if (!user) return;
+            const now = Date.now();
+            if (isSyncingClerk || (now - lastSyncAttempt < 2500)) {
+                return;
+            }
+            lastSyncAttempt = now;
+
             try {
-                const token = clerkInstance && clerkInstance.session ? await clerkInstance.session.getToken() : '';
+                isSyncingClerk = true;
+                const clerk = clerkInstance || window.Clerk;
+                let token = null;
+                if (clerk && clerk.session && typeof clerk.session.getToken === 'function') {
+                    try {
+                        token = await clerk.session.getToken();
+                    } catch (tokErr) {
+                        console.warn('Could not retrieve active Clerk session token:', tokErr);
+                    }
+                }
+
+                if (!token) {
+                    console.debug('Clerk session token not yet ready — skipping sync request.');
+                    return;
+                }
+
                 const syncRes = await api('/api/auth/clerk-sync', 'POST', {
                     clerk_id: user.id,
                     email: user.primaryEmailAddress?.emailAddress || '',
                     name: user.fullName || (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : ''),
                     token: token
+                }, {
+                    'Authorization': `Bearer ${token}`
                 });
+
                 if (syncRes && syncRes.success && syncRes.user) {
                     currentUser = syncRes.user;
                     if (syncRes.token) {
@@ -4083,9 +4111,13 @@
                     await fetchStatus();
                     await loadRules();
                     await loadUserSubscription();
+                } else if (syncRes && syncRes.status === 401) {
+                    console.warn('Clerk sync rejected (401 Unauthorized)');
                 }
             } catch (err) {
                 console.warn('Clerk sync error:', err);
+            } finally {
+                isSyncingClerk = false;
             }
         }
 
@@ -4137,14 +4169,17 @@
                     });
                     clerkInstance = window.Clerk;
 
-                    // Immediately sync if user is already logged in (e.g. returning from OAuth redirect)
-                    if (clerkInstance.user) {
+                    // Sync if user is logged in
+                    if (clerkInstance.user && (!currentUser || currentUser.email !== (clerkInstance.user.primaryEmailAddress?.emailAddress || ''))) {
                         await syncClerkUser(clerkInstance.user);
                     }
 
                     clerkInstance.addListener(async (emission) => {
                         if (emission.user) {
-                            await syncClerkUser(emission.user);
+                            const userEmail = emission.user.primaryEmailAddress?.emailAddress || '';
+                            if (!currentUser || currentUser.email !== userEmail) {
+                                await syncClerkUser(emission.user);
+                            }
                         } else if (!emission.user && currentUser) {
                             currentUser = null;
                             localStorage.removeItem('teletips_auth_token');

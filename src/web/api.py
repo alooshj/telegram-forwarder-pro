@@ -933,29 +933,36 @@ def api_get_clerk_config():
 
 
 @app.route("/api/auth/clerk-sync", methods=["POST"])
-@limiter.limit("10 per minute")
+@limiter.limit("60 per minute")
 def api_auth_clerk_sync():
     """Sync or provision a Clerk authenticated user and issue session token from verified JWT."""
-    db = get_db()
-    if not db:
-        return jsonify({"success": False, "error": "Database not connected"}), 500
-
-    from src.web.auth import verify_clerk_token_or_payload, get_current_user_from_request
-
-    # 1. First attempt to extract user authenticated by Bearer / Cookie JWT
-    user = get_current_user_from_request(db)
-
-    # 2. If not already resolved, extract JWT token from request body
-    if not user:
-        data = request.get_json(silent=True) or {}
-        raw_token = data.get("token") or ""
-        if raw_token:
-            user = verify_clerk_token_or_payload(raw_token, db)
-
-    if not user:
-        return jsonify({"success": False, "error": "Unauthorized: Valid verified Clerk JWT token is required"}), 401
-
     try:
+        db = get_db()
+        if not db:
+            return jsonify({"success": False, "error": "Database unavailable"}), 500
+
+        from src.web.auth import verify_clerk_token_or_payload, get_current_user_from_request
+
+        # 1. First attempt to extract user authenticated by Bearer / Cookie JWT
+        user = None
+        try:
+            user = get_current_user_from_request(db)
+        except Exception as e:
+            logger.debug(f"Header/Cookie auth extraction exception: {e}")
+
+        # 2. If not already resolved, extract JWT token from request body
+        if not user:
+            data = request.get_json(silent=True) or {}
+            raw_token = data.get("token") or ""
+            if raw_token:
+                try:
+                    user = verify_clerk_token_or_payload(raw_token, db)
+                except Exception as e:
+                    logger.debug(f"Body token verification exception: {e}")
+
+        if not user:
+            return jsonify({"success": False, "error": "Unauthorized"}), 401
+
         user_id = str(user["_id"])
         token = generate_auth_token(user_id, user["email"])
         is_super = (user.get("role") == "super_admin" or user.get("email") == "alooshpal@gmail.com")
@@ -977,8 +984,8 @@ def api_auth_clerk_sync():
         resp.set_cookie("auth_token", token, max_age=30 * 86400, httponly=True, samesite="Lax")
         return resp
     except Exception as e:
-        logger.error(f"Clerk sync error: {e}")
-        return jsonify({"success": False, "error": f"Clerk sync failed: {str(e)}"}), 500
+        logger.error(f"Clerk sync error: {e}", exc_info=True)
+        return jsonify({"success": False, "error": "Unauthorized"}), 401
 
 
 @app.route("/api/auth/register", methods=["POST"])

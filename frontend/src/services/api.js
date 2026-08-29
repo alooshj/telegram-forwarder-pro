@@ -78,7 +78,18 @@ export const createApiClient = (getToken) => {
     delete: (endpoint) => request(endpoint, 'DELETE'),
 
     // Specific endpoints
-    syncClerkUser: (userData) => request('/api/auth/clerk-sync', 'POST', userData),
+    syncClerkUser: async (userData) => {
+      let token = userData?.token || null;
+      if (!token && typeof getToken === 'function') {
+        try { token = await getToken(); } catch (e) {}
+      } else if (!token && typeof window !== 'undefined' && window.Clerk?.session?.getToken) {
+        try { token = await window.Clerk.session.getToken(); } catch (e) {}
+      }
+      return request('/api/auth/clerk-sync', 'POST', {
+        ...userData,
+        token: token || userData?.token || ''
+      });
+    },
     getStats: () => request('/api/stats', 'GET'),
     getRules: () => request('/api/rules', 'GET'),
     getLogs: (all = false) => request(`/api/logs${all ? '?all=true' : ''}`, 'GET'),

@@ -118,18 +118,30 @@ def verify_clerk_token_or_payload(token: str, db) -> dict:
 
         # 2. Verify with Clerk JWKS endpoint if issuer/publishable key is available
         if payload is None:
-            issuer = config.get("CLERK_ISSUER")
-            pub_key = config.get("CLERK_PUBLISHABLE_KEY")
+            issuer = (
+                config.get("CLERK_ISSUER")
+                or os.environ.get("CLERK_ISSUER")
+                or "https://oriented-mullet-5681.clerk.accounts.dev"
+            )
+            pub_key = (
+                config.get("CLERK_PUBLISHABLE_KEY")
+                or os.environ.get("CLERK_PUBLISHABLE_KEY")
+                or os.environ.get("VITE_CLERK_PUBLISHABLE_KEY")
+                or os.environ.get("NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY")
+                or "pk_test_b3JpZW50ZWQtbXVsbGV0LTU2ODEuY2xlcmsuYWNjb3VudHMuZGV2JA"
+            )
             clerk_domain = issuer
             if not clerk_domain and pub_key:
                 try:
                     parts_pub = pub_key.split("_")
                     if len(parts_pub) >= 3:
+                        raw = parts_pub[2]
+                        raw_padded = raw + "=" * (-len(raw) % 4)
                         import base64
-                        decoded_domain = base64.b64decode(parts_pub[2] + "==").decode("utf-8").rstrip("$")
+                        decoded_domain = base64.b64decode(raw_padded).decode("utf-8").rstrip("$")
                         clerk_domain = f"https://{decoded_domain}"
-                except Exception:
-                    pass
+                except Exception as e:
+                    logger.debug(f"Could not parse domain from publishable key: {e}")
 
             if clerk_domain:
                 try:
@@ -139,7 +151,7 @@ def verify_clerk_token_or_payload(token: str, db) -> dict:
                     signing_key = jwks_client.get_signing_key_from_jwt(token)
                     payload = jwt.decode(token, signing_key.key, algorithms=["RS256"], options={"verify_aud": False})
                 except Exception as e:
-                    logger.debug(f"JWKS verification failed: {e}")
+                    logger.debug(f"JWKS verification failed for domain {clerk_domain}: {e}")
 
         # If signature verification failed across all valid keys, strictly reject
         if not payload or not isinstance(payload, dict):
