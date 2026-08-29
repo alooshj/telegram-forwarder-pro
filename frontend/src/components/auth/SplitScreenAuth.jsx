@@ -44,12 +44,30 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
   };
 
   return (
-    <div className="min-h-screen w-full bg-[#0b0f17] text-white flex flex-col md:flex-row antialiased selection:bg-[#00e5ff]/30 selection:text-[#00e5ff] font-['Tajawal',sans-serif]" dir="rtl">
+    <div className="min-h-screen w-full bg-[#0b0f17] text-white flex flex-col md:flex-row antialiased selection:bg-[#00e5ff]/30 selection:text-[#00e5ff] font-['Tajawal',sans-serif] relative overflow-hidden" dir="rtl">
       
+      {/* =========================================================================
+          CINEMATIC VIDEO BACKGROUND LAYER
+          ========================================================================= */}
+      <video
+        autoPlay
+        loop
+        muted
+        playsInline
+        className="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none"
+      >
+        <source src="/bg-login.mp4" type="video/mp4" />
+      </video>
+
+      {/* Cyberpunk Glassmorphic Tint & Radial Lighting Overlay */}
+      <div className="absolute inset-0 bg-[#0b0f17]/75 backdrop-blur-[2px] bg-gradient-to-l from-[#0b0f17] via-[#0b0f17]/80 to-transparent z-0 pointer-events-none" />
+      <div className="absolute top-1/4 -right-24 w-96 h-96 bg-[#00e5ff]/15 rounded-full blur-3xl z-0 pointer-events-none" />
+      <div className="absolute bottom-1/4 -left-24 w-96 h-96 bg-[#10b981]/15 rounded-full blur-3xl z-0 pointer-events-none" />
+
       {/* =========================================================================
           HERO & BRANDING SIDE (Right column on RTL desktop, hidden on mobile)
           ========================================================================= */}
-      <div className="hidden md:flex md:w-1/2 lg:w-7/12 relative overflow-hidden bg-[#0b0f17] border-l border-white/5 flex-col justify-between p-8 lg:p-14">
+      <div className="hidden md:flex md:w-1/2 lg:w-7/12 relative z-10 overflow-hidden flex-col justify-between p-8 lg:p-14">
         
         {/* Background Cyber Glow & Radial Gradients */}
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_80%_80%_at_50%_-20%,rgba(0,229,255,0.15),rgba(255,255,255,0))]" />

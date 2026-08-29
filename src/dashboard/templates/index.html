@@ -351,6 +351,138 @@
     <!-- Toast Notifications Container -->
     <div id="toast-container" class="fixed top-20 right-5 rtl:right-auto rtl:left-5 z-50 flex flex-col space-y-3 pointer-events-none max-w-sm w-full"></div>
 
+    <!-- ==================== DEDICATED FULL-SCREEN VIDEO LOGIN GATE ==================== -->
+    <div id="login-gate-screen" class="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#0b0f17] font-['Tajawal',sans-serif]" dir="rtl">
+        <!-- 1. Background Video -->
+        <video id="login-gate-video" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none">
+            <source src="/static/video/bg-login.mp4" type="video/mp4">
+        </video>
+
+        <!-- 2. Dark Cyberpunk Glass Overlay -->
+        <div class="absolute inset-0 bg-[#0b0f17]/75 backdrop-blur-[2px] bg-gradient-to-l from-[#0b0f17] via-[#0b0f17]/80 to-transparent z-10 pointer-events-none"></div>
+
+        <!-- 3. Ambient Neon Lighting -->
+        <div class="absolute top-1/4 -right-24 w-96 h-96 bg-[#00e5ff]/15 rounded-full blur-3xl z-10 pointer-events-none"></div>
+        <div class="absolute bottom-1/4 -left-24 w-96 h-96 bg-[#10b981]/15 rounded-full blur-3xl z-10 pointer-events-none"></div>
+
+        <!-- 4. Content Container -->
+        <div class="relative z-20 w-full h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between py-6 md:py-12 overflow-y-auto">
+            
+            <!-- LEFT / HERO AREA: Platform Branding & Capabilities (Hidden on mobile) -->
+            <div class="hidden md:flex flex-col justify-between max-w-xl py-6 space-y-6 text-white my-auto">
+                <div class="space-y-3">
+                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#151c28]/90 border border-[#00e5ff]/30 text-[#00e5ff] text-xs font-bold shadow-[0_0_20px_rgba(0,229,255,0.2)]">
+                        <span class="w-2 h-2 rounded-full bg-[#00e5ff] animate-ping"></span>
+                        <span>سحابة الأتمتة المتقدمة 24/7 نشطة</span>
+                    </div>
+                    <h1 class="text-4xl lg:text-5xl font-black leading-tight tracking-tight">
+                        منصة <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00e5ff] via-cyan-200 to-[#10b981]">TeleTips Pro</span> لتوجيه منشورات تليجرام
+                    </h1>
+                    <p class="text-sm text-slate-300 leading-relaxed">
+                        نظام سحابي فائق السرعة والأمان لإدارة ومزامنة القنوات والمجموعات مع تحكم دقيق بفلاتر النصوص وتشفير الجلسات بأعلى المعايير.
+                    </p>
+                </div>
+
+                <!-- Feature Highlights Chips -->
+                <div class="grid grid-cols-2 gap-3.5 pt-1">
+                    <div class="p-4 bg-[#151c28]/85 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg hover:border-[#00e5ff]/40 transition group">
+                        <div class="w-8 h-8 rounded-xl bg-[#00e5ff]/10 text-[#00e5ff] flex items-center justify-center text-base mb-2 group-hover:scale-110 transition">⚡</div>
+                        <h4 class="text-xs font-bold text-white mb-0.5">توجيه فوري &lt; 1 ثانية</h4>
+                        <p class="text-[11px] text-slate-400">توجيه فوري للمنشورات والألبومات بدون أي تأخير.</p>
+                    </div>
+                    <div class="p-4 bg-[#151c28]/85 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg hover:border-[#10b981]/40 transition group">
+                        <div class="w-8 h-8 rounded-xl bg-[#10b981]/10 text-[#10b981] flex items-center justify-center text-base mb-2 group-hover:scale-110 transition">🛡️</div>
+                        <h4 class="text-xs font-bold text-white mb-0.5">عزل سحابي متعدد</h4>
+                        <p class="text-[11px] text-slate-400">عزل مستقل لبيانات وسجلات وقواعد كل مشترك.</p>
+                    </div>
+                    <div class="p-4 bg-[#151c28]/85 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg hover:border-purple-500/40 transition group">
+                        <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-base mb-2 group-hover:scale-110 transition">⚙️</div>
+                        <h4 class="text-xs font-bold text-white mb-0.5">استبدال وفلترة النصوص</h4>
+                        <p class="text-[11px] text-slate-400">تنظيف الروابط وتعديل النصوص والمعرفات بذكاء.</p>
+                    </div>
+                    <div class="p-4 bg-[#151c28]/85 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg hover:border-amber-500/40 transition group">
+                        <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-base mb-2 group-hover:scale-110 transition">🔒</div>
+                        <h4 class="text-xs font-bold text-white mb-0.5">تشفير AES-256</h4>
+                        <p class="text-[11px] text-slate-400">حماية وتشفير الجلسات بأعلى المعايير الأمنية.</p>
+                    </div>
+                </div>
+
+                <!-- Security Trust Badge -->
+                <div class="flex items-center gap-2 text-xs text-slate-400 font-medium pt-2">
+                    <svg class="w-4 h-4 text-[#10b981]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                    <span>محمي ومؤمن عبر بروتوكولات Clerk للمصادقة السحابية</span>
+                </div>
+            </div>
+
+            <!-- RIGHT SIDE: LATERAL SIGN-IN CARD -->
+            <div class="w-full md:w-auto md:min-w-[380px] lg:min-w-[440px] max-w-md my-auto">
+                <div class="bg-[#151c28]/95 backdrop-blur-2xl border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_35px_rgba(0,229,255,0.2)] space-y-6">
+                    
+                    <!-- Brand Logo Banner on Side Panel -->
+                    <div class="text-center space-y-2 pb-2 border-b border-white/10">
+                        <div class="inline-flex p-2.5 bg-[#0b0f17] rounded-2xl border border-[#00e5ff]/30 shadow-xl shadow-cyan-950/50">
+                            <img src="/static/img/teletips-logo.png?v=3.0" alt="TeleTips Pro" class="h-9 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(0,229,255,0.5)]">
+                        </div>
+                        <h3 class="text-xl font-extrabold text-white">تسجيل الدخول إلى TeleTips</h3>
+                        <p class="text-xs text-slate-400">سجل الدخول بحسابك للوصول إلى لوحة التحكم</p>
+                    </div>
+
+                    <!-- Fast Social Logins -->
+                    <div class="space-y-2.5">
+                        <span class="text-[11px] font-bold text-slate-400 block text-center uppercase tracking-wider">
+                            المتابعة السريعة بحسابات التواصل
+                        </span>
+
+                        <div class="grid grid-cols-3 gap-2.5">
+                            <!-- Google -->
+                            <button type="button" onclick="handleOAuthSignIn('oauth_google')" class="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#00e5ff]/40 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(0,229,255,0.2)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/50" title="تسجيل الدخول بحساب Google">
+                                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                                <span class="text-xs">Google</span>
+                            </button>
+
+                            <!-- Discord -->
+                            <button type="button" onclick="handleOAuthSignIn('oauth_discord')" class="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#5865F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(88,101,242,0.3)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#5865F2]/50" title="تسجيل الدخول بحساب Discord">
+                                <svg class="w-4 h-4 text-[#5865F2] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+                                <span class="text-xs">Discord</span>
+                            </button>
+
+                            <!-- Facebook -->
+                            <button type="button" onclick="handleOAuthSignIn('oauth_facebook')" class="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#1877F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(24,119,242,0.3)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#1877F2]/50" title="تسجيل الدخول بحساب Facebook">
+                                <svg class="w-4 h-4 text-[#1877F2] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                <span class="text-xs">Facebook</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Divider -->
+                    <div class="flex items-center my-2">
+                        <div class="flex-grow border-t border-white/10"></div>
+                        <span class="px-3 text-[11px] text-slate-400 font-semibold uppercase">أو بالبريد الإلكتروني</span>
+                        <div class="flex-grow border-t border-white/10"></div>
+                    </div>
+
+                    <!-- Email Sign In Button -->
+                    <button type="button" onclick="handleEmailSignIn()" class="w-full py-3.5 px-4 bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#00e5ff]/50 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2.5 rtl:space-x-reverse shadow-md hover:shadow-[0_0_20px_rgba(0,229,255,0.25)] active:scale-95">
+                        <svg class="w-4 h-4 text-[#00e5ff] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                        <span data-i18n="btn_email_signin">المتابعة باستخدام البريد الإلكتروني</span>
+                    </button>
+
+                    <!-- Sign Up Option -->
+                    <div class="pt-3 border-t border-white/10 text-center text-xs text-slate-400 flex items-center justify-center gap-1.5">
+                        <span>ليس لديك حساب؟</span>
+                        <button type="button" onclick="handleEmailSignUp()" class="text-[#00e5ff] hover:text-cyan-300 font-bold underline">
+                            إنشاء حساب جديد (تجربة مجانية)
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- ==================== MAIN DASHBOARD APPLICATION (LOCKED UNTIL AUTH) ==================== -->
+    <div id="main-dashboard-app" class="hidden flex-col min-h-screen flex">
+
     <!-- Navigation Header (Fixed 64px Minimal Modern - Permanently Fixed LTR for Consistent Global Logo Placement) -->
     <header class="bg-surface-900/95 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-40 h-16 flex items-center" dir="ltr">
         <div class="max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8">
@@ -3942,8 +4074,16 @@
                 const dropRole = document.getElementById('dropdown-user-role-badge');
                 const dropTgStatus = document.getElementById('dropdown-tg-status');
 
+                const loginGate = document.getElementById('login-gate-screen');
+                const mainApp = document.getElementById('main-dashboard-app');
+
                 if (res.authenticated && res.user) {
                     currentUser = res.user;
+                    if (loginGate) loginGate.classList.add('hidden');
+                    if (mainApp) {
+                        mainApp.classList.remove('hidden');
+                        mainApp.classList.add('animate-fade-in');
+                    }
                     const isSuper = (currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com');
                     const isAdmin = (currentUser.role === 'admin' || isSuper);
 
@@ -3981,6 +4121,8 @@
                     }
                 } else {
                     currentUser = null;
+                    if (loginGate) loginGate.classList.remove('hidden');
+                    if (mainApp) mainApp.classList.add('hidden');
                     if (userBtnLabel) userBtnLabel.textContent = currentLang === 'ar' ? 'حسابي / دخول' : 'Account / Login';
                     if (avatarEl) avatarEl.textContent = 'U';
                     if (accEl) accEl.innerHTML = `<span class="text-slate-500 font-medium">${currentLang === 'ar' ? 'غير متصل' : 'Disconnected'}</span>`;
@@ -5570,6 +5712,8 @@
             </div>
         </div>
     </div>
+
+    </div> <!-- End #main-dashboard-app -->
 
 </body>
 </html>
