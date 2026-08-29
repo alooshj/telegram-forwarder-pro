@@ -7,9 +7,9 @@ const strings = {
   ar: {
     langBtn: 'English',
     badge: 'سحابة الأتمتة المتقدمة 24/7 نشطة',
-    title1: 'تحكم كامل في مسارات ',
-    titleHighlight: 'التوجيه المباشر',
-    title2: ' بدقة فائقة',
+    title1: 'منصة ',
+    titleHighlight: 'TeleTips Pro',
+    title2: ' لتوجيه منشورات تليجرام',
     desc: 'نظام سحابي فائق السرعة والأمان لإدارة ومزامنة القنوات والمجموعات مع تحكم دقيق بفلاتر النصوص وتشفير الجلسات بأعلى المعايير.',
     feat1Title: 'توجيه فوري < 1 ثانية',
     feat1Desc: 'توجيه فوري للمنشورات والألبومات بدون أي تأخير.',
@@ -21,7 +21,7 @@ const strings = {
     feat4Desc: 'حماية وتشفير الجلسات بأعلى المعايير الأمنية.',
     cardSignInTitle: 'تسجيل الدخول إلى TeleTips',
     cardSignUpTitle: 'إنشاء حساب جديد في TeleTips',
-    cardSignInSub: 'أهلاً بك مجدداً! تفضل بالدخول لإدارة قنواتك',
+    cardSignInSub: 'سجل الدخول بحسابك للوصول إلى لوحة التحكم',
     cardSignUpSub: 'ابدأ تجربتك المجانية الآن وأتمت قنواتك بكل سهولة',
     socialHeader: 'المتابعة السريعة بحسابات التواصل',
     orEmail: 'أو بالبريد الإلكتروني',
@@ -29,7 +29,7 @@ const strings = {
     signInLink: 'تسجيل الدخول',
     noAccount: 'ليس لديك حساب بعد؟',
     signUpLink: 'إنشاء حساب جديد',
-    clerkBadge: 'محمي بتشفير end-to-end وبروتوكول مصادقة Clerk العالمية',
+    clerkBadge: 'محمي ومؤمن عبر بروتوكولات Clerk للمصادقة السحابية',
     errOAuth: 'تعذر بدء تسجيل الدخول، يرجى المحاولة مرة أخرى.',
   },
   en: {
@@ -49,7 +49,7 @@ const strings = {
     feat4Desc: 'Military-grade encryption for all user credentials and sessions.',
     cardSignInTitle: 'Sign In to TeleTips',
     cardSignUpTitle: 'Create TeleTips Account',
-    cardSignInSub: 'Welcome back! Sign in to manage your forwarding routes',
+    cardSignInSub: 'Sign in to access your dashboard and manage routes',
     cardSignUpSub: 'Start your free trial today and automate your channels',
     socialHeader: 'Quick Continue with Social Accounts',
     orEmail: 'Or with Email',
@@ -57,7 +57,7 @@ const strings = {
     signInLink: 'Sign In',
     noAccount: "Don't have an account?",
     signUpLink: 'Create New Account',
-    clerkBadge: 'Secured with end-to-end encryption & global Clerk authentication protocols',
+    clerkBadge: 'Protected & secured by Clerk cloud authentication protocols',
     errOAuth: 'Failed to initiate login, please try again.',
   }
 };
@@ -149,7 +149,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
           <button
             type="button"
             onClick={toggleLanguage}
-            className="px-3.5 py-2 rounded-xl bg-[#151c28]/85 hover:bg-[#1c2536] border border-white/20 hover:border-[#00e5ff]/50 text-slate-100 hover:text-white font-bold text-xs flex items-center gap-2 backdrop-blur-xl shadow-xl transition duration-200 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/40"
+            className="px-3.5 py-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/20 hover:border-[#00e5ff]/50 text-slate-100 hover:text-white font-bold text-xs flex items-center gap-2 backdrop-blur-xl shadow-xl transition duration-200 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/40"
           >
             <svg className="w-4 h-4 text-[#00e5ff] group-hover:rotate-12 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="12" cy="12" r="10" />
@@ -162,7 +162,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
 
         {/* Central Feature Showcase */}
         <div className="relative z-10 my-auto py-10 space-y-6 max-w-lg">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#1c2536]/90 backdrop-blur-xl border border-[#00e5ff]/30 text-[#00e5ff] text-xs font-bold shadow-[0_0_20px_rgba(0,229,255,0.2)]">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-white/[0.06] backdrop-blur-xl border border-[#00e5ff]/30 text-[#00e5ff] text-xs font-bold shadow-[0_0_20px_rgba(0,229,255,0.2)]">
             <span className="w-2 h-2 rounded-full bg-[#00e5ff] animate-ping" />
             <span>{t.badge}</span>
           </div>
@@ -179,34 +179,34 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
             {t.desc}
           </p>
 
-          {/* Feature Grid Chips with Transparent Frosted Glass */}
+          {/* Feature Grid Chips with Transparent Glass Windows */}
           <div className="grid grid-cols-2 gap-4 pt-2">
-            <div className="p-4 sm:p-5 bg-[#0f172a]/40 hover:bg-[#0f172a]/65 backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-[#00e5ff]/60 shadow-[0_8px_32px_rgba(0,0,0,0.37)] hover:shadow-[0_0_25px_rgba(0,229,255,0.2)] transition-all duration-300 group">
-              <div className="w-9 h-9 rounded-xl bg-[#00e5ff]/20 text-[#00e5ff] border border-[#00e5ff]/30 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(0,229,255,0.25)]">
+            <div className="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-[#00e5ff]/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(0,229,255,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
+              <div className="w-9 h-9 rounded-xl bg-[#00e5ff]/20 text-[#00e5ff] border border-[#00e5ff]/40 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(0,229,255,0.3)]">
                 ⚡
               </div>
               <h4 className="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide">{t.feat1Title}</h4>
               <p className="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed">{t.feat1Desc}</p>
             </div>
 
-            <div className="p-4 sm:p-5 bg-[#0f172a]/40 hover:bg-[#0f172a]/65 backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-[#10b981]/60 shadow-[0_8px_32px_rgba(0,0,0,0.37)] hover:shadow-[0_0_25px_rgba(16,185,129,0.2)] transition-all duration-300 group">
-              <div className="w-9 h-9 rounded-xl bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/30 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(16,185,129,0.25)]">
+            <div className="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-[#10b981]/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(16,185,129,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
+              <div className="w-9 h-9 rounded-xl bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
                 🛡️
               </div>
               <h4 className="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide">{t.feat2Title}</h4>
               <p className="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed">{t.feat2Desc}</p>
             </div>
 
-            <div className="p-4 sm:p-5 bg-[#0f172a]/40 hover:bg-[#0f172a]/65 backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-purple-400/60 shadow-[0_8px_32px_rgba(0,0,0,0.37)] hover:shadow-[0_0_25px_rgba(168,85,247,0.2)] transition-all duration-300 group">
-              <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/30 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(168,85,247,0.25)]">
+            <div className="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-purple-400/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(168,85,247,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
+              <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
                 ⚙️
               </div>
               <h4 className="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide">{t.feat3Title}</h4>
               <p className="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed">{t.feat3Desc}</p>
             </div>
 
-            <div className="p-4 sm:p-5 bg-[#0f172a]/40 hover:bg-[#0f172a]/65 backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-amber-400/60 shadow-[0_8px_32px_rgba(0,0,0,0.37)] hover:shadow-[0_0_25px_rgba(251,191,36,0.2)] transition-all duration-300 group">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(251,191,36,0.25)]">
+            <div className="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-amber-400/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(251,191,36,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(251,191,36,0.3)]">
                 🔒
               </div>
               <h4 className="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide">{t.feat4Title}</h4>
@@ -223,7 +223,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
       </div>
 
       {/* =========================================================================
-          AUTH FORM SIDE (Lateral Glassmorphism Panel)
+          AUTH FORM SIDE (Lateral Glassmorphism Window)
           ========================================================================= */}
       <div className="w-full md:w-1/2 lg:w-5/12 relative z-10 flex items-center justify-center p-4 sm:p-8 lg:p-12 overflow-y-auto">
         
@@ -232,7 +232,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
           <button
             type="button"
             onClick={toggleLanguage}
-            className="px-3 py-1.5 rounded-lg bg-[#151c28]/90 border border-white/15 text-xs text-white font-bold"
+            className="px-3 py-1.5 rounded-lg bg-white/[0.08] border border-white/20 text-xs text-white font-bold backdrop-blur-md"
           >
             {t.langBtn}
           </button>
@@ -240,12 +240,12 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
 
         <div className="w-full max-w-md space-y-6 my-auto pt-10 md:pt-0">
           
-          {/* Main Glassmorphic Card */}
-          <div className="bg-[#0f172a]/75 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 sm:p-8 shadow-[0_30px_70px_rgba(0,0,0,0.8),0_0_40px_rgba(0,229,255,0.2)] space-y-6">
+          {/* Main Glassmorphic Window */}
+          <div className="bg-white/[0.06] backdrop-blur-2xl border border-white/20 rounded-3xl p-6 sm:p-8 shadow-[0_30px_70px_rgba(0,0,0,0.5),0_0_40px_rgba(0,229,255,0.15),inset_0_1px_0_rgba(255,255,255,0.2)] space-y-6">
             
             {/* Header / Intro */}
             <div className="text-center space-y-2 pb-2 border-b border-white/10">
-              <div className="inline-flex p-2.5 bg-[#0b0f17]/90 rounded-2xl border border-[#00e5ff]/30 shadow-xl shadow-cyan-950/50">
+              <div className="inline-flex p-2.5 bg-white/[0.05] rounded-2xl border border-[#00e5ff]/30 shadow-xl shadow-cyan-950/30 backdrop-blur-md">
                 <img src="/logo.png" alt="TeleTips Pro" className="h-9 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(0,229,255,0.5)]" />
               </div>
               <h3 className="text-xl font-extrabold text-white">
@@ -281,7 +281,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
                   type="button"
                   onClick={() => handleOAuth('oauth_google')}
                   disabled={Boolean(oauthLoading)}
-                  className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/15 hover:border-[#00e5ff]/50 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(0,229,255,0.25)] disabled:opacity-50 disabled:cursor-not-allowed group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/50"
+                  className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-[#00e5ff]/50 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(0,229,255,0.25)] backdrop-blur-md disabled:opacity-50 disabled:cursor-not-allowed group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/50"
                   title="Google"
                 >
                   {oauthLoading === 'oauth_google' ? (
@@ -302,7 +302,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
                   type="button"
                   onClick={() => handleOAuth('oauth_discord')}
                   disabled={Boolean(oauthLoading)}
-                  className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/15 hover:border-[#5865F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(88,101,242,0.35)] disabled:opacity-50 disabled:cursor-not-allowed group focus:outline-none focus:ring-2 focus:ring-[#5865F2]/50"
+                  className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-[#5865F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(88,101,242,0.35)] backdrop-blur-md disabled:opacity-50 disabled:cursor-not-allowed group focus:outline-none focus:ring-2 focus:ring-[#5865F2]/50"
                   title="Discord"
                 >
                   {oauthLoading === 'oauth_discord' ? (
@@ -320,7 +320,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
                   type="button"
                   onClick={() => handleOAuth('oauth_facebook')}
                   disabled={Boolean(oauthLoading)}
-                  className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/15 hover:border-[#1877F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(24,119,242,0.35)] disabled:opacity-50 disabled:cursor-not-allowed group focus:outline-none focus:ring-2 focus:ring-[#1877F2]/50"
+                  className="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-[#1877F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(24,119,242,0.35)] backdrop-blur-md disabled:opacity-50 disabled:cursor-not-allowed group focus:outline-none focus:ring-2 focus:ring-[#1877F2]/50"
                   title="Facebook"
                 >
                   {oauthLoading === 'oauth_facebook' ? (
@@ -338,7 +338,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
             {/* Visual Divider */}
             <div className="relative flex items-center justify-center">
               <div className="border-t border-white/10 w-full" />
-              <span className="bg-[#151c28] px-3 text-[11px] text-slate-400 font-semibold uppercase whitespace-nowrap">
+              <span className="bg-[#151c28]/60 px-3 text-[11px] text-slate-400 font-semibold uppercase whitespace-nowrap">
                 {t.orEmail}
               </span>
               <div className="border-t border-white/10 w-full" />
