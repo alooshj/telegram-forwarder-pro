@@ -2633,16 +2633,23 @@
 
         // ==================== TOAST NOTIFICATIONS ====================
         
-        // ==================== ADVANCED NOTIFICATION & AUDIO ENGINE ====================
+        // ==================== ADVANCED NOTIFICATION & AUDIO ENGINE (PER-USER ISOLATED) ====================
         const NotificationSystem = {
-            storageKey: 'teletips_notifs_v2',
             soundEnabled: localStorage.getItem('tp_notif_sound') !== 'false',
             filter: 'all',
             audioCtx: null,
 
+            getStorageKey() {
+                if (currentUser && (currentUser.id || currentUser.email)) {
+                    const userIdentifier = (currentUser.id || currentUser.email).replace(/[^a-zA-Z0-9_-]/g, '_');
+                    return `teletips_notifs_${userIdentifier}`;
+                }
+                return 'teletips_notifs_guest';
+            },
+
             getNotifications() {
                 try {
-                    return JSON.parse(localStorage.getItem(this.storageKey) || '[]');
+                    return JSON.parse(localStorage.getItem(this.getStorageKey()) || '[]');
                 } catch {
                     return [];
                 }
@@ -2650,8 +2657,12 @@
 
             saveNotifications(list) {
                 try {
-                    localStorage.setItem(this.storageKey, JSON.stringify(list.slice(0, 50)));
+                    localStorage.setItem(this.getStorageKey(), JSON.stringify(list.slice(0, 50)));
                 } catch (e) {}
+                this.renderCenter();
+            },
+
+            switchUser() {
                 this.renderCenter();
             },
 
@@ -3949,6 +3960,7 @@
                     if (tgBtnText) tgBtnText.textContent = currentLang === 'ar' ? 'ربط حساب تليجرام (Connect Web)' : 'Connect Telegram Account (Web)';
                 }
                 checkAdminVisibility();
+                if (window.NotificationSystem) NotificationSystem.switchUser();
             } catch (e) {
                 console.warn('Auth status check failed:', e);
             }
@@ -4027,6 +4039,7 @@
             localStorage.removeItem('teletips_auth_token');
             await api('/api/auth/logout', 'POST');
             currentUser = null;
+            if (window.NotificationSystem) NotificationSystem.switchUser();
             closeAuthModal();
             showToast(currentLang === 'ar' ? 'تم تسجيل الخروج بنجاح' : 'Logged out', 'info');
             await checkAuthStatus();
@@ -4064,6 +4077,7 @@
                     if (syncRes.token) {
                         localStorage.setItem('teletips_auth_token', syncRes.token);
                     }
+                    if (window.NotificationSystem) NotificationSystem.switchUser();
                     closeAuthModal();
                     await checkAuthStatus();
                     await fetchStatus();
