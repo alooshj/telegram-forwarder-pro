@@ -92,74 +92,117 @@
         }
     </script>
     <style>
+        /* ==================== WORLD-CLASS UI ANIMATIONS & EFFECTS ==================== */
+        
+        /* 1. Floating Cosmic Aurora Background */
         body {
             font-family: 'Readex Pro', 'Inter', sans-serif;
             background-color: #0F172A;
-            background-image: 
-                radial-gradient(at 0% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
-                radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.07) 0px, transparent 50%),
-                radial-gradient(at 50% 100%, rgba(99, 102, 241, 0.06) 0px, transparent 50%);
-            background-attachment: fixed;
+            position: relative;
+            overflow-x: hidden;
         }
 
+        .aurora-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .aurora-orb-1 {
+            position: absolute;
+            top: -10%;
+            left: 15%;
+            width: 50vw;
+            height: 50vw;
+            background: radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, rgba(6, 182, 212, 0) 70%);
+            border-radius: 50%;
+            filter: blur(50px);
+            animation: auroraFloat1 18s ease-in-out infinite alternate;
+        }
+        .aurora-orb-2 {
+            position: absolute;
+            top: 40%;
+            right: -10%;
+            width: 45vw;
+            height: 45vw;
+            background: radial-gradient(circle, rgba(99, 102, 241, 0.11) 0%, rgba(99, 102, 241, 0) 70%);
+            border-radius: 50%;
+            filter: blur(60px);
+            animation: auroraFloat2 22s ease-in-out infinite alternate;
+        }
+        .aurora-orb-3 {
+            position: absolute;
+            bottom: -15%;
+            left: 30%;
+            width: 40vw;
+            height: 40vw;
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0) 70%);
+            border-radius: 50%;
+            filter: blur(55px);
+            animation: auroraFloat1 25s ease-in-out infinite alternate-reverse;
+        }
+
+        @keyframes auroraFloat1 {
+            0% { transform: translate(0px, 0px) scale(1); opacity: 0.6; }
+            50% { transform: translate(60px, -40px) scale(1.18); opacity: 0.85; }
+            100% { transform: translate(-30px, 30px) scale(0.95); opacity: 0.6; }
+        }
+        @keyframes auroraFloat2 {
+            0% { transform: translate(0px, 0px) scale(1); opacity: 0.5; }
+            50% { transform: translate(-50px, 35px) scale(1.22); opacity: 0.8; }
+            100% { transform: translate(40px, -20px) scale(0.92); opacity: 0.5; }
+        }
+
+        /* 2. Glassmorphism Elevation & Tactile Physics */
         .glass-card {
-            background: rgba(30, 41, 59, 0.7);
-            backdrop-filter: blur(12px);
-            -webkit-backdrop-filter: blur(12px);
+            background: rgba(30, 41, 59, 0.72);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
             border: 1px solid rgba(255, 255, 255, 0.08);
             box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), 
+                        box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), 
+                        border-color 0.28s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .glass-card:hover {
-            border-color: rgba(6, 182, 212, 0.35);
-            box-shadow: 0 15px 35px -10px rgba(6, 182, 212, 0.18), 0 0 15px -3px rgba(6, 182, 212, 0.12);
+            transform: translateY(-2.5px);
+            border-color: rgba(6, 182, 212, 0.4);
+            box-shadow: 0 18px 38px -10px rgba(6, 182, 212, 0.2), 0 0 18px -2px rgba(6, 182, 212, 0.12);
         }
 
-        /* Fluid Tab Buttons */
+        /* 3. Fluid Tab Buttons with Spring Pill */
         .tab-btn {
-            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
         }
         .tab-btn:hover:not(.active) {
-            background-color: rgba(30, 41, 59, 0.6);
-            color: #f8fafc;
-            transform: translateY(-1px);
+            background-color: rgba(30, 41, 59, 0.7);
+            color: #ffffff;
+            transform: translateY(-1.5px);
         }
         .tab-btn.active {
             background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #4338ca 100%);
             color: #ffffff;
             font-weight: 700;
-            box-shadow: 0 4px 18px -2px rgba(99, 102, 241, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-            transform: translateY(-1px);
+            box-shadow: 0 4px 20px -2px rgba(99, 102, 241, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+            transform: translateY(-1px) scale(1.01);
+        }
+        .tab-btn:active {
+            transform: scale(0.96);
         }
 
-        /* Glassmorphism Cards & Panels */
-        .glass-panel {
-            background: rgba(10, 15, 29, 0.75);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        /* 4. Staggered Cascading Page Entry Animation */
+        .animate-fade-in { 
+            animation: tabEnter 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
         }
-        .glass-panel:hover {
-            border-color: rgba(99, 102, 241, 0.3);
-            box-shadow: 0 15px 35px -10px rgba(99, 102, 241, 0.15);
-        }
-
-        /* Smooth Scrollbars */
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(10, 15, 29, 0.6); }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 9999px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.7); }
-
-        /* Fluid Entrance & Tab Animations */
-        .animate-fade-in { animation: tabEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
         @keyframes tabEnter {
             from {
                 opacity: 0;
-                transform: translateY(8px) scale(0.995);
+                transform: translateY(12px) scale(0.99);
             }
             to {
                 opacity: 1;
@@ -167,17 +210,27 @@
             }
         }
 
-        /* Live Radar Pulse */
-        @keyframes radar-pulse {
-            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
-            70% { transform: scale(1.05); box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
-            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
-        }
-        .pulse-live {
-            animation: radar-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        .stagger-1 { animation: cardSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.04s backwards; }
+        .stagger-2 { animation: cardSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.08s backwards; }
+        .stagger-3 { animation: cardSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.12s backwards; }
+        .stagger-4 { animation: cardSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.16s backwards; }
+
+        @keyframes cardSlideUp {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Shimmer Button Effect */
+        /* 5. Live Radar Pulse with Concentric Ring Waves */
+        @keyframes radarWave {
+            0% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8), 0 0 0 0 rgba(6, 182, 212, 0.4); }
+            50% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0), 0 0 0 10px rgba(6, 182, 212, 0); }
+            100% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 0 0 0 rgba(6, 182, 212, 0); }
+        }
+        .pulse-live {
+            animation: radarWave 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* 6. Button Shimmer Sweep Effect */
         .btn-shimmer {
             position: relative;
             overflow: hidden;
@@ -189,13 +242,39 @@
             left: -50%;
             width: 200%;
             height: 200%;
-            background: linear-gradient(60deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+            background: linear-gradient(60deg, transparent 35%, rgba(255,255,255,0.22) 50%, transparent 65%);
             transform: translateX(-100%);
             transition: transform 0.65s ease;
         }
         .btn-shimmer:hover::after {
             transform: translateX(100%);
         }
+
+        /* 7. Modal Spring In Animation */
+        .modal-spring-in {
+            animation: modalSpring 0.32s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+        }
+        @keyframes modalSpring {
+            from { opacity: 0; transform: scale(0.92) translateY(10px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+
+        /* 8. Log Inflow Stream Glow Effect */
+        @keyframes logInflow {
+            from { opacity: 0; transform: translateX(-6px); background-color: rgba(6, 182, 212, 0.15); }
+            to { opacity: 1; transform: translateX(0); background-color: transparent; }
+        }
+        .log-enter {
+            animation: logInflow 0.25s ease-out forwards;
+        }
+
+        /* 9. Smooth Scrollbars */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 9999px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(6, 182, 212, 0.8); }
 
         /* Responsive Breakpoints & Resolution Tuning */
         @media (max-width: 640px) {
@@ -807,7 +886,7 @@
             <!-- Hero Metrics Grid (4 Equal Balanced Glassmorphic KPI Cards) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- KPI 1: Forwarded Posts -->
-                <div class="glass-card rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
+                <div class="glass-card stagger-1 rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-400" data-i18n="metric_forwarded">إجمالي المنشورات المحولة</span>
                         <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center border border-emerald-500/30 group-hover:scale-105 transition-transform shadow-glow-emerald">
@@ -825,7 +904,7 @@
                 </div>
 
                 <!-- KPI 2: Active Rules & Pipelines -->
-                <div class="glass-card rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
+                <div class="glass-card stagger-2 rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-400" data-i18n="metric_active_rules">قواعد التوجيه النشطة</span>
                         <div class="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center border border-cyan-500/30 group-hover:scale-105 transition-transform shadow-glow-cyan">
@@ -840,7 +919,7 @@
                 </div>
 
                 <!-- KPI 3: Latency & AlbumCollector -->
-                <div class="glass-card rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
+                <div class="glass-card stagger-3 rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-400">سرعة التوجيه اللحظي</span>
                         <div class="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center border border-indigo-500/30 group-hover:scale-105 transition-transform shadow-glow-indigo">
@@ -855,7 +934,7 @@
                 </div>
 
                 <!-- KPI 4: Content Scrubber & Database -->
-                <div class="glass-card rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
+                <div class="glass-card stagger-4 rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
                     <div class="flex items-center justify-between">
                         <span class="text-xs font-bold text-slate-400">قاعدة البيانات والفلترة</span>
                         <div class="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center border border-purple-500/30 group-hover:scale-105 transition-transform">
