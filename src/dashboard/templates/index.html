@@ -273,7 +273,7 @@
                             <span id="sub-badge-role" class="px-2.5 py-0.5 rounded-full text-xs font-bold bg-purple-500/20 text-purple-300 border border-purple-500/30">Client</span>
                         </div>
                         <p class="text-xs sm:text-sm text-slate-300">
-                            <span data-i18n="sub_plan_label">الخطة الحالية:</span> <strong id="sub-current-plan-name" class="text-white">Free Trial (فترة تجريبية)</strong>
+                            <span data-i18n="sub_plan_label">الخطة الحالية:</span> <strong id="sub-current-plan-name" class="text-white">Free Trial</strong>
                             &bull; <span data-i18n="sub_expires_label">تاريخ الانتهاء:</span> <strong id="sub-current-expires" class="text-cyan-300 font-mono">--</strong>
                             &bull; <span data-i18n="sub_channels_limit">حد القنوات:</span> <strong id="sub-current-channels-limit" class="text-amber-300">Max 2 Targets</strong>
                         </p>
@@ -293,9 +293,9 @@
                     <div class="space-y-1">
                         <div class="flex items-center space-x-2 rtl:space-x-reverse">
                             <div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-400 flex items-center justify-center font-bold">🎁</div>
-                            <h3 class="font-bold text-white text-sm sm:text-base">تفعيل كود اشتراك يدوي (Redeem Activation Key)</h3>
+                            <h3 class="font-bold text-white text-sm sm:text-base" data-i18n="redeem_card_title">تفعيل كود اشتراك يدوي (Redeem Activation Key)</h3>
                         </div>
-                        <p class="text-xs text-slate-400">إذا استلمت كود تفعيل أو بطاقة اشتراك من الإدارة، اكتب الكود هنا وسيتم تفعيل وتمديد حسابك فوراً.</p>
+                        <p class="text-xs text-slate-400" data-i18n="redeem_card_desc">إذا استلمت كود تفعيل أو بطاقة اشتراك من الإدارة، اكتب الكود هنا وسيتم تفعيل وتمديد حسابك فوراً.</p>
                     </div>
                     <div class="flex items-center gap-2 max-w-md w-full md:w-auto">
                         <input type="text" id="redeem-code-input" placeholder="ACT-XXXX-XXXX-XXXX" dir="ltr" class="w-full md:w-60 bg-slate-950 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-indigo-300 font-mono uppercase tracking-widest focus:outline-none focus:border-indigo-400">
@@ -325,12 +325,12 @@
                         </div>
                         <div class="flex items-baseline space-x-1 rtl:space-x-reverse">
                             <span class="text-3xl font-black text-white">$5</span>
-                            <span class="text-xs text-slate-400">/ 7 أيام</span>
+                            <span class="text-xs text-slate-400" data-i18n="unit_7days">/ 7 أيام</span>
                         </div>
                         <ul class="space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-4">
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>قنوات غير محدودة (Unlimited Targets)</span></li>
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>توجيه فوري لحظي (< 1s)</span></li>
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>تعديل النصوص واستبدال الروابط</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_unlimited_targets">قنوات غير محدودة (Unlimited Targets)</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_instant_forward">توجيه فوري لحظي (< 1s)</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_text_replace">تعديل النصوص واستبدال الروابط</span></li>
                         </ul>
                     </div>
                     <button onclick="openCheckoutModal('weekly')" class="mt-5 w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-700 transition flex items-center justify-center space-x-1 rtl:space-x-reverse">
@@ -341,7 +341,7 @@
                 <!-- Plan 2: Monthly (Popular) -->
                 <div class="bg-gradient-to-b from-surface-900 via-surface-900 to-amber-950/20 border-2 border-amber-500/60 rounded-2xl p-5 flex flex-col justify-between transition-all hover:shadow-2xl hover:shadow-amber-500/10 hover:-translate-y-1.5 relative shadow-lg">
                     <div class="absolute -top-3 left-1/2 -translate-x-1/2 bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black text-[10px] uppercase px-3 py-0.5 rounded-full shadow-md tracking-wider">
-                        الأكثر شعبية &bull; POPULAR
+                        <span data-i18n="badge_popular">الأكثر شعبية &bull; POPULAR</span>
                     </div>
                     <div class="space-y-4 pt-1">
                         <div>
@@ -351,13 +351,13 @@
                         </div>
                         <div class="flex items-baseline space-x-1 rtl:space-x-reverse">
                             <span class="text-3xl font-black text-amber-300">$15</span>
-                            <span class="text-xs text-slate-400">/ 30 يوم</span>
+                            <span class="text-xs text-slate-400" data-i18n="unit_30days">/ 30 يوم</span>
                         </div>
                         <ul class="space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-4">
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>قنوات وقواعد غير محدودة</span></li>
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>تجميع ألبومات الصور والفيديو كاملة</span></li>
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>فلترة الكلمات المفتاحية الذكية</span></li>
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>تخطي قيود القنوات المحمية تلقائياً</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_unlimited_rules">قنوات وقواعد غير محدودة</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_media_albums">تجميع ألبومات الصور والفيديو كاملة</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_keyword_filter">فلترة الكلمات المفتاحية الذكية</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_bypass_restricted">تخطي قيود القنوات المحمية تلقائياً</span></li>
                         </ul>
                     </div>
                     <button onclick="openCheckoutModal('monthly')" class="mt-5 w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs rounded-xl shadow-lg shadow-amber-500/20 transition flex items-center justify-center space-x-1 rtl:space-x-reverse">
@@ -375,12 +375,12 @@
                         </div>
                         <div class="flex items-baseline space-x-1 rtl:space-x-reverse">
                             <span class="text-3xl font-black text-white">$35</span>
-                            <span class="text-xs text-slate-400">/ 90 يوم</span>
+                            <span class="text-xs text-slate-400" data-i18n="unit_90days">/ 90 يوم</span>
                         </div>
                         <ul class="space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-4">
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>كافة ميزات الباقة الشهرية</span></li>
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>أولوية المعالجة وسرعة عالية</span></li>
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>دعم فني مخصص مباشر</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_all_monthly">كافة ميزات الباقة الشهرية</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_high_priority">أولوية المعالجة وسرعة عالية</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_dedicated_support">دعم فني مخصص مباشر</span></li>
                         </ul>
                     </div>
                     <button onclick="openCheckoutModal('quarterly')" class="mt-5 w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-700 transition flex items-center justify-center space-x-1 rtl:space-x-reverse">
@@ -398,12 +398,12 @@
                         </div>
                         <div class="flex items-baseline space-x-1 rtl:space-x-reverse">
                             <span class="text-3xl font-black text-white">$65</span>
-                            <span class="text-xs text-slate-400">/ 180 يوم</span>
+                            <span class="text-xs text-slate-400" data-i18n="unit_180days">/ 180 يوم</span>
                         </div>
                         <ul class="space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-4">
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>محرك Userbot مخصص عالي السرعة</span></li>
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>تخطي قيود التوجيه المتقدمة</span></li>
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>تحديثات النظام المستمرة</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_dedicated_engine">محرك Userbot مخصص عالي السرعة</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_advanced_bypass">تخطي قيود التوجيه المتقدمة</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_system_updates">تحديثات النظام المستمرة</span></li>
                         </ul>
                     </div>
                     <button onclick="openCheckoutModal('semi_annual')" class="mt-5 w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-700 transition flex items-center justify-center space-x-1 rtl:space-x-reverse">
@@ -421,12 +421,12 @@
                         </div>
                         <div class="flex items-baseline space-x-1 rtl:space-x-reverse">
                             <span class="text-3xl font-black text-indigo-300">$110</span>
-                            <span class="text-xs text-slate-400">/ 365 يوم</span>
+                            <span class="text-xs text-slate-400" data-i18n="unit_365days">/ 365 يوم</span>
                         </div>
                         <ul class="space-y-2 text-xs text-slate-300 border-t border-slate-800/80 pt-4">
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>وصول كامل VIP لكافة الميزات</span></li>
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>أعلى أولوية في المعالجة والسرعة</span></li>
-                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span>دعم فني استثنائي وتحديثات مبكرة</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_vip_access">وصول كامل VIP لكافة الميزات</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_highest_priority">أعلى أولوية في المعالجة والسرعة</span></li>
+                            <li class="flex items-center space-x-2 rtl:space-x-reverse"><svg class="w-4 h-4 text-emerald-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"></polyline></svg><span data-i18n="feat_exceptional_support">دعم فني استثنائي وتحديثات مبكرة</span></li>
                         </ul>
                     </div>
                     <button onclick="openCheckoutModal('annual')" class="mt-5 w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-600/20 transition flex items-center justify-center space-x-1 rtl:space-x-reverse">
@@ -509,16 +509,16 @@
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-800 pb-4">
                     <div class="space-y-0.5">
                         <h3 class="font-bold text-white text-base">قائمة الأعضاء المشتركين والتحكم بالحسابات</h3>
-                        <p class="text-xs text-slate-400">عرض كامل لتفاصيل الحسابات، الخطط المفعلة، وإجراءات التجميد والتمديد.</p>
+                        <p class="text-xs text-slate-400" data-i18n="admin_subscribers_desc">عرض كامل لتفاصيل الحسابات، الخطط المفعلة، وإجراءات التجميد والتمديد.</p>
                     </div>
                     <div class="flex flex-wrap items-center gap-2">
                         <input type="text" id="admin-user-search" oninput="filterAdminUsersTable()" placeholder="بحث بالبريد أو الاسم..." class="bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2 text-xs text-slate-200 focus:outline-none focus:border-rose-400 w-full sm:w-56">
                         <select id="admin-user-filter" onchange="filterAdminUsersTable()" class="bg-slate-950 border border-slate-700/80 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-rose-400">
-                            <option value="all">كافة الحسابات (All)</option>
-                            <option value="active">نشط فقط (Active)</option>
-                            <option value="trial">تجريبي (Trial)</option>
-                            <option value="expired">منتهي (Expired)</option>
-                            <option value="frozen">مجمد فقط (Frozen ❄️)</option>
+                            <option value="all" data-i18n="admin_filter_all">كافة الحسابات (All)</option>
+                            <option value="active" data-i18n="admin_filter_active">نشط فقط (Active)</option>
+                            <option value="trial" data-i18n="admin_filter_trial">تجريبي (Trial)</option>
+                            <option value="expired" data-i18n="admin_filter_expired">منتهي (Expired)</option>
+                            <option value="frozen" data-i18n="admin_filter_frozen">مجمد فقط (Frozen ❄️)</option>
                         </select>
                     </div>
                 </div>
@@ -555,7 +555,7 @@
                             <div class="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">⚡</div>
                             <h3 class="font-bold text-white text-sm">توليد كود تفعيل جديد (Generate Key)</h3>
                         </div>
-                        <p class="text-xs text-slate-400">أنشئ مفتاح ترخيص يدوي لمنحه لأحد العملاء لتفعيل حسابه فوراً.</p>
+                        <p class="text-xs text-slate-400" data-i18n="admin_gen_key_desc">أنشئ مفتاح ترخيص يدوي لمنحه لأحد العملاء لتفعيل حسابه فوراً.</p>
 
                         <div class="space-y-3 pt-1">
                             <div>
@@ -583,7 +583,7 @@
                     </div>
 
                     <button onclick="generateAdminKey()" id="btn-generate-key" class="w-full py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-bold text-xs rounded-xl shadow-md transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse mt-4">
-                        <span>⚡ توليد كود التفعيل الآن</span>
+                        <span data-i18n="btn_gen_key_now">⚡ توليد كود التفعيل الآن</span>
                     </button>
                 </div>
 
@@ -592,7 +592,7 @@
                     <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                         <div class="space-y-0.5">
                             <h3 class="font-bold text-white text-sm sm:text-base">سجل مفاتيح وأكواد التفعيل المولدة</h3>
-                            <p class="text-xs text-slate-400">قائمة بكافة الأكواد وحالة استخدامها من قبل الأعضاء.</p>
+                            <p class="text-xs text-slate-400" data-i18n="admin_keys_log_desc">قائمة بكافة الأكواد وحالة استخدامها من قبل الأعضاء.</p>
                         </div>
                     </div>
 
@@ -1424,7 +1424,7 @@
                             <label class="block text-xs font-semibold text-slate-300" data-i18n="form_source_channel">Source Channel (ID or @username)</label>
                             <button type="button" onclick="toggleChannelsPicker()" class="inline-flex items-center space-x-1 rtl:space-x-reverse text-xs text-brand-400 hover:text-brand-300 bg-brand-500/10 hover:bg-brand-500/20 border border-brand-500/30 px-2.5 py-1 rounded-lg transition font-medium">
                                 <svg class="w-3.5 h-3.5 text-indigo-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path><rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect></svg>
-                                <span>عرض قنوات الحساب المتاحة</span>
+                                <span data-i18n="btn_view_dialogs">عرض قنوات الحساب المتاحة</span>
                             </button>
                         </div>
                         <div class="relative">
@@ -1560,9 +1560,9 @@
                     <textarea id="transform-form-replacement" rows="2" placeholder="e.g. @MyChannel or custom branding message" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500 resize-none"></textarea>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-slate-300 mb-1">نطاق تطبيق القاعدة (القناة الهدف)</label>
+                    <label class="block text-xs font-semibold text-slate-300 mb-1" data-i18n="lbl_rule_scope_target">نطاق تطبيق القاعدة (القناة الهدف)</label>
                     <input type="text" id="transform-form-target" placeholder="اتركه فارغاً للتطبيق على كل القنوات، أو ضع ID القناة الهدف مثل 1001234567890-" class="w-full bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2 text-sm text-slate-100 focus:outline-none focus:border-brand-500 font-mono">
-                    <p class="text-[11px] text-slate-500 mt-1">اتركه فارغاً للتطبيق على جميع القنوات، أو حدد ID القناة لتطبيق هذا التعديل عليها حصراً.</p>
+                    <p class="text-[11px] text-slate-500 mt-1" data-i18n="txt_rule_scope_desc">اتركه فارغاً للتطبيق على جميع القنوات، أو حدد ID القناة لتطبيق هذا التعديل عليها حصراً.</p>
                 </div>
                 <div class="grid grid-cols-2 gap-3">
                     <div>
@@ -1864,6 +1864,61 @@
                 guide_alert_title: "نصيحة هامة لتفادي فترات الانتظار (FloodWait):",
                 guide_alert_desc: "استخدم دائماً معرف القناة ID الرقمي (مثل 1001234567890-) بدلاً من اسم المستخدم العام (@username) لتقليل استدعاءات البحث وتسريع النقل.",
                 btn_connect_telegram: "ربط حساب تليجرام",
+                badge_popular: "الأكثر شعبية • POPULAR",
+                unit_7days: "/ 7 أيام",
+                unit_30days: "/ 30 يوم",
+                unit_90days: "/ 90 يوم",
+                unit_180days: "/ 180 يوم",
+                unit_365days: "/ 365 يوم",
+                feat_unlimited_targets: "قنوات غير محدودة (Unlimited Targets)",
+                feat_instant_forward: "توجيه فوري لحظي (< 1s)",
+                feat_text_replace: "تعديل النصوص واستبدال الروابط",
+                feat_unlimited_rules: "قنوات وقواعد غير محدودة",
+                feat_media_albums: "تجميع ألبومات الصور والفيديو كاملة",
+                feat_keyword_filter: "فلترة الكلمات المفتاحية الذكية",
+                feat_bypass_restricted: "تخطي قيود القنوات المحمية تلقائياً",
+                feat_all_monthly: "كافة ميزات الباقة الشهرية",
+                feat_high_priority: "أولوية المعالجة وسرعة عالية",
+                feat_dedicated_support: "دعم فني مخصص مباشر",
+                feat_dedicated_engine: "محرك Userbot مخصص عالي السرعة",
+                feat_advanced_bypass: "تخطي قيود التوجيه المتقدمة",
+                feat_system_updates: "تحديثات النظام المستمرة",
+                feat_vip_access: "وصول كامل VIP لكافة الميزات",
+                feat_highest_priority: "أعلى أولوية في المعالجة والسرعة",
+                feat_exceptional_support: "دعم فني استثنائي وتحديثات مبكرة",
+                admin_gen_key_title: "توليد كود تفعيل جديد (Generate Key)",
+                admin_gen_key_desc: "أنشئ مفتاح ترخيص يدوي لمنحه لأحد العملاء لتفعيل حسابه فوراً.",
+                btn_gen_key_now: "⚡ توليد كود التفعيل الآن",
+                admin_keys_log_title: "سجل مفاتيح وأكواد التفعيل المولدة",
+                admin_keys_log_desc: "قائمة بكافة الأكواد وحالة استخدامها من قبل الأعضاء.",
+                logs_scope_user: "👤 سجلاتي فقط",
+                logs_scope_all: "🌐 كل النظام",
+                lbl_rule_scope_target: "نطاق تطبيق القاعدة (القناة الهدف)",
+                txt_rule_scope_desc: "اتركه فارغاً للتطبيق على جميع القنوات، أو حدد ID القناة لتطبيق هذا التعديل عليها حصراً.",
+                lbl_user_email: "البريد الإلكتروني:",
+                lbl_user_verified: "حالة التحقق:",
+                lbl_user_name: "الاسم:",
+                lbl_user_role: "الرتبة والصلاحية:",
+                lbl_user_plan: "الباقة والاشتراك:",
+                btn_logout_view: "تسجيل الخروج (Log Out)",
+                modal_extend_title: "تمديد / تعديل اشتراك العميل",
+                modal_role_title: "تعديل رتبة وصلاحية المستخدم",
+                btn_save_activate: "حفظ وتفعيل",
+                btn_update_role: "تحديث الرتبة",
+                admin_subscribers_title: "قائمة الأعضاء المشتركين والتحكم بالحسابات",
+                admin_subscribers_desc: "عرض كامل لتفاصيل الحسابات، الخطط المفعلة، وإجراءات التجميد والتمديد.",
+                admin_filter_all: "كافة الحسابات (All)",
+                admin_filter_active: "نشط فقط (Active)",
+                admin_filter_trial: "تجريبي (Trial)",
+                admin_filter_expired: "منتهي (Expired)",
+                admin_filter_frozen: "مجمد فقط (Frozen ❄️)",
+                lbl_key_plan_duration: "الخطة والمدة",
+                lbl_custom_days: "عدد الأيام المخصصة",
+                lbl_key_notes: "ملاحظات / اسم العميل (اختياري)",
+                th_key_notes: "الملاحظات",
+                th_key_action: "إجراء",
+                modal_dialogs_title: "قنواتك المشترك بها حساب التوجيه:",
+                btn_view_dialogs: "عرض قنوات الحساب المتاحة",
             },
             en: {
                 app_subtitle: "24/7 Automated Post Forwarding & Content Transformation",
@@ -2099,6 +2154,61 @@
                 guide_alert_title: "Important Tip to Prevent Telegram FloodWait:",
                 guide_alert_desc: "Always use numerical Channel ID (e.g. -1001234567890) instead of public @username to minimize API lookups and speed up forwarding.",
                 btn_connect_telegram: "Connect Telegram",
+                badge_popular: "POPULAR • BEST CHOICE",
+                unit_7days: "/ 7 Days",
+                unit_30days: "/ 30 Days",
+                unit_90days: "/ 90 Days",
+                unit_180days: "/ 180 Days",
+                unit_365days: "/ 365 Days",
+                feat_unlimited_targets: "Unlimited Target Channels",
+                feat_instant_forward: "Instant Forwarding (< 1s)",
+                feat_text_replace: "Text Editing & Link Replacement",
+                feat_unlimited_rules: "Unlimited Forwarding Rules",
+                feat_media_albums: "Full Media Album & File Support",
+                feat_keyword_filter: "Smart Keyword & Regex Filtering",
+                feat_bypass_restricted: "Auto-Bypass Restricted Channels",
+                feat_all_monthly: "All Monthly Plan Features",
+                feat_high_priority: "High Processing Priority & Speed",
+                feat_dedicated_support: "Dedicated 1-on-1 Support",
+                feat_dedicated_engine: "Dedicated High-Speed Userbot",
+                feat_advanced_bypass: "Advanced Forwarding Bypass",
+                feat_system_updates: "Continuous System Updates",
+                feat_vip_access: "Full VIP Access to All Features",
+                feat_highest_priority: "Highest Priority & Maximum Speed",
+                feat_exceptional_support: "Exceptional 24/7 VIP Support",
+                admin_gen_key_title: "Generate New Activation Key",
+                admin_gen_key_desc: "Create a manual license key to distribute to a subscriber for instant activation.",
+                btn_gen_key_now: "⚡ Generate Activation Key Now",
+                admin_keys_log_title: "Generated License Keys History",
+                admin_keys_log_desc: "List of all generated keys and their redemption status by subscribers.",
+                logs_scope_user: "👤 My Logs Only",
+                logs_scope_all: "🌐 All System Logs",
+                lbl_rule_scope_target: "Rule Scope (Target Channel)",
+                txt_rule_scope_desc: "Leave empty to apply to all target channels, or enter specific Channel ID.",
+                lbl_user_email: "Email Address:",
+                lbl_user_verified: "Verification Status:",
+                lbl_user_name: "Full Name:",
+                lbl_user_role: "Role & Permissions:",
+                lbl_user_plan: "Subscription Plan:",
+                btn_logout_view: "Log Out",
+                modal_extend_title: "Extend / Modify User Subscription",
+                modal_role_title: "Modify User Role & Permissions",
+                btn_save_activate: "Save & Activate",
+                btn_update_role: "Update Role",
+                admin_subscribers_title: "Subscribers List & Account Controls",
+                admin_subscribers_desc: "Full overview of user accounts, active subscriptions, and freeze/extend actions.",
+                admin_filter_all: "All Accounts",
+                admin_filter_active: "Active Only",
+                admin_filter_trial: "Trial Only",
+                admin_filter_expired: "Expired Only",
+                admin_filter_frozen: "Frozen Only ❄️",
+                lbl_key_plan_duration: "Plan & Duration",
+                lbl_custom_days: "Custom Days Amount",
+                lbl_key_notes: "Notes / Client Name (Optional)",
+                th_key_notes: "Notes",
+                th_key_action: "Action",
+                modal_dialogs_title: "Channels Joined by Forwarding Account:",
+                btn_view_dialogs: "View Available Channels",
             }
         };
 
@@ -4241,27 +4351,27 @@
             <div id="auth-logged-in-view" class="hidden space-y-4 text-xs">
                 <div class="p-4 bg-slate-950 border border-slate-800 rounded-xl space-y-2.5">
                     <div class="flex justify-between items-center text-slate-400">
-                        <span>البريد الإلكتروني:</span>
+                        <span data-i18n="lbl_user_email">البريد الإلكتروني:</span>
                         <span id="auth-user-email" class="font-semibold text-slate-200"></span>
                     </div>
                     <div class="flex justify-between items-center text-slate-400">
-                        <span>حالة التحقق:</span>
+                        <span data-i18n="lbl_user_verified">حالة التحقق:</span>
                         <span id="auth-user-verified" class="px-2 py-0.5 text-[10px] font-bold rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">🟢 مؤكد</span>
                     </div>
                     <div class="flex justify-between items-center text-slate-400">
-                        <span>الاسم:</span>
+                        <span data-i18n="lbl_user_name">الاسم:</span>
                         <span id="auth-user-name" class="font-semibold text-slate-200"></span>
                     </div>
                     <div class="flex justify-between items-center text-slate-400">
-                        <span>الرتبة والصلاحية:</span>
+                        <span data-i18n="lbl_user_role">الرتبة والصلاحية:</span>
                         <span id="auth-user-role" class="px-2.5 py-0.5 rounded bg-purple-500/20 text-purple-300 font-bold uppercase border border-purple-500/40">SUPER ADMIN</span>
                     </div>
                     <div class="flex justify-between items-center text-slate-400">
-                        <span>الباقة والاشتراك:</span>
+                        <span data-i18n="lbl_user_plan">الباقة والاشتراك:</span>
                         <span id="auth-user-plan" class="px-2.5 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold uppercase border border-emerald-500/40">ANNUAL VIP</span>
                     </div>
                 </div>
-                <button onclick="handleUserLogout()" class="w-full py-2.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl font-bold transition">
+                <button onclick="handleUserLogout()" data-i18n="btn_logout_view" class="w-full py-2.5 bg-rose-600/20 hover:bg-rose-600/30 text-rose-400 border border-rose-500/30 rounded-xl font-bold transition">
                     تسجيل الخروج (Log Out)
                 </button>
             </div>
@@ -4528,7 +4638,7 @@
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2 rtl:space-x-reverse">
                     <div class="w-8 h-8 rounded-lg bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold">📅</div>
-                    <h3 class="font-bold text-white text-base">تمديد / تعديل اشتراك العميل</h3>
+                    <h3 class="font-bold text-white text-base" data-i18n="modal_extend_title">تمديد / تعديل اشتراك العميل</h3>
                 </div>
                 <button onclick="closeAdminExtendModal()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
@@ -4567,7 +4677,7 @@
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <div class="flex items-center space-x-2 rtl:space-x-reverse">
                     <div class="w-8 h-8 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center font-bold">👑</div>
-                    <h3 class="font-bold text-white text-base">تعديل رتبة وصلاحية المستخدم</h3>
+                    <h3 class="font-bold text-white text-base" data-i18n="modal_role_title">تعديل رتبة وصلاحية المستخدم</h3>
                 </div>
                 <button onclick="closeAdminRoleModal()" class="text-slate-400 hover:text-white p-1 rounded-lg bg-slate-800">
                     <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
