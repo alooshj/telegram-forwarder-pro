@@ -139,27 +139,8 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
           ========================================================================= */}
       <div className="hidden md:flex md:w-1/2 lg:w-7/12 relative z-10 overflow-hidden flex-col justify-between p-8 lg:p-14">
         
-        {/* Brand Header & Floating Language Switcher */}
-        <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center space-x-3 rtl:space-x-reverse">
-            <div className="relative group">
-              <div className="absolute -inset-0.5 bg-gradient-to-r from-[#00e5ff] to-[#10b981] rounded-2xl blur opacity-60 group-hover:opacity-100 transition duration-300" />
-              <div className="relative p-2.5 bg-[#151c28]/90 backdrop-blur-md rounded-2xl border border-white/10 shadow-xl flex items-center justify-center">
-                <img src="/logo.png" alt="TeleTips Pro" className="h-9 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(0,229,255,0.5)]" />
-              </div>
-            </div>
-            <div>
-              <h1 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
-                <span>TeleTips</span>
-                <span className="text-xs px-2 py-0.5 rounded-full bg-[#00e5ff]/10 text-[#00e5ff] border border-[#00e5ff]/30 font-bold font-mono uppercase tracking-wider">
-                  PRO 2.0
-                </span>
-              </h1>
-              <p className="text-xs text-slate-300 font-medium">Telegram Post Automation Cloud</p>
-            </div>
-          </div>
-
-          {/* Language Switcher */}
+        {/* Floating Language Switcher */}
+        <div className="relative z-10 flex items-center justify-end">
           <button
             type="button"
             onClick={toggleLanguage}
@@ -242,11 +223,7 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
       <div className="w-full md:w-1/2 lg:w-5/12 relative z-10 flex items-center justify-center p-4 sm:p-8 lg:p-12 overflow-y-auto">
         
         {/* Mobile Top Bar */}
-        <div className="md:hidden absolute top-4 left-4 right-4 flex items-center justify-between z-20">
-          <div className="flex items-center gap-2">
-            <img src="/logo.png" alt="TeleTips" className="h-6 w-auto object-contain" />
-            <span className="font-bold text-sm text-white">TeleTips Pro</span>
-          </div>
+        <div className="md:hidden absolute top-4 left-4 right-4 flex items-center justify-end z-20">
           <button
             type="button"
             onClick={toggleLanguage}

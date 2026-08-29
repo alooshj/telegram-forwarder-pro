@@ -368,18 +368,11 @@
         <!-- 4. Main Gate Content Wrapper -->
         <div class="relative z-20 w-full h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-between py-5 md:py-8 overflow-y-auto">
             
-            <!-- Top Gate Floating Bar (Branding & Language Switcher) -->
-            <div class="w-full flex items-center justify-between pb-2">
-                <div class="flex items-center gap-3">
-                    <div class="px-3 py-1.5 bg-[#0f172a]/80 backdrop-blur-xl rounded-2xl border border-white/15 shadow-xl flex items-center gap-2.5">
-                        <img src="/static/img/teletips-logo.png?v=3.0" alt="TeleTips" class="h-6 sm:h-7 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(0,229,255,0.6)]">
-                        <span class="text-white font-black text-xs sm:text-sm tracking-wider">TeleTips <span class="text-[#00e5ff] text-[10px] sm:text-xs font-mono uppercase bg-[#00e5ff]/10 px-1.5 py-0.5 rounded-full border border-[#00e5ff]/30">PRO 2.0</span></span>
-                    </div>
-                </div>
-
+            <!-- Top Gate Floating Bar (Language Switcher) -->
+            <div class="w-full flex items-center justify-end pb-2">
                 <!-- Language Switcher Button (العربية / English) -->
                 <button type="button" onclick="toggleLanguage()" class="px-3.5 py-2 rounded-xl bg-[#151c28]/85 hover:bg-[#1c2536] border border-white/20 hover:border-[#00e5ff]/50 text-slate-100 hover:text-white font-bold text-xs flex items-center gap-2 backdrop-blur-xl shadow-xl transition duration-200 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/40">
-                    <svg class="w-4 h-4 text-[#00e5ff] group-hover:rotate-12 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    <svg class="w-4 h-4 text-[#00e5ff] group-hover:rotate-12 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1 4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
                     <span id="login-gate-lang-label">English</span>
                 </button>
             </div>
