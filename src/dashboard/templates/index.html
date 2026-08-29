@@ -353,128 +353,154 @@
 
     <!-- ==================== DEDICATED FULL-SCREEN VIDEO LOGIN GATE ==================== -->
     <div id="login-gate-screen" class="fixed inset-0 z-50 flex items-center justify-center overflow-hidden bg-[#0b0f17] font-['Tajawal',sans-serif]" dir="rtl">
-        <!-- 1. Background Video -->
+        <!-- 1. Background Video (Vivid & Clear) -->
         <video id="login-gate-video" autoplay loop muted playsinline class="absolute inset-0 w-full h-full object-cover z-0 pointer-events-none">
             <source src="/static/video/bg-login.mp4" type="video/mp4">
         </video>
 
-        <!-- 2. Dark Cyberpunk Glass Overlay -->
-        <div class="absolute inset-0 bg-[#0b0f17]/75 backdrop-blur-[2px] bg-gradient-to-l from-[#0b0f17] via-[#0b0f17]/80 to-transparent z-10 pointer-events-none"></div>
+        <!-- 2. Ultra-Light Cyberpunk Glass Overlay (High Video Transparency) -->
+        <div class="absolute inset-0 bg-black/20 bg-gradient-to-b from-black/45 via-transparent to-black/65 z-10 pointer-events-none"></div>
 
-        <!-- 3. Ambient Neon Lighting -->
-        <div class="absolute top-1/4 -right-24 w-96 h-96 bg-[#00e5ff]/15 rounded-full blur-3xl z-10 pointer-events-none"></div>
-        <div class="absolute bottom-1/4 -left-24 w-96 h-96 bg-[#10b981]/15 rounded-full blur-3xl z-10 pointer-events-none"></div>
+        <!-- 3. Ambient Subtle Neon Glows -->
+        <div class="absolute top-1/4 -right-24 w-96 h-96 bg-[#00e5ff]/10 rounded-full blur-3xl z-10 pointer-events-none"></div>
+        <div class="absolute bottom-1/4 -left-24 w-96 h-96 bg-[#10b981]/10 rounded-full blur-3xl z-10 pointer-events-none"></div>
 
-        <!-- 4. Content Container -->
-        <div class="relative z-20 w-full h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between py-6 md:py-12 overflow-y-auto">
+        <!-- 4. Main Gate Content Wrapper -->
+        <div class="relative z-20 w-full h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-between py-5 md:py-8 overflow-y-auto">
             
-            <!-- LEFT / HERO AREA: Platform Branding & Capabilities (Hidden on mobile) -->
-            <div class="hidden md:flex flex-col justify-between max-w-xl py-6 space-y-6 text-white my-auto">
-                <div class="space-y-3">
-                    <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[#151c28]/90 border border-[#00e5ff]/30 text-[#00e5ff] text-xs font-bold shadow-[0_0_20px_rgba(0,229,255,0.2)]">
-                        <span class="w-2 h-2 rounded-full bg-[#00e5ff] animate-ping"></span>
-                        <span>سحابة الأتمتة المتقدمة 24/7 نشطة</span>
-                    </div>
-                    <h1 class="text-4xl lg:text-5xl font-black leading-tight tracking-tight">
-                        منصة <span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00e5ff] via-cyan-200 to-[#10b981]">TeleTips Pro</span> لتوجيه منشورات تليجرام
-                    </h1>
-                    <p class="text-sm text-slate-300 leading-relaxed">
-                        نظام سحابي فائق السرعة والأمان لإدارة ومزامنة القنوات والمجموعات مع تحكم دقيق بفلاتر النصوص وتشفير الجلسات بأعلى المعايير.
-                    </p>
-                </div>
-
-                <!-- Feature Highlights Chips -->
-                <div class="grid grid-cols-2 gap-3.5 pt-1">
-                    <div class="p-4 bg-[#151c28]/85 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg hover:border-[#00e5ff]/40 transition group">
-                        <div class="w-8 h-8 rounded-xl bg-[#00e5ff]/10 text-[#00e5ff] flex items-center justify-center text-base mb-2 group-hover:scale-110 transition">⚡</div>
-                        <h4 class="text-xs font-bold text-white mb-0.5">توجيه فوري &lt; 1 ثانية</h4>
-                        <p class="text-[11px] text-slate-400">توجيه فوري للمنشورات والألبومات بدون أي تأخير.</p>
-                    </div>
-                    <div class="p-4 bg-[#151c28]/85 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg hover:border-[#10b981]/40 transition group">
-                        <div class="w-8 h-8 rounded-xl bg-[#10b981]/10 text-[#10b981] flex items-center justify-center text-base mb-2 group-hover:scale-110 transition">🛡️</div>
-                        <h4 class="text-xs font-bold text-white mb-0.5">عزل سحابي متعدد</h4>
-                        <p class="text-[11px] text-slate-400">عزل مستقل لبيانات وسجلات وقواعد كل مشترك.</p>
-                    </div>
-                    <div class="p-4 bg-[#151c28]/85 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg hover:border-purple-500/40 transition group">
-                        <div class="w-8 h-8 rounded-xl bg-purple-500/10 text-purple-400 flex items-center justify-center text-base mb-2 group-hover:scale-110 transition">⚙️</div>
-                        <h4 class="text-xs font-bold text-white mb-0.5">استبدال وفلترة النصوص</h4>
-                        <p class="text-[11px] text-slate-400">تنظيف الروابط وتعديل النصوص والمعرفات بذكاء.</p>
-                    </div>
-                    <div class="p-4 bg-[#151c28]/85 backdrop-blur-md rounded-2xl border border-white/10 shadow-lg hover:border-amber-500/40 transition group">
-                        <div class="w-8 h-8 rounded-xl bg-amber-500/10 text-amber-400 flex items-center justify-center text-base mb-2 group-hover:scale-110 transition">🔒</div>
-                        <h4 class="text-xs font-bold text-white mb-0.5">تشفير AES-256</h4>
-                        <p class="text-[11px] text-slate-400">حماية وتشفير الجلسات بأعلى المعايير الأمنية.</p>
+            <!-- Top Gate Floating Bar (Branding & Language Switcher) -->
+            <div class="w-full flex items-center justify-between pb-2">
+                <div class="flex items-center gap-3">
+                    <div class="px-3 py-1.5 bg-[#0f172a]/80 backdrop-blur-xl rounded-2xl border border-white/15 shadow-xl flex items-center gap-2.5">
+                        <img src="/static/img/teletips-logo.png?v=3.0" alt="TeleTips" class="h-6 sm:h-7 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(0,229,255,0.6)]">
+                        <span class="text-white font-black text-xs sm:text-sm tracking-wider">TeleTips <span class="text-[#00e5ff] text-[10px] sm:text-xs font-mono uppercase bg-[#00e5ff]/10 px-1.5 py-0.5 rounded-full border border-[#00e5ff]/30">PRO 2.0</span></span>
                     </div>
                 </div>
 
-                <!-- Security Trust Badge -->
-                <div class="flex items-center gap-2 text-xs text-slate-400 font-medium pt-2">
-                    <svg class="w-4 h-4 text-[#10b981]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
-                    <span>محمي ومؤمن عبر بروتوكولات Clerk للمصادقة السحابية</span>
-                </div>
+                <!-- Language Switcher Button (العربية / English) -->
+                <button type="button" onclick="toggleLanguage()" class="px-3.5 py-2 rounded-xl bg-[#151c28]/85 hover:bg-[#1c2536] border border-white/20 hover:border-[#00e5ff]/50 text-slate-100 hover:text-white font-bold text-xs flex items-center gap-2 backdrop-blur-xl shadow-xl transition duration-200 active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/40">
+                    <svg class="w-4 h-4 text-[#00e5ff] group-hover:rotate-12 transition-transform" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    <span id="login-gate-lang-label">English</span>
+                </button>
             </div>
 
-            <!-- RIGHT SIDE: LATERAL SIGN-IN CARD -->
-            <div class="w-full md:w-auto md:min-w-[380px] lg:min-w-[440px] max-w-md my-auto">
-                <div class="bg-[#151c28]/95 backdrop-blur-2xl border border-white/15 rounded-3xl p-6 sm:p-8 shadow-[0_25px_60px_rgba(0,0,0,0.9),0_0_35px_rgba(0,229,255,0.2)] space-y-6">
-                    
-                    <!-- Brand Logo Banner on Side Panel -->
-                    <div class="text-center space-y-2 pb-2 border-b border-white/10">
-                        <div class="inline-flex p-2.5 bg-[#0b0f17] rounded-2xl border border-[#00e5ff]/30 shadow-xl shadow-cyan-950/50">
-                            <img src="/static/img/teletips-logo.png?v=3.0" alt="TeleTips Pro" class="h-9 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(0,229,255,0.5)]">
+            <!-- Middle Section (Hero on Left, Lateral Login Card on Right) -->
+            <div class="flex flex-col md:flex-row items-center justify-between gap-8 my-auto py-4">
+                
+                <!-- LEFT / HERO AREA: Platform Capabilities & Live Highlights -->
+                <div class="hidden md:flex flex-col justify-between max-w-xl space-y-6 text-white my-auto">
+                    <div class="space-y-3">
+                        <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#151c28]/90 backdrop-blur-xl border border-[#00e5ff]/40 text-[#00e5ff] text-xs font-bold shadow-[0_0_25px_rgba(0,229,255,0.25)]">
+                            <span class="w-2 h-2 rounded-full bg-[#00e5ff] animate-ping"></span>
+                            <span data-i18n="gate_badge">سحابة الأتمتة المتقدمة 24/7 نشطة</span>
                         </div>
-                        <h3 class="text-xl font-extrabold text-white">تسجيل الدخول إلى TeleTips</h3>
-                        <p class="text-xs text-slate-400">سجل الدخول بحسابك للوصول إلى لوحة التحكم</p>
+                        <h1 class="text-3xl lg:text-5xl font-black leading-tight tracking-tight drop-shadow-[0_4px_12px_rgba(0,0,0,0.9)]">
+                            <span data-i18n="gate_title_prefix">منصة </span><span class="text-transparent bg-clip-text bg-gradient-to-r from-[#00e5ff] via-cyan-200 to-[#10b981]">TeleTips Pro</span><span data-i18n="gate_title_suffix"> لتوجيه منشورات تليجرام</span>
+                        </h1>
+                        <p class="text-sm text-slate-200/90 leading-relaxed font-medium drop-shadow-[0_2px_8px_rgba(0,0,0,0.8)]" data-i18n="gate_desc">
+                            نظام سحابي فائق السرعة والأمان لإدارة ومزامنة القنوات والمجموعات مع تحكم دقيق بفلاتر النصوص وتشفير الجلسات بأعلى المعايير.
+                        </p>
                     </div>
 
-                    <!-- Fast Social Logins -->
-                    <div class="space-y-2.5">
-                        <span class="text-[11px] font-bold text-slate-400 block text-center uppercase tracking-wider">
-                            المتابعة السريعة بحسابات التواصل
-                        </span>
-
-                        <div class="grid grid-cols-3 gap-2.5">
-                            <!-- Google -->
-                            <button type="button" onclick="handleOAuthSignIn('oauth_google')" class="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#00e5ff]/40 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(0,229,255,0.2)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/50" title="تسجيل الدخول بحساب Google">
-                                <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                                <span class="text-xs">Google</span>
-                            </button>
-
-                            <!-- Discord -->
-                            <button type="button" onclick="handleOAuthSignIn('oauth_discord')" class="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#5865F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(88,101,242,0.3)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#5865F2]/50" title="تسجيل الدخول بحساب Discord">
-                                <svg class="w-4 h-4 text-[#5865F2] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
-                                <span class="text-xs">Discord</span>
-                            </button>
-
-                            <!-- Facebook -->
-                            <button type="button" onclick="handleOAuthSignIn('oauth_facebook')" class="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#1877F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(24,119,242,0.3)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#1877F2]/50" title="تسجيل الدخول بحساب Facebook">
-                                <svg class="w-4 h-4 text-[#1877F2] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                                <span class="text-xs">Facebook</span>
-                            </button>
+                    <!-- Feature Highlights Chips with Frosted Glass -->
+                    <div class="grid grid-cols-2 gap-3.5 pt-1">
+                        <div class="p-4 bg-[#0f172a]/85 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl hover:border-[#00e5ff]/50 transition group">
+                            <div class="w-8 h-8 rounded-xl bg-[#00e5ff]/15 text-[#00e5ff] flex items-center justify-center text-base mb-2 group-hover:scale-110 transition shadow-inner">⚡</div>
+                            <h4 class="text-xs font-bold text-white mb-0.5" data-i18n="gate_feat_speed_title">توجيه فوري &lt; 1 ثانية</h4>
+                            <p class="text-[11px] text-slate-300" data-i18n="gate_feat_speed_desc">توجيه فوري للمنشورات والألبومات بدون أي تأخير.</p>
+                        </div>
+                        <div class="p-4 bg-[#0f172a]/85 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl hover:border-[#10b981]/50 transition group">
+                            <div class="w-8 h-8 rounded-xl bg-[#10b981]/15 text-[#10b981] flex items-center justify-center text-base mb-2 group-hover:scale-110 transition shadow-inner">🛡️</div>
+                            <h4 class="text-xs font-bold text-white mb-0.5" data-i18n="gate_feat_multi_title">عزل سحابي متعدد</h4>
+                            <p class="text-[11px] text-slate-300" data-i18n="gate_feat_multi_desc">عزل مستقل لبيانات وسجلات وقواعد كل مشترك.</p>
+                        </div>
+                        <div class="p-4 bg-[#0f172a]/85 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl hover:border-purple-500/50 transition group">
+                            <div class="w-8 h-8 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center text-base mb-2 group-hover:scale-110 transition shadow-inner">⚙️</div>
+                            <h4 class="text-xs font-bold text-white mb-0.5" data-i18n="gate_feat_filter_title">استبدال وفلترة النصوص</h4>
+                            <p class="text-[11px] text-slate-300" data-i18n="gate_feat_filter_desc">تنظيف الروابط وتعديل النصوص والمعرفات بذكاء.</p>
+                        </div>
+                        <div class="p-4 bg-[#0f172a]/85 backdrop-blur-xl rounded-2xl border border-white/15 shadow-2xl hover:border-amber-500/50 transition group">
+                            <div class="w-8 h-8 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center text-base mb-2 group-hover:scale-110 transition shadow-inner">🔒</div>
+                            <h4 class="text-xs font-bold text-white mb-0.5" data-i18n="gate_feat_crypto_title">تشفير AES-256</h4>
+                            <p class="text-[11px] text-slate-300" data-i18n="gate_feat_crypto_desc">حماية وتشفير الجلسات بأعلى المعايير الأمنية.</p>
                         </div>
                     </div>
 
-                    <!-- Divider -->
-                    <div class="flex items-center my-2">
-                        <div class="flex-grow border-t border-white/10"></div>
-                        <span class="px-3 text-[11px] text-slate-400 font-semibold uppercase">أو بالبريد الإلكتروني</span>
-                        <div class="flex-grow border-t border-white/10"></div>
-                    </div>
-
-                    <!-- Email Sign In Button -->
-                    <button type="button" onclick="handleEmailSignIn()" class="w-full py-3.5 px-4 bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#00e5ff]/50 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2.5 rtl:space-x-reverse shadow-md hover:shadow-[0_0_20px_rgba(0,229,255,0.25)] active:scale-95">
-                        <svg class="w-4 h-4 text-[#00e5ff] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                        <span data-i18n="btn_email_signin">المتابعة باستخدام البريد الإلكتروني</span>
-                    </button>
-
-                    <!-- Sign Up Option -->
-                    <div class="pt-3 border-t border-white/10 text-center text-xs text-slate-400 flex items-center justify-center gap-1.5">
-                        <span>ليس لديك حساب؟</span>
-                        <button type="button" onclick="handleEmailSignUp()" class="text-[#00e5ff] hover:text-cyan-300 font-bold underline">
-                            إنشاء حساب جديد (تجربة مجانية)
-                        </button>
+                    <!-- Security Trust Badge -->
+                    <div class="flex items-center gap-2 text-xs text-slate-300 font-medium pt-1 drop-shadow-md">
+                        <svg class="w-4 h-4 text-[#10b981] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+                        <span data-i18n="gate_clerk_badge">محمي ومؤمن عبر بروتوكولات Clerk للمصادقة السحابية</span>
                     </div>
                 </div>
+
+                <!-- RIGHT SIDE: LATERAL SIGN-IN CARD -->
+                <div class="w-full md:w-auto md:min-w-[380px] lg:min-w-[440px] max-w-md my-auto">
+                    <div class="bg-[#0f172a]/92 backdrop-blur-2xl border border-white/20 rounded-3xl p-6 sm:p-8 shadow-[0_30px_70px_rgba(0,0,0,0.95),0_0_40px_rgba(0,229,255,0.2)] space-y-6">
+                        
+                        <!-- Brand Logo Banner on Side Panel -->
+                        <div class="text-center space-y-2 pb-2 border-b border-white/10">
+                            <div class="inline-flex p-2.5 bg-[#0b0f17]/90 rounded-2xl border border-[#00e5ff]/30 shadow-xl shadow-cyan-950/50">
+                                <img src="/static/img/teletips-logo.png?v=3.0" alt="TeleTips Pro" class="h-9 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(0,229,255,0.5)]">
+                            </div>
+                            <h3 class="text-xl font-extrabold text-white" data-i18n="gate_card_title">تسجيل الدخول إلى TeleTips</h3>
+                            <p class="text-xs text-slate-300" data-i18n="gate_card_subtitle">سجل الدخول بحسابك للوصول إلى لوحة التحكم</p>
+                        </div>
+
+                        <!-- Fast Social Logins -->
+                        <div class="space-y-2.5">
+                            <span class="text-[11px] font-bold text-slate-400 block text-center uppercase tracking-wider" data-i18n="gate_social_header">
+                                المتابعة السريعة بحسابات التواصل
+                            </span>
+
+                            <div class="grid grid-cols-3 gap-2.5">
+                                <!-- Google -->
+                                <button type="button" onclick="handleOAuthSignIn('oauth_google')" class="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/15 hover:border-[#00e5ff]/50 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(0,229,255,0.25)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/50" title="Google">
+                                    <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                                    <span class="text-xs">Google</span>
+                                </button>
+
+                                <!-- Discord -->
+                                <button type="button" onclick="handleOAuthSignIn('oauth_discord')" class="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/15 hover:border-[#5865F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(88,101,242,0.35)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#5865F2]/50" title="Discord">
+                                    <svg class="w-4 h-4 text-[#5865F2] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+                                    <span class="text-xs">Discord</span>
+                                </button>
+
+                                <!-- Facebook -->
+                                <button type="button" onclick="handleOAuthSignIn('oauth_facebook')" class="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/15 hover:border-[#1877F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(24,119,242,0.35)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#1877F2]/50" title="Facebook">
+                                    <svg class="w-4 h-4 text-[#1877F2] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                    <span class="text-xs">Facebook</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Divider -->
+                        <div class="flex items-center my-2">
+                            <div class="flex-grow border-t border-white/10"></div>
+                            <span class="px-3 text-[11px] text-slate-400 font-semibold uppercase" data-i18n="gate_or_email">أو بالبريد الإلكتروني</span>
+                            <div class="flex-grow border-t border-white/10"></div>
+                        </div>
+
+                        <!-- Email Sign In Button -->
+                        <button type="button" onclick="handleEmailSignIn()" class="w-full py-3.5 px-4 bg-[#1c2536] hover:bg-[#263248] border border-white/15 hover:border-[#00e5ff]/50 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2.5 rtl:space-x-reverse shadow-md hover:shadow-[0_0_20px_rgba(0,229,255,0.25)] active:scale-95">
+                            <svg class="w-4 h-4 text-[#00e5ff] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
+                            <span data-i18n="gate_btn_email">المتابعة باستخدام البريد الإلكتروني</span>
+                        </button>
+
+                        <!-- Sign Up Option -->
+                        <div class="pt-3 border-t border-white/10 text-center text-xs text-slate-300 flex items-center justify-center gap-1.5">
+                            <span data-i18n="gate_no_account">ليس لديك حساب؟</span>
+                            <button type="button" onclick="handleEmailSignUp()" class="text-[#00e5ff] hover:text-cyan-300 font-bold underline" data-i18n="gate_btn_signup">
+                                إنشاء حساب جديد (تجربة مجانية)
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+
+            <!-- Bottom Gate Notice -->
+            <div class="w-full text-center text-[11px] text-slate-400 font-medium py-1">
+                <span>TeleTips Pro &copy; 2026 &bull; Secure Userbot & Cloud Routing Hub</span>
             </div>
 
         </div>
@@ -2750,6 +2776,12 @@
 
             const dropLangLabel = document.getElementById('dropdown-lang-label');
             if (dropLangLabel) dropLangLabel.textContent = lang === 'ar' ? 'English' : 'العربية';
+
+            const gateLangLabel = document.getElementById('login-gate-lang-label');
+            if (gateLangLabel) gateLangLabel.textContent = lang === 'ar' ? 'English' : 'العربية';
+
+            const loginGate = document.getElementById('login-gate-screen');
+            if (loginGate) loginGate.setAttribute('dir', lang === 'ar' ? 'rtl' : 'ltr');
 
             // Translate elements text
             document.querySelectorAll('[data-i18n]').forEach(el => {
