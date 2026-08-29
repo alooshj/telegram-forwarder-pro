@@ -1564,6 +1564,33 @@ def api_payments_webhook():
     return jsonify(res), 200
 
 
+@app.route("/api/webhooks/clerk", methods=["POST"])
+def api_clerk_webhook():
+    """
+    Clerk Webhook endpoint for automated real-time MongoDB user synchronization.
+    Secured via Svix cryptographic signature verification (svix-signature header).
+    """
+    db = get_db()
+    if not db:
+        return jsonify({"success": False, "error": "Database unavailable"}), 500
+
+    from src.web.clerk_webhook import get_clerk_webhook_secret, verify_svix_signature, process_clerk_webhook_event
+
+    secret = get_clerk_webhook_secret()
+    raw_body = request.get_data()
+    headers = dict(request.headers)
+
+    # Verify Svix signature
+    is_valid = verify_svix_signature(raw_body, headers, secret)
+    if not is_valid:
+        logger.warning("Rejected Clerk Webhook: Invalid or missing Svix signature")
+        return jsonify({"success": False, "error": "Invalid signature"}), 400
+
+    payload = request.get_json(silent=True) or {}
+    success, res_data, status_code = process_clerk_webhook_event(db, payload)
+    return jsonify(res_data), status_code
+
+
 @app.route("/api/v1/payments/simulate-success", methods=["POST"])
 def api_simulate_payment():
     """Test/Demo simulation endpoint — strictly disabled in production."""

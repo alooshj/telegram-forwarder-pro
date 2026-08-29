@@ -8,16 +8,26 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: '#0F172A',
+        background: '#0b0f17',
         surface: {
-          800: '#1E293B',
-          850: '#172033',
-          900: '#0F172A',
-          950: '#090D16',
+          800: '#1c2536',
+          850: '#151c28',
+          900: '#0b0f17',
+          950: '#06090e',
+        },
+        card: '#151c28',
+        btn: {
+          base: '#1c2536',
+          hover: '#263248',
+          active: '#2a374f',
+        },
+        neon: {
+          cyan: '#00e5ff',
+          emerald: '#10b981',
         },
         accent: {
           emerald: '#10B981',
-          cyan: '#06B6D4',
+          cyan: '#00e5ff',
           warning: '#F59E0B',
           danger: '#EF4444',
           purple: '#8B5CF6',
@@ -25,20 +35,21 @@ export default {
         },
         glass: {
           border: 'rgba(255, 255, 255, 0.08)',
-          card: 'rgba(30, 41, 59, 0.7)',
-          hover: 'rgba(51, 65, 85, 0.6)',
+          card: 'rgba(21, 28, 40, 0.85)',
+          hover: 'rgba(38, 50, 72, 0.6)',
         }
       },
       fontFamily: {
-        sans: ['Readex Pro', 'Inter', 'sans-serif'],
-        arabic: ['Readex Pro', 'sans-serif'],
+        sans: ['Tajawal', 'Readex Pro', 'Inter', 'sans-serif'],
+        arabic: ['Tajawal', 'Readex Pro', 'sans-serif'],
+        tajawal: ['Tajawal', 'sans-serif'],
         mono: ['JetBrains Mono', 'Inter', 'monospace'],
       },
       boxShadow: {
-        'glow-cyan': '0 0 15px -2px rgba(6, 182, 212, 0.4)',
-        'glow-cyan-lg': '0 0 25px -3px rgba(6, 182, 212, 0.6)',
-        'glow-emerald': '0 0 15px -2px rgba(16, 185, 129, 0.4)',
-        'glow-emerald-lg': '0 0 25px -3px rgba(16, 185, 129, 0.6)',
+        'glow-cyan': '0 0 20px rgba(0, 229, 255, 0.4)',
+        'glow-cyan-lg': '0 0 35px rgba(0, 229, 255, 0.6)',
+        'glow-emerald': '0 0 20px rgba(16, 185, 129, 0.4)',
+        'glow-emerald-lg': '0 0 35px rgba(16, 185, 129, 0.6)',
         'glow-indigo': '0 0 20px -3px rgba(99, 102, 241, 0.45)',
         'glass-card': '0 10px 30px -10px rgba(0, 0, 0, 0.5)',
       },
