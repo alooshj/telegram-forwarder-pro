@@ -280,12 +280,64 @@
         @media (max-width: 640px) {
             .tab-btn { min-width: max-content; padding-left: 0.85rem; padding-right: 0.85rem; font-size: 0.8rem; }
         }
+    
+        /* ==================== ADVANCED NOTIFICATION STYLES ==================== */
+        .toast-card {
+            pointer-events: auto;
+            background: rgba(15, 23, 42, 0.92);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.6), 0 0 15px -3px rgba(6, 182, 212, 0.2);
+            border-radius: 1rem;
+            padding: 0.85rem 1rem;
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: toastSlideIn 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+        }
+        .toast-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.7), 0 0 20px -2px rgba(6, 182, 212, 0.35);
+        }
+        .toast-card.toast-exit {
+            animation: toastSlideOut 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        @keyframes toastSlideIn {
+            from { opacity: 0; transform: translateX(40px) scale(0.92); }
+            to { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes toastSlideOut {
+            from { opacity: 1; transform: translateX(0) scale(1); }
+            to { opacity: 0; transform: translateX(40px) scale(0.9); }
+        }
+
+        .toast-progress {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, #06b6d4, #10b981);
+            transform-origin: left;
+            animation: toastTimer linear forwards;
+        }
+        .toast-card:hover .toast-progress {
+            animation-play-state: paused;
+        }
+
+        @keyframes toastTimer {
+            from { transform: scaleX(1); }
+            to { transform: scaleX(0); }
+        }
+
     </style>
 </head>
 <body class="bg-surface-950 text-slate-100 min-h-screen flex flex-col antialiased selection:bg-brand-500 selection:text-white">
 
     <!-- Toast Notifications Container -->
-    <div id="toast-container" class="fixed top-5 left-5 z-50 flex flex-col space-y-3 pointer-events-none"></div>
+    <div id="toast-container" class="fixed top-20 right-5 rtl:right-auto rtl:left-5 z-50 flex flex-col space-y-3 pointer-events-none max-w-sm w-full"></div>
 
     <!-- Navigation Header (Fixed 64px Minimal Modern - Permanently Fixed LTR for Consistent Global Logo Placement) -->
     <header class="bg-surface-900/95 backdrop-blur-xl border-b border-slate-800/80 sticky top-0 z-40 h-16 flex items-center" dir="ltr">
@@ -415,6 +467,53 @@
                         </span>
                         <span id="quick-toggle-text" data-i18n="btn_start">تشغيل المحرك</span>
                     </button>
+
+                                        <!-- 2.5. Notifications Center Bell Trigger -->
+                    <div class="relative" id="notif-center-container">
+                        <button id="header-notif-btn" onclick="toggleNotificationCenter(event)" class="relative p-2.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 text-slate-300 hover:text-white transition active:scale-95 shadow-sm" title="Notifications Center">
+                            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                                <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                            </svg>
+                            <span id="notif-badge" class="hidden absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-white rounded-full text-[9px] font-black font-mono flex items-center justify-center shadow-lg shadow-rose-500/50 animate-pulse">0</span>
+                        </button>
+
+                        <!-- Floating Notification Center Drawer / Dropdown -->
+                        <div id="notif-center-dropdown" class="hidden absolute right-0 mt-2 w-80 sm:w-96 bg-slate-900/95 border border-slate-700/90 rounded-2xl p-3 shadow-2xl backdrop-blur-xl z-50 animate-fade-in space-y-3 text-right rtl:text-right" dir="rtl">
+                            <!-- Header -->
+                            <div class="flex items-center justify-between border-b border-slate-800 pb-2.5">
+                                <div class="flex items-center space-x-2 rtl:space-x-reverse">
+                                    <span class="text-sm font-bold text-white">مركز الإشعارات</span>
+                                    <span id="notif-unread-count-pill" class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">0 جديد</span>
+                                </div>
+                                <div class="flex items-center space-x-2.5 rtl:space-x-reverse text-[11px]">
+                                    <button onclick="NotificationSystem.toggleSound(event)" id="notif-sound-btn" class="text-slate-400 hover:text-cyan-300 transition" title="Toggle Sound">
+                                        🔊
+                                    </button>
+                                    <button onclick="NotificationSystem.markAllAsRead(event)" class="text-cyan-400 hover:text-cyan-300 font-semibold transition">
+                                        تحديد كمقروء
+                                    </button>
+                                    <button onclick="NotificationSystem.clearAll(event)" class="text-slate-400 hover:text-rose-400 font-semibold transition">
+                                        مسح
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Filter Chips -->
+                            <div class="flex items-center space-x-1 rtl:space-x-reverse text-[10px]">
+                                <button onclick="NotificationSystem.setFilter('all', event)" id="notif-filter-all" class="px-2.5 py-1 rounded-lg font-bold bg-cyan-500 text-slate-950 shadow-glow-cyan transition">الكل</button>
+                                <button onclick="NotificationSystem.setFilter('forward', event)" id="notif-filter-forward" class="px-2.5 py-1 rounded-lg font-bold bg-slate-800 text-slate-400 hover:text-white transition">التوجيه ⚡</button>
+                                <button onclick="NotificationSystem.setFilter('system', event)" id="notif-filter-system" class="px-2.5 py-1 rounded-lg font-bold bg-slate-800 text-slate-400 hover:text-white transition">النظام 🛡️</button>
+                            </div>
+
+                            <!-- Notifications List Container -->
+                            <div id="notif-list-container" class="max-h-72 overflow-y-auto custom-scrollbar space-y-2 text-xs">
+                                <div class="p-6 text-center text-slate-500 text-xs italic">
+                                    لا توجد إشعارات حالياً
+                                </div>
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- 3. User Profile Dropdown Container -->
                     <div class="relative" id="user-dropdown-container">
@@ -2533,35 +2632,326 @@
         }
 
         // ==================== TOAST NOTIFICATIONS ====================
-        function showToast(msg, type = 'info') {
-            const container = document.getElementById('toast-container');
-            const toast = document.createElement('div');
-            const colors = {
-                success: 'bg-emerald-600/95 border-emerald-500 text-white',
-                error: 'bg-rose-600/95 border-rose-500 text-white',
-                warning: 'bg-amber-600/95 border-amber-500 text-white',
-                info: 'bg-brand-600/95 border-brand-500 text-white',
-            };
-            const icons = {
-                success: `<svg class="w-4 h-4 text-emerald-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>`,
-                error: `<svg class="w-4 h-4 text-rose-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>`,
-                warning: `<svg class="w-4 h-4 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>`,
-                info: `<svg class="w-4 h-4 text-cyan-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>`
-            };
-            toast.innerHTML = `<span class="flex-shrink-0">${icons[type] || icons.info}</span><span>${msg}</span>`;
-            container.appendChild(toast);
+        
+        // ==================== ADVANCED NOTIFICATION & AUDIO ENGINE ====================
+        const NotificationSystem = {
+            storageKey: 'teletips_notifs_v2',
+            soundEnabled: localStorage.getItem('tp_notif_sound') !== 'false',
+            filter: 'all',
+            audioCtx: null,
 
-            setTimeout(() => {
-                toast.classList.remove('translate-y-2', 'opacity-0');
-            }, 10);
+            getNotifications() {
+                try {
+                    return JSON.parse(localStorage.getItem(this.storageKey) || '[]');
+                } catch {
+                    return [];
+                }
+            },
 
-            setTimeout(() => {
-                toast.classList.add('opacity-0', 'translate-y-2');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
+            saveNotifications(list) {
+                try {
+                    localStorage.setItem(this.storageKey, JSON.stringify(list.slice(0, 50)));
+                } catch (e) {}
+                this.renderCenter();
+            },
+
+            playChime(type = 'info') {
+                if (!this.soundEnabled) return;
+                try {
+                    if (!this.audioCtx) {
+                        const AudioContext = window.AudioContext || window.webkitAudioContext;
+                        if (AudioContext) this.audioCtx = new AudioContext();
+                    }
+                    if (this.audioCtx && this.audioCtx.state === 'suspended') {
+                        this.audioCtx.resume();
+                    }
+                    if (!this.audioCtx) return;
+
+                    const now = this.audioCtx.currentTime;
+                    const osc = this.audioCtx.createOscillator();
+                    const gain = this.audioCtx.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.audioCtx.destination);
+
+                    if (type === 'success' || type === 'forward') {
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(587.33, now); // D5
+                        osc.frequency.exponentialRampToValueAtTime(880, now + 0.12); // A5
+                        gain.gain.setValueAtTime(0.08, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+                        osc.start(now);
+                        osc.stop(now + 0.3);
+                    } else if (type === 'error') {
+                        osc.type = 'triangle';
+                        osc.frequency.setValueAtTime(320, now);
+                        osc.frequency.setValueAtTime(260, now + 0.1);
+                        gain.gain.setValueAtTime(0.1, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.35);
+                        osc.start(now);
+                        osc.stop(now + 0.35);
+                    } else {
+                        osc.type = 'sine';
+                        osc.frequency.setValueAtTime(523.25, now); // C5
+                        gain.gain.setValueAtTime(0.06, now);
+                        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+                        osc.start(now);
+                        osc.stop(now + 0.2);
+                    }
+                } catch (e) {}
+            },
+
+            notify(options) {
+                const opt = typeof options === 'string' ? { message: options } : options;
+                const msg = opt.message || opt.msg || '';
+                const type = opt.type || 'info'; // 'success' | 'error' | 'warning' | 'forward' | 'info'
+                const title = opt.title || (currentLang === 'ar' ? 
+                    (type === 'success' ? 'عملية ناجحة' : type === 'forward' ? 'توجيه منشور لحظي ⚡' : type === 'error' ? 'تنبيه النظام ⚠️' : 'إشعار') : 
+                    (type === 'success' ? 'Success' : type === 'forward' ? 'Live Forward Event' : type === 'error' ? 'System Alert' : 'Notification'));
+                const duration = opt.duration || 4500;
+
+                // 1. Play Audio Chime
+                this.playChime(type);
+
+                // 2. Add to Persistent Inbox
+                if (opt.persistent !== false) {
+                    const list = this.getNotifications();
+                    const newEntry = {
+                        id: 'notif_' + Date.now() + '_' + Math.random().toString(36).substr(2, 4),
+                        title,
+                        message: msg,
+                        type,
+                        timestamp: Date.now(),
+                        read: false,
+                        category: type === 'forward' ? 'forward' : 'system',
+                        actionTab: opt.actionTab || (type === 'forward' ? 'logs' : null)
+                    };
+                    list.unshift(newEntry);
+                    this.saveNotifications(list);
+                }
+
+                // 3. Render Interactive Toast
+                this.renderToast(title, msg, type, duration, opt.action);
+
+                // 4. Desktop Notification (if backgrounded)
+                if (document.hidden && 'Notification' in window && Notification.permission === 'granted') {
+                    try {
+                        new Notification(title, { body: msg, icon: '/static/img/teletips-icon.png' });
+                    } catch (e) {}
+                }
+            },
+
+            renderToast(title, msg, type, duration, action) {
+                const container = document.getElementById('toast-container');
+                if (!container) return;
+
+                const card = document.createElement('div');
+                card.className = 'toast-card flex items-start space-x-3 rtl:space-x-reverse';
+
+                const iconBadges = {
+                    success: '<div class="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 flex items-center justify-center font-bold text-sm shadow-glow-emerald flex-shrink-0">✓</div>',
+                    error: '<div class="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 border border-rose-500/30 flex items-center justify-center font-bold text-sm flex-shrink-0">✕</div>',
+                    warning: '<div class="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center justify-center font-bold text-sm flex-shrink-0">⚠️</div>',
+                    forward: '<div class="w-8 h-8 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center justify-center font-bold text-sm shadow-glow-cyan flex-shrink-0">⚡</div>',
+                    info: '<div class="w-8 h-8 rounded-xl bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center justify-center font-bold text-sm shadow-glow-indigo flex-shrink-0">ℹ️</div>'
+                };
+
+                let actionHtml = '';
+                if (action && action.label) {
+                    actionHtml = `<button class="mt-1.5 px-2.5 py-0.5 rounded-lg text-[10px] font-bold bg-cyan-500/20 hover:bg-cyan-500/30 text-cyan-300 border border-cyan-500/40 transition toast-act-btn">${action.label}</button>`;
+                }
+
+                card.innerHTML = `
+                    ${iconBadges[type] || iconBadges.info}
+                    <div class="flex-1 min-w-0 pr-2 rtl:pr-0 rtl:pl-2">
+                        <div class="flex items-center justify-between">
+                            <h5 class="font-bold text-white text-xs truncate">${title}</h5>
+                            <button class="text-slate-400 hover:text-white text-xs p-0.5 toast-close-btn">✕</button>
+                        </div>
+                        <p class="text-[11px] text-slate-300 mt-0.5 leading-snug break-words">${msg}</p>
+                        ${actionHtml}
+                    </div>
+                    <div class="toast-progress" style="animation-duration: ${duration}ms;"></div>
+                `;
+
+                // Handle Close
+                const closeBtn = card.querySelector('.toast-close-btn');
+                if (closeBtn) {
+                    closeBtn.onclick = () => {
+                        card.classList.add('toast-exit');
+                        setTimeout(() => card.remove(), 280);
+                    };
+                }
+
+                // Handle Action
+                if (action && action.onClick) {
+                    const actBtn = card.querySelector('.toast-act-btn');
+                    if (actBtn) {
+                        actBtn.onclick = () => {
+                            action.onClick();
+                            card.classList.add('toast-exit');
+                            setTimeout(() => card.remove(), 280);
+                        };
+                    }
+                }
+
+                container.appendChild(card);
+
+                // Auto Dismiss
+                setTimeout(() => {
+                    if (card.parentNode) {
+                        card.classList.add('toast-exit');
+                        setTimeout(() => card.remove(), 280);
+                    }
+                }, duration);
+            },
+
+            renderCenter() {
+                const list = this.getNotifications();
+                const unreadCount = list.filter(n => !n.read).length;
+                const badge = document.getElementById('notif-badge');
+                const pill = document.getElementById('notif-unread-count-pill');
+                const container = document.getElementById('notif-list-container');
+
+                if (badge) {
+                    if (unreadCount > 0) {
+                        badge.classList.remove('hidden');
+                        badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+                    } else {
+                        badge.classList.add('hidden');
+                    }
+                }
+                if (pill) {
+                    pill.textContent = unreadCount + (currentLang === 'ar' ? ' جديد' : ' unread');
+                }
+
+                if (!container) return;
+
+                const filtered = list.filter(n => {
+                    if (this.filter === 'forward') return n.category === 'forward';
+                    if (this.filter === 'system') return n.category === 'system';
+                    return true;
+                });
+
+                if (filtered.length === 0) {
+                    container.innerHTML = `<div class="p-6 text-center text-slate-500 text-xs italic">${currentLang === 'ar' ? 'لا توجد إشعارات حالياً' : 'No notifications'}</div>`;
+                    return;
+                }
+
+                const iconMini = {
+                    success: '✓',
+                    error: '⚠️',
+                    forward: '⚡',
+                    warning: '⏳',
+                    info: 'ℹ️'
+                };
+
+                container.innerHTML = filtered.map(n => {
+                    const timeAgo = formatTimeAgo(n.timestamp);
+                    return `
+                        <div onclick="NotificationSystem.handleNotifClick('${n.id}', '${n.actionTab || ''}')" class="p-2.5 rounded-xl ${n.read ? 'bg-slate-950/40 opacity-75' : 'bg-slate-800/80 border border-slate-700/80'} hover:bg-slate-800 transition cursor-pointer flex items-start justify-between gap-2">
+                            <div class="flex items-start space-x-2 rtl:space-x-reverse min-w-0">
+                                <span class="text-xs font-bold ${n.type === 'forward' ? 'text-accent-cyan' : n.type === 'success' ? 'text-accent-emerald' : n.type === 'error' ? 'text-rose-400' : 'text-indigo-400'}">${iconMini[n.type] || '●'}</span>
+                                <div class="space-y-0.5 min-w-0">
+                                    <p class="font-bold text-white text-[11px] truncate">${n.title}</p>
+                                    <p class="text-[10px] text-slate-300 line-clamp-2 leading-relaxed">${n.message}</p>
+                                </div>
+                            </div>
+                            <span class="text-[9px] font-mono text-slate-500 whitespace-nowrap">${timeAgo}</span>
+                        </div>
+                    `;
+                }).join('');
+            },
+
+            handleNotifClick(id, actionTab) {
+                const list = this.getNotifications();
+                const item = list.find(n => n.id === id);
+                if (item) item.read = true;
+                this.saveNotifications(list);
+                if (actionTab) {
+                    switchTab(actionTab);
+                    closeNotifCenter();
+                }
+            },
+
+            markAllAsRead(e) {
+                if (e) e.stopPropagation();
+                const list = this.getNotifications();
+                list.forEach(n => n.read = true);
+                this.saveNotifications(list);
+            },
+
+            clearAll(e) {
+                if (e) e.stopPropagation();
+                this.saveNotifications([]);
+            },
+
+            setFilter(cat, e) {
+                if (e) e.stopPropagation();
+                this.filter = cat;
+                ['all', 'forward', 'system'].forEach(c => {
+                    const btn = document.getElementById(`notif-filter-${c}`);
+                    if (btn) {
+                        if (c === cat) {
+                            btn.className = 'px-2.5 py-1 rounded-lg font-bold bg-cyan-500 text-slate-950 shadow-glow-cyan transition';
+                        } else {
+                            btn.className = 'px-2.5 py-1 rounded-lg font-bold bg-slate-800 text-slate-400 hover:text-white transition';
+                        }
+                    }
+                });
+                this.renderCenter();
+            },
+
+            toggleSound(e) {
+                if (e) e.stopPropagation();
+                this.soundEnabled = !this.soundEnabled;
+                localStorage.setItem('tp_notif_sound', this.soundEnabled);
+                const btn = document.getElementById('notif-sound-btn');
+                if (btn) btn.textContent = this.soundEnabled ? '🔊' : '🔇';
+                if (this.soundEnabled) this.playChime('success');
+            }
+        };
+
+        function formatTimeAgo(timestamp) {
+            const sec = Math.floor((Date.now() - timestamp) / 1000);
+            if (sec < 60) return currentLang === 'ar' ? 'الآن' : 'just now';
+            const min = Math.floor(sec / 60);
+            if (min < 60) return `${min}${currentLang === 'ar' ? ' د' : 'm'}`;
+            const hr = Math.floor(min / 60);
+            if (hr < 24) return `${hr}${currentLang === 'ar' ? ' س' : 'h'}`;
+            return `${Math.floor(hr / 24)}${currentLang === 'ar' ? ' ي' : 'd'}`;
         }
 
-        // ==================== TAB NAVIGATION ====================
+        function toggleNotificationCenter(e) {
+            if (e) e.stopPropagation();
+            const dropdown = document.getElementById('notif-center-dropdown');
+            if (dropdown) {
+                dropdown.classList.toggle('hidden');
+                NotificationSystem.renderCenter();
+            }
+        }
+
+        function closeNotifCenter() {
+            const dropdown = document.getElementById('notif-center-dropdown');
+            if (dropdown && !dropdown.classList.contains('hidden')) {
+                dropdown.classList.add('hidden');
+            }
+        }
+
+        // Close when clicking outside
+        document.addEventListener('click', function(e) {
+            const container = document.getElementById('notif-center-container');
+            if (container && !container.contains(e.target)) {
+                closeNotifCenter();
+            }
+        });
+
+        // Bridge showToast into NotificationSystem
+        function showToast(msg, type = 'info') {
+            NotificationSystem.notify({ message: msg, type });
+        }
+
+
+                // ==================== TAB NAVIGATION ====================
         let currentTab = 'overview';
         function switchTab(tabId) {
             currentTab = tabId;
@@ -3326,10 +3716,39 @@
             loadLogs(true);
         }
 
+        let lastSeenLogTime = null;
         async function loadLogs(isManual = false) {
             const endpoint = (logsScope === 'all') ? '/api/logs?all=true' : '/api/logs';
             const res = await api(endpoint);
-            allLogs = res.logs || [];
+            const freshLogs = res.logs || [];
+
+            // Detect new real-time forwarder events and dispatch notifications
+            if (lastSeenLogTime && freshLogs.length > 0) {
+                const newItems = freshLogs.filter(l => l.timestamp && l.timestamp > lastSeenLogTime);
+                newItems.forEach(l => {
+                    const msg = l.message || '';
+                    if (msg.includes('Forwarded') || msg.includes('توجيه') || msg.includes('تم تحويل') || msg.includes('Album')) {
+                        NotificationSystem.notify({
+                            title: currentLang === 'ar' ? 'تم توجيه منشور جديد ⚡' : 'New Post Forwarded ⚡',
+                            message: msg,
+                            type: 'forward',
+                            actionTab: 'logs'
+                        });
+                    } else if ((l.level || '').toUpperCase() === 'ERROR') {
+                        NotificationSystem.notify({
+                            title: currentLang === 'ar' ? 'تنبيه خطأ في النظام ⚠️' : 'System Error Alert ⚠️',
+                            message: msg,
+                            type: 'error',
+                            actionTab: 'logs'
+                        });
+                    }
+                });
+            }
+            if (freshLogs.length > 0 && freshLogs[0].timestamp) {
+                lastSeenLogTime = freshLogs[0].timestamp;
+            }
+
+            allLogs = freshLogs;
             renderLogs();
             if (isManual) showToast(currentLang === 'ar' ? 'تم تحديث السجلات' : 'Logs refreshed', 'info');
         }
@@ -4518,6 +4937,7 @@
         // ==================== INIT ====================
         window.addEventListener('DOMContentLoaded', async () => {
             setLanguage(currentLang);
+            if (window.NotificationSystem) NotificationSystem.renderCenter();
             await initClerk();
             await checkAuthStatus();
             checkAdminVisibility();
