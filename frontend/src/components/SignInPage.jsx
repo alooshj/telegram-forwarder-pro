@@ -21,12 +21,11 @@ export const SignInPage = () => {
       <div className="absolute bottom-1/4 -right-20 w-80 h-80 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
 
       {/* Brand Header */}
-      <div className="mb-6 text-center z-10 space-y-1">
-        <div className="flex items-center justify-center space-x-2 rtl:space-x-reverse">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center text-white font-black text-xl shadow-lg shadow-indigo-500/30">
-            ⚡
+      <div className="mb-6 text-center z-10 space-y-2">
+        <div className="flex items-center justify-center">
+          <div className="p-2.5 bg-slate-900/90 rounded-2xl border border-cyan-500/30 shadow-xl shadow-cyan-950/50">
+            <img src="/logo.png" alt="TeleTips Pro" className="h-10 sm:h-12 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(6,182,212,0.4)]" />
           </div>
-          <span className="text-2xl font-black text-white tracking-tight">TeleTips <span className="text-cyan-400 text-xs px-2 py-0.5 rounded-md bg-cyan-500/10 border border-cyan-500/30">PRO</span></span>
         </div>
         <p className="text-xs text-slate-400">لوحة التحكم السحابية لتوجيه قنوات تليجرام الذكية</p>
       </div>

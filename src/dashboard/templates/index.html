@@ -2,8 +2,15 @@
 <html lang="ar" dir="rtl" class="dark">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>TeleTips Pro — لوحة التحكم الذكية</title>
+    <!-- Brand Favicon & Identity Meta -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
+    <link rel="icon" type="image/x-icon" href="/static/favicon.ico">
+    <link rel="apple-touch-icon" href="/static/img/teletips-icon.png">
+    <meta property="og:title" content="TeleTips Pro — Telegram Forwarder & Content Automation">
+    <meta property="og:image" content="/static/img/teletips-logo.png">
+    <meta name="twitter:image" content="/static/img/teletips-logo.png">
+    <meta name="theme-color" content="#0b0f19">
     <script>
         // Suppress third-party Chrome Extension promise rejections (e.g., 200.js)
         window.addEventListener('unhandledrejection', function(e) {
@@ -107,19 +114,11 @@
                 <!-- Right Side (in RTL): Custom TeleTips Brand Logo & Top Actions (Plans & Admin) -->
                 <div class="flex items-center space-x-2.5 sm:space-x-3.5 rtl:space-x-reverse">
                     <!-- Brand Logo -->
-                    <div class="flex items-center space-x-2 rtl:space-x-reverse cursor-pointer" onclick="switchTab('overview')">
-                        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-brand-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-md shadow-brand-500/25 text-white font-black text-lg flex-shrink-0 relative overflow-hidden group">
-                            <!-- Custom TeleTips Mark: Styled 'T' with Forward Lightning Wing -->
-                            <svg class="w-5 h-5 text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                                <path d="M2 17l10 5 10-5"></path>
-                                <path d="M2 12l10 5 10-5"></path>
-                            </svg>
+                    <div class="flex items-center space-x-2 rtl:space-x-reverse cursor-pointer group" onclick="switchTab('overview')">
+                        <div class="h-9 sm:h-10 px-2 py-0.5 rounded-xl bg-slate-950/80 border border-cyan-500/30 hover:border-cyan-400/70 shadow-lg shadow-cyan-950/40 flex items-center justify-center transition-all duration-300 group-hover:scale-105">
+                            <img src="/static/img/teletips-logo.png" alt="TeleTips Pro" class="h-6 sm:h-7 w-auto object-contain filter drop-shadow-[0_0_8px_rgba(6,182,212,0.45)]">
                         </div>
-                        <div class="flex items-center space-x-1.5 rtl:space-x-reverse">
-                            <span class="font-black text-lg text-white tracking-tight bg-gradient-to-r from-white via-slate-100 to-cyan-300 bg-clip-text text-transparent">TeleTips</span>
-                            <span class="text-[10px] bg-brand-500/20 text-brand-400 font-bold px-1.5 py-0.5 rounded border border-brand-500/30">PRO</span>
-                        </div>
+                        <span class="text-[10px] bg-gradient-to-r from-brand-500/20 via-cyan-500/20 to-indigo-500/20 text-cyan-300 font-extrabold px-2 py-0.5 rounded-full border border-cyan-500/30 tracking-wider shadow-sm">PRO</span>
                     </div>
 
                     <!-- Divider -->
@@ -4380,9 +4379,12 @@
             <div id="auth-form-view" class="space-y-4">
                 <div id="clerk-mount-target" class="w-full">
                     <div class="space-y-4">
-                        <div class="text-center space-y-1 pb-1">
-                            <h4 class="text-base font-black text-white">تسجيل الدخول إلى TeleTips Pro</h4>
-                            <p class="text-xs text-slate-400">سجل الدخول بحساب Google أو بريدك الإلكتروني للمتابعة فوراً</p>
+                        <div class="text-center space-y-2 pb-2">
+                            <div class="inline-flex p-2 bg-slate-950/90 rounded-2xl border border-cyan-500/30 shadow-xl shadow-cyan-950/50">
+                                <img src="/static/img/teletips-logo.png" alt="TeleTips Pro" class="h-8 sm:h-9 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(6,182,212,0.45)]">
+                            </div>
+                            <h4 class="text-base font-black text-white" data-i18n="auth_login_title">تسجيل الدخول إلى TeleTips Pro</h4>
+                            <p class="text-xs text-slate-400" data-i18n="auth_login_desc">سجل الدخول بحساب Google أو بريدك الإلكتروني للمتابعة فوراً</p>
                         </div>
 
                         <!-- Google Sign In Button -->
