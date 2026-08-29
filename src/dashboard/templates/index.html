@@ -113,23 +113,23 @@
             <div class="flex items-center justify-between h-full">
                 <!-- Right Side (in RTL): Custom TeleTips Brand Logo & Top Actions (Plans & Admin) -->
                 <div class="flex items-center space-x-3 sm:space-x-4 rtl:space-x-reverse">
-                    <!-- Brand Logo -->
-                    <div class="flex items-center cursor-pointer group transition-all duration-300 py-0.5" onclick="switchTab('overview')">
-                        <img src="/static/img/teletips-logo.png" alt="TeleTips" class="h-8 sm:h-9 md:h-10 w-auto object-contain transition-all duration-300 filter drop-shadow-[0_0_10px_rgba(6,182,212,0.35)] group-hover:drop-shadow-[0_0_16px_rgba(6,182,212,0.7)] group-hover:scale-105 select-none">
+                    <!-- Brand Logo with Ambient Glow -->
+                    <div class="flex items-center cursor-pointer group transition-all duration-300 py-1" onclick="switchTab('overview')">
+                        <img src="/static/img/teletips-logo.png" alt="TeleTips" class="h-7 sm:h-8 md:h-8.5 w-auto object-contain transition-all duration-300 filter drop-shadow-[0_0_10px_rgba(6,182,212,0.45)] group-hover:drop-shadow-[0_0_18px_rgba(6,182,212,0.85)] group-hover:scale-[1.02] select-none">
                     </div>
 
                     <!-- Divider -->
-                    <div class="h-6 w-px bg-slate-800 hidden sm:block"></div>
+                    <div class="h-5 w-px bg-slate-800/80 hidden md:block"></div>
 
                     <!-- 1. Header Button: Plans & Subscriptions (الخطط والاشتراكات) -->
-                    <button onclick="switchTab('pricing')" id="header-sub-btn" class="flex items-center space-x-2 rtl:space-x-reverse px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600/90 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/25 border border-indigo-400/30 transition-all active:scale-95 flex-shrink-0">
+                    <button onclick="switchTab('pricing')" id="header-sub-btn" class="flex items-center space-x-2 rtl:space-x-reverse px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold bg-indigo-600/90 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/25 border border-indigo-400/30 transition-all hover:scale-[1.02] active:scale-95 flex-shrink-0">
                         <span id="header-sub-icon">👑</span>
                         <span id="header-sub-label" data-i18n="tab_pricing">الخطط والاشتراكات</span>
                         <span id="tab-sub-status-dot" class="w-2 h-2 rounded-full bg-emerald-400"></span>
                     </button>
 
                     <!-- 2. Header Button: Admin Panel (لوحة الإدارة) - Conditional for Admins -->
-                    <button onclick="switchTab('admin')" id="header-admin-btn" class="hidden flex items-center space-x-1.5 rtl:space-x-reverse px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all active:scale-95 shadow-sm flex-shrink-0">
+                    <button onclick="switchTab('admin')" id="header-admin-btn" class="hidden flex items-center space-x-1.5 rtl:space-x-reverse px-3 sm:px-3.5 py-1.5 rounded-xl text-xs font-bold text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 transition-all hover:scale-[1.02] active:scale-95 shadow-sm flex-shrink-0">
                         <svg class="w-3.5 h-3.5 text-rose-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>
                         <span data-i18n="tab_admin">لوحة الإدارة</span>
                     </button>
