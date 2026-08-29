@@ -106,8 +106,14 @@ def validate_environment(raise_on_missing: bool = False) -> list:
     if not config.get("SECRET_KEY") and is_prod:
         missing.append("SECRET_KEY")
 
+    if not config.get("CLERK_SECRET_KEY") and not config.get("CLERK_JWT_KEY") and is_prod:
+        missing.append("CLERK_SECRET_KEY")
+
+    if not config.get("NOWPAYMENTS_IPN_SECRET") and is_prod:
+        missing.append("NOWPAYMENTS_IPN_SECRET")
+
     if missing:
-        logger.warning(f"⚠️ Security Warning: Missing environment variables: {', '.join(missing)}")
+        logger.warning(f"⚠️ Security Warning: Missing environment variables in production: {', '.join(missing)}")
         if raise_on_missing:
             raise RuntimeError(f"Startup aborted: Missing essential environment variables: {', '.join(missing)}")
 

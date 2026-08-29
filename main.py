@@ -30,7 +30,8 @@ logger = logging.getLogger("teletips-pro")
 
 
 if __name__ == "__main__":
-    validate_environment(raise_on_missing=False)
+    is_prod = os.environ.get("FLASK_ENV") == "production" or os.environ.get("RENDER") == "true" or os.environ.get("ENVIRONMENT") == "production"
+    validate_environment(raise_on_missing=is_prod)
     config = load_config()
     logger.info(f"Configuration loaded: API_ID={config['API_ID']}")
     logger.info("TeleTips Pro starting...")
