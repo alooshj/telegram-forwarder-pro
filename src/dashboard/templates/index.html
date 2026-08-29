@@ -2831,11 +2831,16 @@
             }
         }
 
-        function openAuthModal() {
+        async function openAuthModal() {
             const modal = document.getElementById('auth-modal');
             const loggedInView = document.getElementById('auth-logged-in-view');
             const formView = document.getElementById('auth-form-view');
             if (!modal) return;
+
+            // If Clerk has a user but local state wasn't synced yet, sync immediately
+            if (!currentUser && window.Clerk && window.Clerk.user) {
+                await syncClerkUser(window.Clerk.user);
+            }
 
             if (currentUser) {
                 loggedInView.classList.remove('hidden');
@@ -3018,99 +3023,99 @@
         }
 
         async function handleGoogleSignIn() {
-            if (currentUser || (clerkInstance && clerkInstance.user)) {
-                closeAuthModal();
-                showToast(currentLang === 'ar' ? 'أنت مسجل الدخول بالفعل' : 'You are already signed in', 'info');
+            const clerk = await initClerk();
+            if (!clerk) {
+                showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
                 return;
             }
-            const clerk = await initClerk();
-            if (clerk) {
-                closeAuthModal();
-                try {
-                    if (clerk.client && clerk.client.signIn && typeof clerk.client.signIn.authenticateWithRedirect === 'function') {
-                        await clerk.client.signIn.authenticateWithRedirect({
-                            strategy: 'oauth_google',
-                            redirectUrl: window.location.origin + '/',
-                            redirectUrlComplete: window.location.origin + '/'
-                        });
-                        return;
-                    }
-                } catch (e) {
-                    console.debug('Direct OAuth redirect notice:', e);
-                }
 
-                // Fallback to openSignIn modal
-                try {
-                    clerk.openSignIn();
-                } catch (err) {
-                    try {
-                        if (typeof clerk.redirectToSignIn === 'function') {
-                            clerk.redirectToSignIn({ redirectUrl: window.location.origin + '/' });
-                        }
-                    } catch (e2) {
-                        console.error('Clerk openSignIn error:', e2);
-                    }
+            // If user is already authenticated in Clerk, synchronize immediately and update UI
+            if (clerk.user) {
+                await syncClerkUser(clerk.user);
+                closeAuthModal();
+                showToast(currentLang === 'ar' ? 'تم تسجيل الدخول ومزامنة الحساب بنجاح!' : 'Successfully signed in & synced!', 'success');
+                return;
+            }
+
+            closeAuthModal();
+            try {
+                if (clerk.client && clerk.client.signIn && typeof clerk.client.signIn.authenticateWithRedirect === 'function') {
+                    await clerk.client.signIn.authenticateWithRedirect({
+                        strategy: 'oauth_google',
+                        redirectUrl: window.location.origin + '/',
+                        redirectUrlComplete: window.location.origin + '/'
+                    });
+                    return;
                 }
-            } else {
-                showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
+            } catch (e) {
+                console.debug('Direct OAuth redirect notice:', e);
+            }
+
+            // Fallback to openSignIn modal
+            try {
+                clerk.openSignIn();
+            } catch (err) {
+                try {
+                    if (typeof clerk.redirectToSignIn === 'function') {
+                        clerk.redirectToSignIn({ redirectUrl: window.location.origin + '/' });
+                    }
+                } catch (e2) {
+                    console.error('Clerk openSignIn error:', e2);
+                }
             }
         }
 
         async function handleEmailSignIn() {
-            if (currentUser || (clerkInstance && clerkInstance.user)) {
-                closeAuthModal();
-                showToast(currentLang === 'ar' ? 'أنت مسجل الدخول بالفعل' : 'You are already signed in', 'info');
+            const clerk = await initClerk();
+            if (!clerk) {
+                showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
                 return;
             }
-            const clerk = await initClerk();
-            if (clerk) {
-                if (clerk.user) {
-                    await syncClerkUser(clerk.user);
-                    closeAuthModal();
-                    return;
-                }
-                const target = document.getElementById('clerk-mount-target');
-                if (target) {
-                    try {
-                        target.innerHTML = '';
-                        clerk.mountSignIn(target);
-                    } catch (e) {
-                        try { clerk.openSignIn(); } catch (err) {}
-                    }
-                } else {
+
+            if (clerk.user) {
+                await syncClerkUser(clerk.user);
+                closeAuthModal();
+                showToast(currentLang === 'ar' ? 'تم تسجيل الدخول ومزامنة الحساب بنجاح!' : 'Successfully signed in & synced!', 'success');
+                return;
+            }
+
+            const target = document.getElementById('clerk-mount-target');
+            if (target) {
+                try {
+                    target.innerHTML = '';
+                    clerk.mountSignIn(target);
+                } catch (e) {
                     try { clerk.openSignIn(); } catch (err) {}
                 }
             } else {
-                showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
+                try { clerk.openSignIn(); } catch (err) {}
             }
         }
 
         async function handleEmailSignUp() {
-            if (currentUser || (clerkInstance && clerkInstance.user)) {
-                closeAuthModal();
-                showToast(currentLang === 'ar' ? 'أنت مسجل الدخول بالفعل' : 'You are already signed in', 'info');
+            const clerk = await initClerk();
+            if (!clerk) {
+                showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
                 return;
             }
-            const clerk = await initClerk();
-            if (clerk) {
-                if (clerk.user) {
-                    await syncClerkUser(clerk.user);
-                    closeAuthModal();
-                    return;
-                }
-                const target = document.getElementById('clerk-mount-target');
-                if (target) {
-                    try {
-                        target.innerHTML = '';
-                        clerk.mountSignUp(target);
-                    } catch (e) {
-                        try { clerk.openSignUp(); } catch (err) {}
-                    }
-                } else {
+
+            if (clerk.user) {
+                await syncClerkUser(clerk.user);
+                closeAuthModal();
+                showToast(currentLang === 'ar' ? 'تم تسجيل الدخول ومزامنة الحساب بنجاح!' : 'Successfully signed in & synced!', 'success');
+                return;
+            }
+
+            const target = document.getElementById('clerk-mount-target');
+            if (target) {
+                try {
+                    target.innerHTML = '';
+                    clerk.mountSignUp(target);
+                } catch (e) {
                     try { clerk.openSignUp(); } catch (err) {}
                 }
             } else {
-                showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
+                try { clerk.openSignUp(); } catch (err) {}
             }
         }
 
@@ -3975,6 +3980,13 @@
                             <span>ليس لديك حساب؟</span>
                             <button type="button" onclick="handleEmailSignUp()" class="text-cyan-400 hover:text-cyan-300 font-bold underline">
                                 إنشاء حساب جديد (3 أيام تجربة مجانية)
+                            </button>
+                        </div>
+
+                        <!-- Reset / Sign Out Helper -->
+                        <div class="pt-1 text-center">
+                            <button type="button" onclick="handleUserLogout()" class="text-[11px] text-rose-400/80 hover:text-rose-300 underline font-medium">
+                                تسجيل الخروج من الجلسة السابقة / إعادة تعيين
                             </button>
                         </div>
                     </div>
