@@ -69,32 +69,113 @@
                             900: '#312e81',
                         },
                         surface: {
-                            800: '#1e293b',
-                            850: '#172033',
-                            900: '#0f172a',
-                            950: '#090d16',
+                            800: '#151d32',
+                            850: '#0e1528',
+                            900: '#0a0f1d',
+                            950: '#050711',
                         }
+                    },
+                    boxShadow: {
+                        'neon-cyan': '0 0 20px -3px rgba(6, 182, 212, 0.35)',
+                        'neon-indigo': '0 0 25px -4px rgba(99, 102, 241, 0.4)',
+                        'neon-emerald': '0 0 20px -3px rgba(16, 185, 129, 0.35)',
                     }
                 }
             }
         }
     </script>
     <style>
-        body { font-family: 'Cairo', 'Inter', sans-serif; }
+        body {
+            font-family: 'Cairo', 'Inter', sans-serif;
+            background-color: #050711;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(99, 102, 241, 0.09) 0px, transparent 50%),
+                radial-gradient(at 100% 0%, rgba(6, 182, 212, 0.08) 0px, transparent 50%),
+                radial-gradient(at 50% 100%, rgba(139, 92, 246, 0.07) 0px, transparent 50%);
+            background-attachment: fixed;
+        }
+
+        /* Fluid Tab Buttons */
+        .tab-btn {
+            transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .tab-btn:hover:not(.active) {
+            background-color: rgba(30, 41, 59, 0.6);
+            color: #f8fafc;
+            transform: translateY(-1px);
+        }
         .tab-btn.active {
-            background-color: #4f46e5;
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #4338ca 100%);
             color: #ffffff;
             font-weight: 700;
-            box-shadow: 0 4px 14px 0 rgba(79, 70, 229, 0.35);
+            box-shadow: 0 4px 18px -2px rgba(99, 102, 241, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px);
         }
+
+        /* Glassmorphism Cards & Panels */
+        .glass-panel {
+            background: rgba(10, 15, 29, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .glass-panel:hover {
+            border-color: rgba(99, 102, 241, 0.3);
+            box-shadow: 0 15px 35px -10px rgba(99, 102, 241, 0.15);
+        }
+
+        /* Smooth Scrollbars */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #475569; }
-        .animate-fade-in { animation: fadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1); }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(10, 15, 29, 0.6); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 9999px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(99, 102, 241, 0.7); }
+
+        /* Fluid Entrance & Tab Animations */
+        .animate-fade-in { animation: tabEnter 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
+        @keyframes tabEnter {
+            from {
+                opacity: 0;
+                transform: translateY(8px) scale(0.995);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* Live Radar Pulse */
+        @keyframes radar-pulse {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { transform: scale(1.05); box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+        .pulse-live {
+            animation: radar-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+
+        /* Shimmer Button Effect */
+        .btn-shimmer {
+            position: relative;
+            overflow: hidden;
+        }
+        .btn-shimmer::after {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(60deg, transparent 30%, rgba(255,255,255,0.18) 50%, transparent 70%);
+            transform: translateX(-100%);
+            transition: transform 0.65s ease;
+        }
+        .btn-shimmer:hover::after {
+            transform: translateX(100%);
+        }
 
         /* Responsive Breakpoints & Resolution Tuning */
         @media (max-width: 640px) {
@@ -2301,7 +2382,12 @@
 
             const targetPane = document.getElementById(`tab-content-${tabId}`);
             const targetBtn = document.getElementById(`tab-${tabId}-btn`);
-            if (targetPane) targetPane.classList.remove('hidden');
+            if (targetPane) {
+                targetPane.classList.remove('hidden');
+                targetPane.classList.remove('animate-fade-in');
+                void targetPane.offsetWidth; // Trigger reflow for crisp animation replay
+                targetPane.classList.add('animate-fade-in');
+            }
             if (targetBtn) targetBtn.classList.add('active');
 
             // Header action buttons active state
@@ -2397,23 +2483,23 @@
             const overviewBadge = document.getElementById('overview-engine-badge');
 
             if (isEngineRunning) {
-                dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse';
+                dot.className = 'w-2 h-2 rounded-full bg-emerald-400 pulse-live';
                 text.textContent = i18n[currentLang].status_running;
-                quickBtn.className = 'flex items-center space-x-1.5 rtl:space-x-reverse px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-rose-600 hover:bg-rose-500 text-white shadow-md shadow-rose-600/20 transition-all';
+                quickBtn.className = 'flex items-center space-x-1.5 rtl:space-x-reverse px-3.5 py-1.5 rounded-xl text-xs font-bold bg-rose-600/90 hover:bg-rose-500 text-white shadow-md shadow-rose-600/25 border border-rose-400/30 transition-all hover:scale-[1.02] active:scale-95 btn-shimmer';
                 quickIcon.innerHTML = '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12"></rect></svg>';
                 quickText.textContent = i18n[currentLang].btn_stop;
                 if (overviewBadge) {
-                    overviewBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20';
+                    overviewBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 pulse-live';
                     overviewBadge.textContent = i18n[currentLang].status_running;
                 }
             } else {
-                dot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
+                dot.className = 'w-2 h-2 rounded-full bg-rose-500';
                 text.textContent = i18n[currentLang].status_stopped;
-                quickBtn.className = 'flex items-center space-x-1.5 rtl:space-x-reverse px-3.5 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all';
+                quickBtn.className = 'flex items-center space-x-1.5 rtl:space-x-reverse px-3.5 py-1.5 rounded-xl text-xs font-bold bg-emerald-500 hover:bg-emerald-400 text-slate-950 shadow-md shadow-emerald-500/25 border border-emerald-300/30 transition-all hover:scale-[1.02] active:scale-95 btn-shimmer';
                 quickIcon.innerHTML = '<svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>';
                 quickText.textContent = i18n[currentLang].btn_start;
                 if (overviewBadge) {
-                    overviewBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-semibold bg-rose-500/10 text-rose-400 border border-rose-500/20';
+                    overviewBadge.className = 'px-2.5 py-0.5 rounded-full text-xs font-bold bg-rose-500/15 text-rose-300 border border-rose-500/30';
                     overviewBadge.textContent = i18n[currentLang].status_stopped;
                 }
             }
