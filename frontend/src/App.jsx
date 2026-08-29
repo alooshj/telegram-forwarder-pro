@@ -6,11 +6,15 @@ import { ProtectedRoute } from './components/ProtectedRoute';
 import { SignInPage } from './components/SignInPage';
 import { SignUpPage } from './components/SignUpPage';
 
-// Read Clerk Publishable Key from environment variables
-const CLERK_PUBLISHABLE_KEY =
-  import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ||
-  import.meta.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ||
+// Read Clerk Publishable Key from environment variables with fallback
+const clerkPubKey =
+  (typeof process !== 'undefined' && process.env && (process.env.REACT_APP_CLERK_PUBLISHABLE_KEY || process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)) ||
+  (typeof import.meta !== 'undefined' && import.meta.env && (import.meta.env.VITE_CLERK_PUBLISHABLE_KEY || import.meta.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY)) ||
   'pk_test_b3JpZW50ZWQtbXVsbGV0LTU2ODEuY2xlcmsuYWNjb3VudHMuZGV2JA';
+
+if (!clerkPubKey) {
+  throw new Error("Missing Clerk Publishable Key");
+}
 
 function DashboardPlaceholder() {
   return (
@@ -30,21 +34,8 @@ function DashboardPlaceholder() {
 }
 
 export function App() {
-  if (!CLERK_PUBLISHABLE_KEY) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white flex items-center justify-center p-6">
-        <div className="max-w-md bg-slate-900 border border-slate-800 p-6 rounded-2xl text-center space-y-3">
-          <h2 className="text-lg font-bold text-rose-400">Missing Clerk Publishable Key</h2>
-          <p className="text-xs text-slate-400">
-            Please define <code>VITE_CLERK_PUBLISHABLE_KEY</code> in your <code>.env</code> file to enable Clerk Auth.
-          </p>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <ClerkProvider publishableKey={CLERK_PUBLISHABLE_KEY} appearance={teletipsClerkAppearance}>
+    <ClerkProvider publishableKey={clerkPubKey} appearance={teletipsClerkAppearance}>
       <BrowserRouter>
         <Routes>
           <Route path="/sign-in/*" element={<SignInPage />} />
