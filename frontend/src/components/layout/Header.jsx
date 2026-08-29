@@ -20,11 +20,11 @@ export const Header = ({
   const isRTL = currentLang === 'ar';
 
   return (
-    <header className="bg-surface-900/90 backdrop-blur-xl border-b border-glass-border sticky top-0 z-40 h-16 flex items-center px-4 sm:px-6 lg:px-8 transition-colors duration-200">
+    <header className="bg-surface-900/90 backdrop-blur-xl border-b border-glass-border sticky top-0 z-40 h-16 flex items-center px-4 sm:px-6 lg:px-8 transition-colors duration-200" dir="ltr">
       <div className="w-full flex items-center justify-between">
         
-        {/* Right Area (in RTL): Brand Logo & Sidebar Toggle */}
-        <div className="flex items-center space-x-3 sm:space-x-4 rtl:space-x-reverse">
+        {/* Left Area (Fixed Left): Brand Logo & Sidebar Toggle */}
+        <div className="flex items-center space-x-3 sm:space-x-4">
           {/* Sidebar Mobile/Desktop Toggle */}
           <button
             onClick={onToggleSidebar}
@@ -52,7 +52,7 @@ export const Header = ({
           {/* Subscriptions / VIP Quick Pill */}
           <button
             onClick={() => onTabChange('pricing')}
-            className="hidden sm:flex items-center space-x-1.5 rtl:space-x-reverse px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600/80 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 border border-indigo-400/30 transition-all hover:scale-[1.02] active:scale-95"
+            className="hidden sm:flex items-center space-x-1.5 px-3 py-1.5 rounded-xl text-xs font-bold bg-indigo-600/80 hover:bg-indigo-500 text-white shadow-md shadow-indigo-600/20 border border-indigo-400/30 transition-all hover:scale-[1.02] active:scale-95"
           >
             <span>👑</span>
             <span>{currentLang === 'ar' ? 'الخطط والاشتراكات' : 'Plans & VIP'}</span>
@@ -60,11 +60,11 @@ export const Header = ({
           </button>
         </div>
 
-        {/* Left Area (in RTL): Live Status Indicators & User Profile */}
-        <div className="flex items-center space-x-2.5 sm:space-x-3.5 rtl:space-x-reverse">
+        {/* Right Area (Fixed Right): Live Status Indicators & User Profile */}
+        <div className="flex items-center space-x-2.5 sm:space-x-3.5">
           
           {/* Live Engine Status Indicator */}
-          <div className="flex items-center space-x-2 rtl:space-x-reverse bg-surface-850/80 border border-glass-border px-3 py-1.5 rounded-xl text-xs font-medium text-slate-200">
+          <div className="flex items-center space-x-2 bg-surface-850/80 border border-glass-border px-3 py-1.5 rounded-xl text-xs font-medium text-slate-200">
             <span 
               className={`w-2 h-2 rounded-full ${
                 isEngineRunning ? 'bg-accent-emerald animate-radar-ping' : 'bg-accent-danger'
@@ -81,7 +81,7 @@ export const Header = ({
           {/* Connected Sessions Pill */}
           <div 
             onClick={() => onTabChange('sessions')}
-            className="hidden md:flex items-center space-x-1.5 rtl:space-x-reverse bg-cyan-950/40 border border-accent-cyan/30 text-cyan-300 px-2.5 py-1.5 rounded-xl text-xs font-mono cursor-pointer hover:border-accent-cyan/60 transition"
+            className="hidden md:flex items-center space-x-1.5 bg-cyan-950/40 border border-accent-cyan/30 text-cyan-300 px-2.5 py-1.5 rounded-xl text-xs font-mono cursor-pointer hover:border-accent-cyan/60 transition"
             title="Active Sessions"
           >
             <svg className="w-3.5 h-3.5 text-accent-cyan" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -104,7 +104,7 @@ export const Header = ({
             {isSignedIn ? (
               <button
                 onClick={() => setDropdownOpen(!dropdownOpen)}
-                className="flex items-center space-x-2 rtl:space-x-reverse p-1 pl-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-glass-border transition active:scale-95"
+                className="flex items-center space-x-2 p-1 pl-2.5 rounded-xl bg-surface-850 hover:bg-surface-800 border border-glass-border transition active:scale-95"
               >
                 <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-accent-indigo to-accent-cyan flex items-center justify-center text-white font-bold text-xs uppercase shadow-sm">
                   {user?.firstName ? user.firstName[0] : (user?.primaryEmailAddress?.emailAddress?.[0] || 'U')}
@@ -125,10 +125,10 @@ export const Header = ({
               </button>
             )}
 
-            {/* User Dropdown Menu */}
+            {/* User Dropdown Menu (Fixed Right Aligned) */}
             {dropdownOpen && isSignedIn && (
               <div 
-                className="absolute left-0 rtl:left-auto rtl:right-0 mt-2 w-56 rounded-2xl bg-surface-900 border border-glass-border shadow-2xl p-2 z-50 text-xs space-y-1 animate-fade-in"
+                className="absolute right-0 mt-2 w-56 rounded-2xl bg-surface-900 border border-glass-border shadow-2xl p-2 z-50 text-xs space-y-1 animate-fade-in"
                 onMouseLeave={() => setDropdownOpen(false)}
               >
                 <div className="p-2 border-b border-glass-border/60">
