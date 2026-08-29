@@ -159,7 +159,7 @@
                     <div class="relative" id="user-dropdown-container">
                         <button id="header-user-btn" onclick="handleUserHeaderClick(event)" class="flex items-center space-x-2 rtl:space-x-reverse bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/80 px-2.5 sm:px-3 py-1.5 rounded-xl text-xs font-medium text-slate-200 transition shadow-sm">
                             <div class="w-5 h-5 rounded-lg bg-gradient-to-tr from-brand-600 to-cyan-500 text-white flex items-center justify-center font-bold text-[10px] flex-shrink-0" id="header-user-avatar">U</div>
-                            <span id="header-user-label" class="max-w-[100px] sm:max-w-[120px] truncate" data-i18n="btn_login_account">حسابي</span>
+                            <span id="header-user-label" class="max-w-[100px] sm:max-w-[120px] truncate">حسابي / دخول</span>
                             <svg class="w-3.5 h-3.5 text-slate-400 flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
                         </button>
 
@@ -1921,8 +1921,7 @@
                 const localToken = localStorage.getItem('teletips_auth_token');
                 if (localToken) {
                     headers['Authorization'] = `Bearer ${localToken}`;
-                }
-                if (window.Clerk && window.Clerk.session) {
+                } else if (window.Clerk && window.Clerk.session) {
                     try {
                         const clerkToken = await window.Clerk.session.getToken();
                         if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`;
