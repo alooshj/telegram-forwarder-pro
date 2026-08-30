@@ -182,32 +182,32 @@ export const SplitScreenAuth = ({ mode = 'signin' }) => {
           {/* Feature Grid Chips with Transparent Glass Windows */}
           <div className="grid grid-cols-2 gap-4 pt-2">
             <div className="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-[#00e5ff]/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(0,229,255,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
-              <div className="w-9 h-9 rounded-xl bg-[#00e5ff]/20 text-[#00e5ff] border border-[#00e5ff]/40 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(0,229,255,0.3)]">
-                ⚡
+              <div className="w-9 h-9 rounded-xl bg-[#00e5ff]/20 text-[#00e5ff] border border-[#00e5ff]/40 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(0,229,255,0.3)]">
+                <svg className="w-5 h-5 text-[#00e5ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
               </div>
               <h4 className="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide">{t.feat1Title}</h4>
               <p className="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed">{t.feat1Desc}</p>
             </div>
 
-            <div className="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-[#10b981]/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(16,185,129,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
-              <div className="w-9 h-9 rounded-xl bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
-                🛡️
+            <div className="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-[#10b981]/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(168,85,247,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
+              <div className="w-9 h-9 rounded-xl bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                <svg className="w-5 h-5 text-[#10b981]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
               </div>
               <h4 className="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide">{t.feat2Title}</h4>
               <p className="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed">{t.feat2Desc}</p>
             </div>
 
             <div className="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-purple-400/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(168,85,247,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
-              <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
-                ⚙️
+              <div className="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                <svg className="w-5 h-5 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
               </div>
               <h4 className="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide">{t.feat3Title}</h4>
               <p className="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed">{t.feat3Desc}</p>
             </div>
 
             <div className="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-amber-400/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(251,191,36,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
-              <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(251,191,36,0.3)]">
-                🔒
+              <div className="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(251,191,36,0.3)]">
+                <svg className="w-5 h-5 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
               </div>
               <h4 className="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide">{t.feat4Title}</h4>
               <p className="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed">{t.feat4Desc}</p>

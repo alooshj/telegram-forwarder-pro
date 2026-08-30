@@ -104,16 +104,24 @@
         }
     </script>
     <style>
-        /* ==================== WORLD-CLASS UI ANIMATIONS & EFFECTS ==================== */
+        /* ==================== ULTRA-FLUID HARDWARE-ACCELERATED UI (LINEAR / VERCEL GRADE) ==================== */
         
-        /* 1. Floating Cosmic Aurora Background */
-        body {
-            font-family: 'Readex Pro', 'Inter', sans-serif;
-            background-color: #0F172A;
-            position: relative;
-            overflow-x: hidden;
+        html {
+            scroll-behavior: smooth;
+            -webkit-text-size-adjust: 100%;
         }
 
+        body {
+            font-family: 'Readex Pro', 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: #0B1120;
+            position: relative;
+            overflow-x: hidden;
+            text-rendering: optimizeLegibility;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* 1. Hardware-Accelerated Zero-Lag Background Mesh */
         .aurora-bg {
             position: fixed;
             top: 0;
@@ -123,206 +131,174 @@
             pointer-events: none;
             z-index: 0;
             overflow: hidden;
-        }
-        .aurora-orb-1 {
-            position: absolute;
-            top: -10%;
-            left: 15%;
-            width: 50vw;
-            height: 50vw;
-            background: radial-gradient(circle, rgba(6, 182, 212, 0.12) 0%, rgba(6, 182, 212, 0) 70%);
-            border-radius: 50%;
-            filter: blur(50px);
-            animation: auroraFloat1 18s ease-in-out infinite alternate;
-        }
-        .aurora-orb-2 {
-            position: absolute;
-            top: 40%;
-            right: -10%;
-            width: 45vw;
-            height: 45vw;
-            background: radial-gradient(circle, rgba(99, 102, 241, 0.11) 0%, rgba(99, 102, 241, 0) 70%);
-            border-radius: 50%;
-            filter: blur(60px);
-            animation: auroraFloat2 22s ease-in-out infinite alternate;
-        }
-        .aurora-orb-3 {
-            position: absolute;
-            bottom: -15%;
-            left: 30%;
-            width: 40vw;
-            height: 40vw;
-            background: radial-gradient(circle, rgba(16, 185, 129, 0.08) 0%, rgba(16, 185, 129, 0) 70%);
-            border-radius: 50%;
-            filter: blur(55px);
-            animation: auroraFloat1 25s ease-in-out infinite alternate-reverse;
+            background: 
+                radial-gradient(800px circle at 50% -10%, rgba(6, 182, 212, 0.12), transparent 70%),
+                radial-gradient(600px circle at 90% 20%, rgba(99, 102, 241, 0.08), transparent 60%),
+                radial-gradient(700px circle at 10% 80%, rgba(16, 185, 129, 0.06), transparent 60%);
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
         }
 
-        @keyframes auroraFloat1 {
-            0% { transform: translate(0px, 0px) scale(1); opacity: 0.6; }
-            50% { transform: translate(60px, -40px) scale(1.18); opacity: 0.85; }
-            100% { transform: translate(-30px, 30px) scale(0.95); opacity: 0.6; }
-        }
-        @keyframes auroraFloat2 {
-            0% { transform: translate(0px, 0px) scale(1); opacity: 0.5; }
-            50% { transform: translate(-50px, 35px) scale(1.22); opacity: 0.8; }
-            100% { transform: translate(40px, -20px) scale(0.92); opacity: 0.5; }
-        }
-
-        /* 2. Glassmorphism Elevation & Tactile Physics */
+        /* 2. Ultra-Smooth High-Performance Glass Cards */
         .glass-card {
-            background: rgba(30, 41, 59, 0.72);
-            backdrop-filter: blur(14px);
-            -webkit-backdrop-filter: blur(14px);
+            background: rgba(23, 32, 51, 0.78);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5);
-            transition: transform 0.28s cubic-bezier(0.16, 1, 0.3, 1), 
-                        box-shadow 0.28s cubic-bezier(0.16, 1, 0.3, 1), 
-                        border-color 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.35);
+            transition: transform 0.18s cubic-bezier(0.16, 1, 0.3, 1), 
+                        border-color 0.18s cubic-bezier(0.16, 1, 0.3, 1),
+                        box-shadow 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
         }
         .glass-card:hover {
-            transform: translateY(-2.5px);
-            border-color: rgba(6, 182, 212, 0.4);
-            box-shadow: 0 18px 38px -10px rgba(6, 182, 212, 0.2), 0 0 18px -2px rgba(6, 182, 212, 0.12);
+            transform: translateY(-2px) translate3d(0, 0, 0);
+            border-color: rgba(6, 182, 212, 0.35);
+            box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.5), 0 0 16px -2px rgba(6, 182, 212, 0.15);
         }
 
-        /* 3. Fluid Tab Buttons with Spring Pill */
+        /* 3. Instant Snappy Tab Panes with Layout Containment */
+        .tab-pane {
+            contain: content;
+        }
+
         .tab-btn {
-            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
             position: relative;
+            transform: translate3d(0, 0, 0);
+            will-change: transform;
         }
         .tab-btn:hover:not(.active) {
-            background-color: rgba(30, 41, 59, 0.7);
+            background-color: rgba(30, 41, 59, 0.8);
             color: #ffffff;
-            transform: translateY(-1.5px);
+            transform: translateY(-1px) translate3d(0, 0, 0);
         }
         .tab-btn.active {
-            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 50%, #4338ca 100%);
+            background: linear-gradient(135deg, #4f46e5 0%, #6366f1 100%);
             color: #ffffff;
             font-weight: 700;
-            box-shadow: 0 4px 20px -2px rgba(99, 102, 241, 0.55), inset 0 1px 0 rgba(255, 255, 255, 0.3);
-            transform: translateY(-1px) scale(1.01);
+            box-shadow: 0 4px 16px -2px rgba(99, 102, 241, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            transform: translateY(-1px) translate3d(0, 0, 0);
         }
         .tab-btn:active {
-            transform: scale(0.96);
+            transform: scale(0.97) translate3d(0, 0, 0);
         }
 
-        /* 4. Staggered Cascading Page Entry Animation */
+        /* 4. Fluid 60fps Micro-Animations */
         .animate-fade-in { 
-            animation: tabEnter 0.32s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+            animation: tabFastEnter 0.16s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+            will-change: opacity, transform;
         }
-        @keyframes tabEnter {
+        @keyframes tabFastEnter {
             from {
                 opacity: 0;
-                transform: translateY(12px) scale(0.99);
+                transform: translateY(6px) translate3d(0, 0, 0);
             }
             to {
                 opacity: 1;
-                transform: translateY(0) scale(1);
+                transform: translateY(0) translate3d(0, 0, 0);
             }
         }
 
-        .stagger-1 { animation: cardSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.04s backwards; }
-        .stagger-2 { animation: cardSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.08s backwards; }
-        .stagger-3 { animation: cardSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.12s backwards; }
-        .stagger-4 { animation: cardSlideUp 0.35s cubic-bezier(0.16, 1, 0.3, 1) 0.16s backwards; }
+        .stagger-1 { animation: cardFastSlide 0.18s cubic-bezier(0.16, 1, 0.3, 1) 0.02s backwards; }
+        .stagger-2 { animation: cardFastSlide 0.18s cubic-bezier(0.16, 1, 0.3, 1) 0.04s backwards; }
+        .stagger-3 { animation: cardFastSlide 0.18s cubic-bezier(0.16, 1, 0.3, 1) 0.06s backwards; }
+        .stagger-4 { animation: cardFastSlide 0.18s cubic-bezier(0.16, 1, 0.3, 1) 0.08s backwards; }
 
-        @keyframes cardSlideUp {
-            from { opacity: 0; transform: translateY(16px); }
-            to { opacity: 1; transform: translateY(0); }
+        @keyframes cardFastSlide {
+            from { opacity: 0; transform: translateY(8px) translate3d(0, 0, 0); }
+            to { opacity: 1; transform: translateY(0) translate3d(0, 0, 0); }
         }
 
-        /* 5. Live Radar Pulse with Concentric Ring Waves */
+        /* 5. Modern Pulse Indicator */
         @keyframes radarWave {
-            0% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.8), 0 0 0 0 rgba(6, 182, 212, 0.4); }
-            50% { transform: scale(1.06); box-shadow: 0 0 0 6px rgba(16, 185, 129, 0), 0 0 0 10px rgba(6, 182, 212, 0); }
-            100% { transform: scale(0.92); box-shadow: 0 0 0 0 rgba(16, 185, 129, 0), 0 0 0 0 rgba(6, 182, 212, 0); }
+            0% { transform: scale(0.95); opacity: 1; }
+            50% { transform: scale(1.05); opacity: 0.85; }
+            100% { transform: scale(0.95); opacity: 1; }
         }
         .pulse-live {
-            animation: radarWave 2.2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+            animation: radarWave 2s ease-in-out infinite;
+            will-change: transform;
         }
 
-        /* 6. Button Shimmer Sweep Effect */
-        .btn-shimmer {
-            position: relative;
-            overflow: hidden;
+        /* 6. Button Tactile Physics */
+        button, a {
+            -webkit-tap-highlight-color: transparent;
         }
-        .btn-shimmer::after {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: linear-gradient(60deg, transparent 35%, rgba(255,255,255,0.22) 50%, transparent 65%);
-            transform: translateX(-100%);
-            transition: transform 0.65s ease;
+        .btn-interactive {
+            transition: transform 0.12s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.12s ease;
+            will-change: transform;
         }
-        .btn-shimmer:hover::after {
-            transform: translateX(100%);
+        .btn-interactive:active {
+            transform: scale(0.97) translate3d(0, 0, 0);
         }
 
         /* 7. Modal Spring In Animation */
         .modal-spring-in {
-            animation: modalSpring 0.32s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+            animation: modalFastIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            will-change: transform, opacity;
         }
-        @keyframes modalSpring {
-            from { opacity: 0; transform: scale(0.92) translateY(10px); }
-            to { opacity: 1; transform: scale(1) translateY(0); }
+        @keyframes modalFastIn {
+            from { opacity: 0; transform: scale(0.96) translateY(6px) translate3d(0, 0, 0); }
+            to { opacity: 1; transform: scale(1) translateY(0) translate3d(0, 0, 0); }
         }
 
-        /* 8. Log Inflow Stream Glow Effect */
+        /* 8. Log Inflow Stream */
         @keyframes logInflow {
-            from { opacity: 0; transform: translateX(-6px); background-color: rgba(6, 182, 212, 0.15); }
-            to { opacity: 1; transform: translateX(0); background-color: transparent; }
+            from { opacity: 0; transform: translateY(-4px) translate3d(0, 0, 0); }
+            to { opacity: 1; transform: translateY(0) translate3d(0, 0, 0); }
         }
         .log-enter {
-            animation: logInflow 0.25s ease-out forwards;
+            animation: logInflow 0.15s ease-out forwards;
+            will-change: opacity, transform;
         }
 
         /* 9. Smooth Scrollbars */
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
-        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.6); }
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.8); border-radius: 9999px; }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(6, 182, 212, 0.8); }
+        .custom-scrollbar::-webkit-scrollbar { width: 5px; height: 5px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(15, 23, 42, 0.4); }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(51, 65, 85, 0.6); border-radius: 9999px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(6, 182, 212, 0.7); }
 
-        /* Responsive Breakpoints & Resolution Tuning */
+        /* Responsive Breakpoints */
         @media (max-width: 640px) {
             .tab-btn { min-width: max-content; padding-left: 0.85rem; padding-right: 0.85rem; font-size: 0.8rem; }
         }
     
-        /* ==================== ADVANCED NOTIFICATION STYLES ==================== */
+        /* ==================== ADVANCED NOTIFICATION TOASTS ==================== */
         .toast-card {
             pointer-events: auto;
-            background: rgba(15, 23, 42, 0.92);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
+            background: rgba(15, 23, 42, 0.95);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
             border: 1px solid rgba(255, 255, 255, 0.1);
-            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.6), 0 0 15px -3px rgba(6, 182, 212, 0.2);
-            border-radius: 1rem;
-            padding: 0.85rem 1rem;
+            box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 12px -2px rgba(6, 182, 212, 0.18);
+            border-radius: 0.875rem;
+            padding: 0.75rem 0.9rem;
             position: relative;
             overflow: hidden;
-            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-            animation: toastSlideIn 0.35s cubic-bezier(0.34, 1.4, 0.64, 1) forwards;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: toastSlideIn 0.22s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            will-change: transform, opacity;
+            transform: translate3d(0, 0, 0);
         }
         .toast-card:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 20px 40px -5px rgba(0, 0, 0, 0.7), 0 0 20px -2px rgba(6, 182, 212, 0.35);
+            transform: translateY(-1.5px) translate3d(0, 0, 0);
+            box-shadow: 0 15px 35px -5px rgba(0, 0, 0, 0.6), 0 0 16px -2px rgba(6, 182, 212, 0.25);
         }
         .toast-card.toast-exit {
-            animation: toastSlideOut 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            animation: toastSlideOut 0.18s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
         @keyframes toastSlideIn {
-            from { opacity: 0; transform: translateX(40px) scale(0.92); }
-            to { opacity: 1; transform: translateX(0) scale(1); }
+            from { opacity: 0; transform: translateX(25px) translate3d(0, 0, 0); }
+            to { opacity: 1; transform: translateX(0) translate3d(0, 0, 0); }
         }
         @keyframes toastSlideOut {
-            from { opacity: 1; transform: translateX(0) scale(1); }
-            to { opacity: 0; transform: translateX(40px) scale(0.9); }
+            from { opacity: 1; transform: translateX(0) translate3d(0, 0, 0); }
+            to { opacity: 0; transform: translateX(25px) translate3d(0, 0, 0); }
         }
 
         .toast-progress {
@@ -330,7 +306,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            height: 3px;
+            height: 2.5px;
             background: linear-gradient(90deg, #06b6d4, #10b981);
             transform-origin: left;
             animation: toastTimer linear forwards;
@@ -398,22 +374,30 @@
                     <!-- Feature Highlights Chips with Transparent Glass Windows -->
                     <div class="grid grid-cols-2 gap-4 pt-1">
                         <div class="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-[#00e5ff]/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(0,229,255,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
-                            <div class="w-9 h-9 rounded-xl bg-[#00e5ff]/20 text-[#00e5ff] border border-[#00e5ff]/40 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(0,229,255,0.3)]">⚡</div>
+                            <div class="w-9 h-9 rounded-xl bg-[#00e5ff]/20 text-[#00e5ff] border border-[#00e5ff]/40 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(0,229,255,0.3)]">
+                                <svg class="w-5 h-5 text-[#00e5ff]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+                            </div>
                             <h4 class="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide" data-i18n="gate_feat_speed_title">توجيه فوري &lt; 1 ثانية</h4>
                             <p class="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed" data-i18n="gate_feat_speed_desc">توجيه فوري للمنشورات والألبومات بدون أي تأخير.</p>
                         </div>
                         <div class="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-[#10b981]/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(16,185,129,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
-                            <div class="w-9 h-9 rounded-xl bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(16,185,129,0.3)]">🛡️</div>
+                            <div class="w-9 h-9 rounded-xl bg-[#10b981]/20 text-[#10b981] border border-[#10b981]/40 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(16,185,129,0.3)]">
+                                <svg class="w-5 h-5 text-[#10b981]" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+                            </div>
                             <h4 class="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide" data-i18n="gate_feat_multi_title">عزل سحابي متعدد</h4>
                             <p class="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed" data-i18n="gate_feat_multi_desc">عزل مستقل لبيانات وسجلات وقواعد كل مشترك.</p>
                         </div>
                         <div class="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-purple-400/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(168,85,247,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
-                            <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(168,85,247,0.3)]">⚙️</div>
+                            <div class="w-9 h-9 rounded-xl bg-purple-500/20 text-purple-300 border border-purple-500/40 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(168,85,247,0.3)]">
+                                <svg class="w-5 h-5 text-purple-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="21" x2="4" y2="14"/><line x1="4" y1="10" x2="4" y2="3"/><line x1="12" y1="21" x2="12" y2="12"/><line x1="12" y1="8" x2="12" y2="3"/><line x1="20" y1="21" x2="20" y2="16"/><line x1="20" y1="12" x2="20" y2="3"/><line x1="1" y1="14" x2="7" y2="14"/><line x1="9" y1="8" x2="15" y2="8"/><line x1="17" y1="16" x2="23" y2="16"/></svg>
+                            </div>
                             <h4 class="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide" data-i18n="gate_feat_filter_title">استبدال وفلترة النصوص</h4>
                             <p class="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed" data-i18n="gate_feat_filter_desc">تنظيف الروابط وتعديل النصوص والمعرفات بذكاء.</p>
                         </div>
                         <div class="p-4 sm:p-5 bg-white/[0.04] hover:bg-white/[0.08] backdrop-blur-2xl rounded-2xl border border-white/20 hover:border-amber-400/60 shadow-[0_8px_32px_rgba(0,0,0,0.37),inset_0_1px_0_rgba(255,255,255,0.15)] hover:shadow-[0_0_25px_rgba(251,191,36,0.25),inset_0_1px_0_rgba(255,255,255,0.25)] transition-all duration-300 group">
-                            <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center justify-center text-lg mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(251,191,36,0.3)]">🔒</div>
+                            <div class="w-9 h-9 rounded-xl bg-amber-500/20 text-amber-300 border border-amber-500/40 flex items-center justify-center mb-2.5 group-hover:scale-110 transition duration-200 shadow-[0_0_15px_rgba(251,191,36,0.3)]">
+                                <svg class="w-5 h-5 text-amber-300" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </div>
                             <h4 class="text-xs sm:text-sm font-extrabold text-white mb-1 tracking-wide" data-i18n="gate_feat_crypto_title">تشفير AES-256</h4>
                             <p class="text-[11px] sm:text-xs text-slate-200/90 leading-relaxed" data-i18n="gate_feat_crypto_desc">حماية وتشفير الجلسات بأعلى المعايير الأمنية.</p>
                         </div>
@@ -3186,20 +3170,26 @@
         }
 
 
-                // ==================== TAB NAVIGATION ====================
+        // ==================== TAB NAVIGATION ====================
         let currentTab = 'overview';
         function switchTab(tabId) {
+            if (currentTab === tabId && document.getElementById(`tab-content-${tabId}`) && !document.getElementById(`tab-content-${tabId}`).classList.contains('hidden')) {
+                return;
+            }
             currentTab = tabId;
-            document.querySelectorAll('.tab-pane').forEach(p => p.classList.add('hidden'));
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            const panes = document.querySelectorAll('.tab-pane');
+            for (let i = 0; i < panes.length; i++) {
+                panes[i].classList.add('hidden');
+            }
+            const btns = document.querySelectorAll('.tab-btn');
+            for (let i = 0; i < btns.length; i++) {
+                btns[i].classList.remove('active');
+            }
 
             const targetPane = document.getElementById(`tab-content-${tabId}`);
             const targetBtn = document.getElementById(`tab-${tabId}-btn`);
             if (targetPane) {
                 targetPane.classList.remove('hidden');
-                targetPane.classList.remove('animate-fade-in');
-                void targetPane.offsetWidth; // Trigger reflow for crisp animation replay
-                targetPane.classList.add('animate-fade-in');
             }
             if (targetBtn) targetBtn.classList.add('active');
 
@@ -3286,7 +3276,9 @@
 
         function safeSetText(id, val) {
             const el = document.getElementById(id);
-            if (el) el.textContent = (val !== undefined && val !== null) ? val : '';
+            if (!el) return;
+            const strVal = (val !== undefined && val !== null) ? String(val) : '';
+            if (el.textContent !== strVal) el.textContent = strVal;
         }
 
         // ==================== ENGINE CONTROLS ====================
@@ -4000,51 +3992,62 @@
             renderLogs();
         }
 
+        let lastRenderedLogsKey = '';
         function renderLogs() {
             const container = document.getElementById('log-container');
+            if (!container) return;
             let filtered = allLogs;
             if (currentLogLevel !== 'ALL') {
                 filtered = allLogs.filter(l => (l.level || 'INFO').toUpperCase() === currentLogLevel);
             }
 
             if (filtered.length === 0) {
-                container.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">${currentLang === 'ar' ? 'لا توجد سجلات تطابق الفلتر المحدد.' : 'No logs matching current filter.'}</div>`;
+                if (lastRenderedLogsKey !== 'EMPTY') {
+                    container.innerHTML = `<div class="p-8 text-center text-slate-500 text-xs">${currentLang === 'ar' ? 'لا توجد سجلات تطابق الفلتر المحدد.' : 'No logs matching current filter.'}</div>`;
+                    lastRenderedLogsKey = 'EMPTY';
+                }
                 return;
             }
 
-            container.innerHTML = filtered.map(l => {
-                let ts = l.timestamp ? l.timestamp.replace('T', ' ').split('.')[0] : '';
-                const lvl = (l.level || 'INFO').toUpperCase();
-                let badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">INFO</span>';
-                let rowBg = 'hover:bg-slate-900/60';
-                
-                if (lvl === 'ERROR') {
-                    badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">ERROR</span>';
-                    rowBg = 'bg-rose-950/10 hover:bg-rose-950/20';
-                } else if (lvl === 'WARNING' || lvl === 'WARN') {
-                    badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">WARN</span>';
-                    rowBg = 'bg-amber-950/10 hover:bg-amber-950/20';
-                }
+            const cacheKey = currentLogLevel + '_' + logsScope + '_' + filtered.length + '_' + (filtered[0]?.timestamp || '') + '_' + (filtered[0]?.message || '');
+            if (cacheKey === lastRenderedLogsKey && container.children.length > 0) return;
+            lastRenderedLogsKey = cacheKey;
 
-                let userBadge = '';
-                if (logsScope === 'all' && l.user_id) {
-                    const isSys = l.user_id === 'system';
-                    userBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono ${isSys ? 'bg-slate-800 text-slate-400' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'}">${isSys ? 'SYS' : 'USR:' + escapeHtml(l.user_id.substring(0, 6))}</span>`;
-                }
+            requestAnimationFrame(() => {
+                container.innerHTML = filtered.map(l => {
+                    let ts = l.timestamp ? l.timestamp.replace('T', ' ').split('.')[0] : '';
+                    const lvl = (l.level || 'INFO').toUpperCase();
+                    let badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">INFO</span>';
+                    let rowBg = 'hover:bg-slate-900/60';
+                    
+                    if (lvl === 'ERROR') {
+                        badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-400 border border-rose-500/20">ERROR</span>';
+                        rowBg = 'bg-rose-950/10 hover:bg-rose-950/20';
+                    } else if (lvl === 'WARNING' || lvl === 'WARN') {
+                        badge = '<span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">WARN</span>';
+                        rowBg = 'bg-amber-950/10 hover:bg-amber-950/20';
+                    }
 
-                // Clean up message text
-                let msg = (l.message || '')
-                    .replace(/\(caused by CheckChatInviteRequest\)/g, '')
-                    .replace(/\(caused by [a-zA-Z0-9_]+\)/g, '')
-                    .trim();
+                    let userBadge = '';
+                    if (logsScope === 'all' && l.user_id) {
+                        const isSys = l.user_id === 'system';
+                        userBadge = `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono ${isSys ? 'bg-slate-800 text-slate-400' : 'bg-purple-500/20 text-purple-300 border border-purple-500/30'}">${isSys ? 'SYS' : 'USR:' + escapeHtml(l.user_id.substring(0, 6))}</span>`;
+                    }
 
-                return `<div class="py-2 px-2.5 rounded-lg mb-1 border-b border-slate-900/80 flex items-start space-x-2.5 rtl:space-x-reverse ${rowBg} transition">
-                    <span class="text-slate-500 font-mono text-[11px] whitespace-nowrap pt-0.5">${escapeHtml(ts)}</span>
-                    <span class="whitespace-nowrap">${badge}</span>
-                    ${userBadge ? `<span class="whitespace-nowrap">${userBadge}</span>` : ''}
-                    <span class="text-slate-200 text-xs font-mono break-all leading-relaxed">${escapeHtml(msg)}</span>
-                </div>`;
-            }).join('');
+                    // Clean up message text
+                    let msg = (l.message || '')
+                        .replace(/\(caused by CheckChatInviteRequest\)/g, '')
+                        .replace(/\(caused by [a-zA-Z0-9_]+\)/g, '')
+                        .trim();
+
+                    return `<div class="py-2 px-2.5 rounded-lg mb-1 border-b border-slate-900/80 flex items-start space-x-2.5 rtl:space-x-reverse ${rowBg} transition">
+                        <span class="text-slate-500 font-mono text-[11px] whitespace-nowrap pt-0.5">${escapeHtml(ts)}</span>
+                        <span class="whitespace-nowrap">${badge}</span>
+                        ${userBadge ? `<span class="whitespace-nowrap">${userBadge}</span>` : ''}
+                        <span class="text-slate-200 text-xs font-mono break-all leading-relaxed">${escapeHtml(msg)}</span>
+                    </div>`;
+                }).join('');
+            });
         }
 
         function toggleLogsAutoPoll() {
