@@ -1000,38 +1000,55 @@ def api_auth_clerk_sync():
     try:
         db = get_db()
         if not db:
+            logger.warning("clerk-sync: Database unavailable")
             return jsonify({"success": False, "error": "Database unavailable"}), 503
 
         from src.web.auth import verify_clerk_token_or_payload, get_current_user_from_request
+
+        auth_header = request.headers.get("Authorization", "")
+        has_bearer = auth_header.startswith("Bearer ")
+        has_cookie = bool(request.cookies.get("auth_token"))
+        logger.debug(f"clerk-sync: auth_header={'Bearer***' if has_bearer else 'none'}, cookie={'yes' if has_cookie else 'no'}")
 
         # 1. First attempt to extract user authenticated by Bearer / Cookie JWT
         user = None
         try:
             user = get_current_user_from_request(db)
+            if user:
+                logger.debug(f"clerk-sync: Authenticated via header/cookie as user={user.get('email', user.get('_id'))}")
         except Exception as e:
-            logger.debug(f"Header/Cookie auth extraction exception: {e}")
+            logger.debug(f"clerk-sync: Header/Cookie auth extraction exception: {e}")
 
         # 2. If not already resolved, extract JWT token from request body
         if not user:
             data = request.get_json(silent=True) or {}
             raw_token = data.get("token") or ""
+            clerk_id_from_body = data.get("clerk_id", "")
+            email_from_body = data.get("email", "")
+            logger.debug(f"clerk-sync: Body token present={bool(raw_token)}, len={len(str(raw_token))}, clerk_id={clerk_id_from_body}, email={email_from_body}")
             if raw_token and isinstance(raw_token, str) and len(raw_token) < 10000:
                 try:
                     user = verify_clerk_token_or_payload(raw_token, db)
+                    if user:
+                        logger.debug(f"clerk-sync: Clerk JWT verified as user={user.get('email', user.get('_id'))}")
+                    else:
+                        logger.warning(f"clerk-sync: Clerk JWT verification returned None (token len={len(raw_token)})")
                 except Exception as e:
-                    logger.debug(f"Body token verification exception: {e}")
+                    logger.warning(f"clerk-sync: Body token verification exception: {e}")
 
         if not user:
+            logger.warning("clerk-sync: 401 — No valid Clerk session found after all auth attempts")
             return jsonify({"success": False, "error": "Unauthorized", "detail": "No valid Clerk session found"}), 401
 
         user_id = str(user["_id"])
         try:
-            token = generate_auth_token(user_id, user["email"])
+            token = generate_auth_token(user_id, user.get("email", ""))
         except Exception as e:
-            logger.error(f"Token generation failed for user {user_id}: {e}")
+            logger.error(f"clerk-sync: Token generation failed for user {user_id}: {e}")
             return jsonify({"success": False, "error": "Token generation failed"}), 500
 
         is_super = (user.get("role") == "super_admin" or user.get("email") == "alooshpal@gmail.com")
+        logger.info(f"clerk-sync: Success — user={user.get('email', user_id)}, role={user.get('role')}, is_super={is_super}")
 
         resp = jsonify({
             "success": True,
@@ -1050,7 +1067,7 @@ def api_auth_clerk_sync():
         resp.set_cookie("auth_token", token, max_age=30 * 86400, httponly=True, samesite="Lax")
         return resp
     except Exception as e:
-        logger.error(f"Clerk sync error: {e}", exc_info=True)
+        logger.error(f"clerk-sync: Unhandled exception: {e}", exc_info=True)
         return jsonify({"success": False, "error": "Sync failed", "detail": str(e)}), 500
 
 
