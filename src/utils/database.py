@@ -632,14 +632,21 @@ class MongoDB:
                 background=True,
             )
         except Exception as e:
-            logger.debug(f"Could not create logs compound index: {e}")
+            logger.debug(f"Could not create forwarding_logs compound index: {e}")
         try:
             self.db["forwarding_rules"].create_index(
                 [("user_id", 1), ("active", 1)],
                 background=True,
             )
         except Exception as e:
-            logger.debug(f"Could not create rules compound index: {e}")
+            logger.debug(f"Could not create forwarding_rules compound index: {e}")
+        try:
+            self.db["logs"].create_index(
+                [("user_id", 1), ("timestamp", -1)],
+                background=True,
+            )
+        except Exception as e:
+            logger.debug(f"Could not create logs compound index: {e}")
 
     def close(self):
         self.client.close()

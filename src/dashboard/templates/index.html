@@ -3349,7 +3349,11 @@
         }
 
         // ==================== FORWARDING RULES ====================
+        let _isFetchingRules = false;
         async function loadRules() {
+            if (_isFetchingRules) return;
+            _isFetchingRules = true;
+            try {
             const res = await api('/api/rules');
             allRules = res.rules || [];
 
@@ -3504,6 +3508,11 @@
                         </div>
                     `).join('');
                 }
+            }
+            } catch (e) {
+                console.debug('loadRules error:', e);
+            } finally {
+                _isFetchingRules = false;
             }
         }
 

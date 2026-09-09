@@ -1015,7 +1015,7 @@ def api_auth_clerk_sync():
         if not user:
             data = request.get_json(silent=True) or {}
             raw_token = data.get("token") or ""
-            if raw_token:
+            if raw_token and isinstance(raw_token, str) and len(raw_token) < 10000:
                 try:
                     user = verify_clerk_token_or_payload(raw_token, db)
                 except Exception as e:
@@ -1025,18 +1025,23 @@ def api_auth_clerk_sync():
             return jsonify({"success": False, "error": "Unauthorized", "detail": "No valid Clerk session found"}), 401
 
         user_id = str(user["_id"])
-        token = generate_auth_token(user_id, user["email"])
+        try:
+            token = generate_auth_token(user_id, user["email"])
+        except Exception as e:
+            logger.error(f"Token generation failed for user {user_id}: {e}")
+            return jsonify({"success": False, "error": "Token generation failed"}), 500
+
         is_super = (user.get("role") == "super_admin" or user.get("email") == "alooshpal@gmail.com")
 
         resp = jsonify({
             "success": True,
             "user": {
                 "id": user_id,
-                "email": user["email"],
+                "email": user.get("email", ""),
                 "name": user.get("name", ""),
                 "plan": "annual" if is_super else user.get("plan", "trial"),
                 "role": "super_admin" if is_super else user.get("role", "client"),
-                "is_verified": True,
+                "is_verified": bool(user.get("is_verified", True)),
                 "telegram_connected": bool(user.get("telegram_account")),
             },
             "token": token,

@@ -379,18 +379,26 @@
         async function api(url, method = 'GET', body = null, customHeaders = {}) {
             const headers = { 'Content-Type': 'application/json', ...customHeaders };
             const token = localStorage.getItem('teletips_auth_token');
-            if (token) headers['Authorization'] = `Bearer ${token}`;
+            if (token && !headers['Authorization']) {
+                headers['Authorization'] = `Bearer ${token}`;
+            } else if (!headers['Authorization']) {
+                const clerk = clerkInstance || window.Clerk;
+                if (clerk && clerk.session && typeof clerk.session.getToken === 'function') {
+                    try {
+                        const clerkToken = await clerk.session.getToken();
+                        if (clerkToken) headers['Authorization'] = `Bearer ${clerkToken}`;
+                    } catch (e) {}
+                }
+            }
             try {
                 const res = await fetch(url, { method, headers, body: body ? JSON.stringify(body) : null });
-                const data = await res.json();
                 if (res.status === 401) {
-                    // Auth failed — stay on login page
-                    return data;
+                    return await res.json().catch(() => ({ error: 'Unauthorized' }));
                 }
-                return data;
+                return await res.json();
             } catch (err) {
                 console.error('API error:', err);
-                return { error: err.message };
+                return { error: err.message || 'Network error' };
             }
         }
 
