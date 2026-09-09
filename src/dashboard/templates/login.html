@@ -635,6 +635,13 @@
                             }
                         }
                     });
+
+                    // If user is already signed in with Clerk, redirect to dashboard immediately
+                    if (clerkInstance.user && clerkInstance.session) {
+                        await syncClerkUser(clerkInstance.user);
+                        window.location.href = '/dashboard';
+                        return clerkInstance;
+                    }
                 }
                 return clerkInstance;
             } catch (err) {
