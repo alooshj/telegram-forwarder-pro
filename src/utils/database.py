@@ -619,9 +619,27 @@ class MongoDB:
         try:
             self.client.admin.command('ping')
             logger.info("MongoDB connected successfully")
+            self._ensure_indexes()
         except Exception as e:
             logger.error(f"MongoDB connection failed: {e}")
             raise
+
+    def _ensure_indexes(self):
+        """Create compound indexes for query performance on hot paths."""
+        try:
+            self.db["forwarding_logs"].create_index(
+                [("user_id", 1), ("timestamp", -1)],
+                background=True,
+            )
+        except Exception as e:
+            logger.debug(f"Could not create logs compound index: {e}")
+        try:
+            self.db["forwarding_rules"].create_index(
+                [("user_id", 1), ("active", 1)],
+                background=True,
+            )
+        except Exception as e:
+            logger.debug(f"Could not create rules compound index: {e}")
 
     def close(self):
         self.client.close()

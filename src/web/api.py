@@ -15,6 +15,7 @@ import uuid
 import logging
 import threading
 import asyncio
+import time
 from datetime import datetime, timezone
 from flask import Flask, request, jsonify, render_template, send_from_directory
 try:
@@ -30,6 +31,37 @@ from src.utils.config import load_config, get_config, validate_environment
 from src.web.auth import require_auth
 
 logger = logging.getLogger(__name__)
+
+
+class _SimpleTTLCache:
+    """Lightweight in-memory TTL cache for reducing repeated DB aggregation on fast polls."""
+
+    def __init__(self):
+        self._store = {}
+        self._lock = threading.Lock()
+
+    def get(self, key):
+        with self._lock:
+            entry = self._store.get(key)
+            if entry and time.monotonic() < entry[1]:
+                return entry[0]
+            if entry:
+                del self._store[key]
+        return None
+
+    def set(self, key, value, ttl_seconds=5):
+        with self._lock:
+            self._store[key] = (value, time.monotonic() + ttl_seconds)
+
+    def invalidate(self, key=None):
+        with self._lock:
+            if key:
+                self._store.pop(key, None)
+            else:
+                self._store.clear()
+
+
+_api_cache = _SimpleTTLCache()
 
 # Load environment variables
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "config", ".env"))
@@ -607,6 +639,13 @@ def api_get_logs():
     is_super = user and (user.get("role") == "super_admin" or user.get("email") == "alooshpal@gmail.com")
     fetch_all = request.args.get("all", "").lower() in ("true", "1", "yes")
 
+    # Enforce strict maximum limit (capped at 50 default, 100 max to prevent 524 timeout)
+    try:
+        req_limit = int(request.args.get("limit", 50))
+        limit = max(1, min(req_limit, 100))
+    except (ValueError, TypeError):
+        limit = 50
+
     if is_super and fetch_all:
         query = {}
     elif user:
@@ -617,13 +656,15 @@ def api_get_logs():
         query = {} if user_count == 0 else {"user_id": "__unauthenticated__"}
 
     try:
-        logs = list(db.logs.find(query).sort("timestamp", -1).limit(100))
+        logs = list(db.logs.find(query).sort("timestamp", -1).limit(limit))
         for log in logs:
             log["_id"] = str(log["_id"])
             if log.get("timestamp"):
                 log["timestamp"] = log["timestamp"].isoformat() if hasattr(log["timestamp"], 'isoformat') else str(log["timestamp"])
         return jsonify({
             "logs": logs,
+            "count": len(logs),
+            "limit": limit,
             "filtered_by_user": not (is_super and fetch_all),
             "is_super_admin": bool(is_super),
         })
@@ -657,6 +698,11 @@ def api_get_stats():
         })
 
     user_id = str(user["_id"])
+    cache_key = f"stats:{user_id}"
+    cached = _api_cache.get(cache_key)
+    if cached is not None:
+        return jsonify(cached)
+
     tg_account = user.get("telegram_account") or {}
     tg_connected = bool(tg_account.get("session_string"))
     tg_username = tg_account.get("username") or tg_account.get("first_name")
@@ -681,16 +727,14 @@ def api_get_stats():
     }
     if db:
         try:
-            rules = list(db.rules.find({"user_id": user_id}))
-            stats["total_rules"] = len(rules)
-            stats["active_rules"] = sum(1 for r in rules if r.get("active", True))
-            stats["total_forwarded"] = len(list(db.processed_posts.find({"user_id": user_id}))) if hasattr(db, "processed_posts") else 0
-            if stats["total_forwarded"] == 0 and hasattr(db, "processed_posts"):
-                stats["total_forwarded"] = db.processed_posts.count_documents({})
-            stats["blacklist_count"] = len(list(db.blacklist.find({})))
-            stats["logs_count"] = len(list(db.logs.find({"user_id": user_id})))
+            stats["total_rules"] = db.rules.count_documents({"user_id": user_id})
+            stats["active_rules"] = db.rules.count_documents({"user_id": user_id, "active": True})
+            stats["total_forwarded"] = db.processed_posts.count_documents({"user_id": user_id}) if hasattr(db, "processed_posts") else 0
+            stats["blacklist_count"] = db.blacklist.count_documents({})
+            stats["logs_count"] = db.logs.count_documents({"user_id": user_id})
         except Exception as e:
             stats["error"] = str(e)
+    _api_cache.set(cache_key, stats, ttl_seconds=8)
     return jsonify(stats)
 
 
@@ -1464,13 +1508,21 @@ def api_get_user_subscription():
     if not user:
         return jsonify({"success": True, "authenticated": False, "subscription": None}), 200
 
-    info = UserManager.get_subscription_info(db, str(user["_id"]))
-    return jsonify({"success": True, "authenticated": True, "subscription": info, "user": {
-        "id": str(user["_id"]),
+    user_id = str(user["_id"])
+    cache_key = f"sub:{user_id}"
+    cached = _api_cache.get(cache_key)
+    if cached is not None:
+        return jsonify(cached)
+
+    info = UserManager.get_subscription_info(db, user_id)
+    resp_payload = {"success": True, "authenticated": True, "subscription": info, "user": {
+        "id": user_id,
         "email": user.get("email"),
         "name": user.get("name"),
         "role": user.get("role", "client")
-    }})
+    }}
+    _api_cache.set(cache_key, resp_payload, ttl_seconds=10)
+    return jsonify(resp_payload)
 
 
 @app.route("/api/v1/payments/create-checkout", methods=["POST"])

@@ -71,11 +71,35 @@ export const createApiClient = (getToken) => {
     }
   };
 
+  const _pollGuards = {};
+  const _pollBackoff = {};
+
+  const pollWithGuard = async (key, fetchFn, { baseDelay = 10000, maxDelay = 60000 } = {}) => {
+    if (_pollGuards[key]) return null;
+    _pollGuards[key] = true;
+    try {
+      const result = await fetchFn();
+      _pollBackoff[key] = baseDelay;
+      return result;
+    } catch (err) {
+      const current = _pollBackoff[key] || baseDelay;
+      _pollBackoff[key] = Math.min(current * 2, maxDelay);
+      throw err;
+    } finally {
+      _pollGuards[key] = false;
+    }
+  };
+
+  const getPollDelay = (key, baseDelay = 10000) => _pollBackoff[key] || baseDelay;
+
   return {
     get: (endpoint) => request(endpoint, 'GET'),
     post: (endpoint, body) => request(endpoint, 'POST', body),
     put: (endpoint, body) => request(endpoint, 'PUT', body),
     delete: (endpoint) => request(endpoint, 'DELETE'),
+
+    pollWithGuard,
+    getPollDelay,
 
     // Specific endpoints
     syncClerkUser: async (userData) => {
@@ -85,9 +109,12 @@ export const createApiClient = (getToken) => {
       } else if (!token && typeof window !== 'undefined' && window.Clerk?.session?.getToken) {
         try { token = await window.Clerk.session.getToken(); } catch (e) {}
       }
+      if (!token) {
+        return { success: false, error: 'Unauthenticated' };
+      }
       return request('/api/auth/clerk-sync', 'POST', {
         ...userData,
-        token: token || userData?.token || ''
+        token: token
       });
     },
     getStats: () => request('/api/stats', 'GET'),

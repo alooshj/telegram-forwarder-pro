@@ -2,6 +2,10 @@
 <html lang="ar" dir="rtl" class="dark">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <title>TeleTips Pro — لوحة التحكم الذكية</title>
     <!-- Brand Favicon & Identity Meta -->
     <link rel="icon" type="image/png" sizes="32x32" href="/static/favicon.png">
@@ -109,6 +113,7 @@
         html {
             scroll-behavior: smooth;
             -webkit-text-size-adjust: 100%;
+            touch-action: manipulation;
         }
 
         body {
@@ -119,6 +124,20 @@
             text-rendering: optimizeLegibility;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            -webkit-tap-highlight-color: transparent;
+            padding-bottom: env(safe-area-inset-bottom, 0px);
+        }
+
+        /* Mobile input font-size safeguard to prevent iOS Safari auto-zoom */
+        @media (max-width: 640px) {
+            input, select, textarea {
+                font-size: 16px !important;
+            }
+        }
+
+        /* Safe area helpers */
+        .safe-bottom {
+            padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem);
         }
 
         /* 1. Hardware-Accelerated Zero-Lag Background Mesh */
@@ -412,64 +431,105 @@
 
                 <!-- RIGHT SIDE: LATERAL SIGN-IN GLASS WINDOW -->
                 <div class="w-full md:w-auto md:min-w-[380px] lg:min-w-[440px] max-w-md my-auto">
-                    <div class="bg-white/[0.06] backdrop-blur-2xl border border-white/20 rounded-3xl p-6 sm:p-8 shadow-[0_30px_70px_rgba(0,0,0,0.5),0_0_40px_rgba(0,229,255,0.15),inset_0_1px_0_rgba(255,255,255,0.2)] space-y-6">
+                    <div class="bg-white/[0.06] backdrop-blur-2xl border border-white/20 rounded-3xl p-6 sm:p-7 shadow-[0_30px_70px_rgba(0,0,0,0.5),0_0_40px_rgba(0,229,255,0.15),inset_0_1px_0_rgba(255,255,255,0.2)] space-y-4">
                         
                         <!-- Brand Logo Banner on Side Panel -->
-                        <div class="text-center space-y-2 pb-2 border-b border-white/10">
-                            <div class="inline-flex p-2.5 bg-white/[0.05] rounded-2xl border border-[#00e5ff]/30 shadow-xl shadow-cyan-950/30 backdrop-blur-md">
-                                <img src="/static/img/teletips-logo.png?v=3.0" alt="TeleTips Pro" class="h-9 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(0,229,255,0.5)]">
+                        <div class="text-center space-y-1.5 pb-2 border-b border-white/10">
+                            <div class="inline-flex p-2 bg-white/[0.05] rounded-2xl border border-[#00e5ff]/30 shadow-xl shadow-cyan-950/30 backdrop-blur-md">
+                                <img src="/static/img/teletips-logo.png?v=3.0" alt="TeleTips Pro" class="h-8 w-auto object-contain filter drop-shadow-[0_0_12px_rgba(0,229,255,0.5)]">
                             </div>
-                            <h3 class="text-xl font-extrabold text-white" data-i18n="gate_card_title">تسجيل الدخول إلى TeleTips</h3>
-                            <p class="text-xs text-slate-300" data-i18n="gate_card_subtitle">سجل الدخول بحسابك للوصول إلى لوحة التحكم</p>
+                            <h3 class="text-lg font-extrabold text-white" data-i18n="gate_card_title">تسجيل الدخول إلى TeleTips</h3>
+                            <p class="text-xs text-slate-300" data-i18n="gate_card_subtitle">سجل الدخول بحسابك أو أنشئ حساباً جديداً للوصول</p>
                         </div>
 
-                        <!-- Fast Social Logins -->
-                        <div class="space-y-2.5">
-                            <span class="text-[11px] font-bold text-slate-400 block text-center uppercase tracking-wider" data-i18n="gate_social_header">
-                                المتابعة السريعة بحسابات التواصل
-                            </span>
+                        <!-- Auth Mode Switcher Tabs -->
+                        <div class="flex items-center p-1 bg-black/40 border border-white/10 rounded-xl">
+                            <button type="button" id="gate-tab-login-btn" onclick="switchAuthTab('login', 'gate')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-cyan-500/20 text-[#00e5ff] border border-cyan-500/40 shadow-sm transition">
+                                <span data-i18n="tab_login">تسجيل الدخول</span>
+                            </button>
+                            <button type="button" id="gate-tab-register-btn" onclick="switchAuthTab('register', 'gate')" class="flex-1 py-2 text-xs font-medium rounded-lg text-slate-400 hover:text-white transition">
+                                <span data-i18n="tab_register">حساب جديد (تجربة مجانية)</span>
+                            </button>
+                        </div>
 
-                            <div class="grid grid-cols-3 gap-2.5">
+                        <!-- 1. Native Sign In Form -->
+                        <form id="gate-signin-view" onsubmit="event.preventDefault(); submitNativeLogin('gate');" class="space-y-3">
+                            <div id="gate-login-error" class="hidden p-2.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-semibold text-center"></div>
+
+                            <div class="space-y-1 text-right rtl:text-right ltr:text-left">
+                                <label class="text-[11px] font-bold text-slate-300" data-i18n="lbl_email">البريد الإلكتروني</label>
+                                <div class="relative">
+                                    <input type="email" id="gate-login-email" required autocomplete="email" placeholder="name@example.com" class="w-full py-2.5 px-3.5 bg-slate-900/80 border border-white/15 focus:border-[#00e5ff] focus:ring-1 focus:ring-[#00e5ff] rounded-xl text-xs text-white placeholder-slate-500 outline-none transition font-sans">
+                                </div>
+                            </div>
+
+                            <div class="space-y-1 text-right rtl:text-right ltr:text-left">
+                                <label class="text-[11px] font-bold text-slate-300" data-i18n="lbl_password">كلمة المرور</label>
+                                <div class="relative">
+                                    <input type="password" id="gate-login-password" required autocomplete="current-password" placeholder="••••••••" class="w-full py-2.5 px-3.5 bg-slate-900/80 border border-white/15 focus:border-[#00e5ff] focus:ring-1 focus:ring-[#00e5ff] rounded-xl text-xs text-white placeholder-slate-500 outline-none transition font-sans">
+                                </div>
+                            </div>
+
+                            <button type="submit" id="gate-login-btn" class="w-full py-3 px-4 bg-gradient-to-r from-[#00e5ff] to-[#0284c7] hover:from-cyan-400 hover:to-sky-500 text-slate-950 font-black rounded-xl text-xs transition flex items-center justify-center space-x-2 rtl:space-x-reverse shadow-[0_0_20px_rgba(0,229,255,0.3)] hover:shadow-[0_0_30px_rgba(0,229,255,0.5)] active:scale-95">
+                                <span data-i18n="btn_login_submit">تسجيل الدخول الفوري</span>
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                        </form>
+
+                        <!-- 2. Native Register Form -->
+                        <form id="gate-register-view" onsubmit="event.preventDefault(); submitNativeRegister('gate');" class="hidden space-y-3">
+                            <div id="gate-register-error" class="hidden p-2.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-semibold text-center"></div>
+
+                            <div class="space-y-1 text-right rtl:text-right ltr:text-left">
+                                <label class="text-[11px] font-bold text-slate-300" data-i18n="lbl_fullname">الاسم الكامل</label>
+                                <input type="text" id="gate-register-name" required autocomplete="name" placeholder="محمد علي" class="w-full py-2.5 px-3.5 bg-slate-900/80 border border-white/15 focus:border-[#00e5ff] focus:ring-1 focus:ring-[#00e5ff] rounded-xl text-xs text-white placeholder-slate-500 outline-none transition font-sans">
+                            </div>
+
+                            <div class="space-y-1 text-right rtl:text-right ltr:text-left">
+                                <label class="text-[11px] font-bold text-slate-300" data-i18n="lbl_email">البريد الإلكتروني</label>
+                                <input type="email" id="gate-register-email" required autocomplete="email" placeholder="name@example.com" class="w-full py-2.5 px-3.5 bg-slate-900/80 border border-white/15 focus:border-[#00e5ff] focus:ring-1 focus:ring-[#00e5ff] rounded-xl text-xs text-white placeholder-slate-500 outline-none transition font-sans">
+                            </div>
+
+                            <div class="space-y-1 text-right rtl:text-right ltr:text-left">
+                                <label class="text-[11px] font-bold text-slate-300" data-i18n="lbl_password">كلمة المرور (6 أحرف فأكثر)</label>
+                                <input type="password" id="gate-register-password" required autocomplete="new-password" placeholder="••••••••" class="w-full py-2.5 px-3.5 bg-slate-900/80 border border-white/15 focus:border-[#00e5ff] focus:ring-1 focus:ring-[#00e5ff] rounded-xl text-xs text-white placeholder-slate-500 outline-none transition font-sans">
+                            </div>
+
+                            <button type="submit" id="gate-register-btn" class="w-full py-3 px-4 bg-gradient-to-r from-[#10b981] to-[#059669] hover:from-emerald-400 hover:to-emerald-600 text-white font-black rounded-xl text-xs transition flex items-center justify-center space-x-2 rtl:space-x-reverse shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] active:scale-95">
+                                <span data-i18n="btn_register_submit">إنشاء حساب وبدء التجربة المجانية 3 أيام</span>
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                        </form>
+
+                        <!-- Fast Social Logins Section -->
+                        <div class="space-y-2 pt-1 border-t border-white/10">
+                            <div class="flex items-center my-1">
+                                <div class="flex-grow border-t border-white/10"></div>
+                                <span class="px-2.5 text-[10px] text-slate-400 font-bold uppercase tracking-wider" data-i18n="gate_social_header">أو الدخول بحسابات التواصل</span>
+                                <div class="flex-grow border-t border-white/10"></div>
+                            </div>
+
+                            <div class="grid grid-cols-3 gap-2">
                                 <!-- Google -->
-                                <button type="button" onclick="handleOAuthSignIn('oauth_google')" class="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-[#00e5ff]/50 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(0,229,255,0.25)] backdrop-blur-md active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/50" title="Google">
+                                <button type="button" onclick="handleOAuthSignIn('oauth_google')" class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-[#00e5ff]/50 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(0,229,255,0.25)] backdrop-blur-md active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/50" title="Google">
                                     <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
                                     <span class="text-xs">Google</span>
                                 </button>
 
                                 <!-- Discord -->
-                                <button type="button" onclick="handleOAuthSignIn('oauth_discord')" class="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-[#5865F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(88,101,242,0.35)] backdrop-blur-md active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#5865F2]/50" title="Discord">
+                                <button type="button" onclick="handleOAuthSignIn('oauth_discord')" class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-[#5865F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(88,101,242,0.35)] backdrop-blur-md active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#5865F2]/50" title="Discord">
                                     <svg class="w-4 h-4 text-[#5865F2] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
                                     <span class="text-xs">Discord</span>
                                 </button>
 
                                 <!-- Facebook -->
-                                <button type="button" onclick="handleOAuthSignIn('oauth_facebook')" class="flex items-center justify-center gap-1.5 py-3 px-3 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-[#1877F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(24,119,242,0.35)] backdrop-blur-md active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#1877F2]/50" title="Facebook">
+                                <button type="button" onclick="handleOAuthSignIn('oauth_facebook')" class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-white/[0.06] hover:bg-white/[0.12] border border-white/15 hover:border-[#1877F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(24,119,242,0.35)] backdrop-blur-md active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#1877F2]/50" title="Facebook">
                                     <svg class="w-4 h-4 text-[#1877F2] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
                                     <span class="text-xs">Facebook</span>
                                 </button>
                             </div>
                         </div>
 
-                        <!-- Divider -->
-                        <div class="flex items-center my-2">
-                            <div class="flex-grow border-t border-white/10"></div>
-                            <span class="px-3 text-[11px] text-slate-400 font-semibold uppercase" data-i18n="gate_or_email">أو بالبريد الإلكتروني</span>
-                            <div class="flex-grow border-t border-white/10"></div>
-                        </div>
-
-                        <!-- Email Sign In Button -->
-                        <button type="button" onclick="handleEmailSignIn()" class="w-full py-3.5 px-4 bg-gradient-to-r from-[#00e5ff]/20 to-[#10b981]/20 hover:from-[#00e5ff]/30 hover:to-[#10b981]/30 border border-[#00e5ff]/40 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2.5 rtl:space-x-reverse shadow-[0_0_20px_rgba(0,229,255,0.2)] hover:shadow-[0_0_30px_rgba(0,229,255,0.4)] backdrop-blur-md active:scale-95">
-                            <svg class="w-4 h-4 text-[#00e5ff] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                            <span data-i18n="gate_btn_email">المتابعة باستخدام البريد الإلكتروني</span>
-                        </button>
-
-                        <!-- Sign Up Option -->
-                        <div class="pt-3 border-t border-white/10 text-center text-xs text-slate-300 flex items-center justify-center gap-1.5">
-                            <span data-i18n="gate_no_account">ليس لديك حساب؟</span>
-                            <button type="button" onclick="handleEmailSignUp()" class="text-[#00e5ff] hover:text-cyan-300 font-bold underline" data-i18n="gate_btn_signup">
-                                إنشاء حساب جديد (تجربة مجانية)
-                            </button>
-                        </div>
                     </div>
                 </div>
 
@@ -724,7 +784,7 @@
     </header>
 
     <!-- Main Container -->
-    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 space-y-4 sm:space-y-6">
+    <main class="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-3 sm:py-6 space-y-4 sm:space-y-6 pb-24 md:pb-8">
 
         <!-- Single Segmented Navigation Tabs Bar (6 Core Tools) -->
         <div class="bg-surface-900/90 backdrop-blur-md border border-slate-800/90 p-1.5 rounded-2xl flex items-center overflow-x-auto no-scrollbar gap-1.5 shadow-sm scroll-smooth">
@@ -1128,70 +1188,69 @@
         </div>
 
         <!-- ==================== TAB 1: OVERVIEW ==================== -->
-        <div id="tab-content-overview" class="tab-pane space-y-6 animate-fade-in">
-            <!-- Hero Metrics Grid (4 Equal Balanced Glassmorphic KPI Cards) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div id="tab-content-overview" class="tab-pane space-y-4 sm:space-y-6 animate-fade-in">
+            <!-- Hero Metrics Grid (2 columns on mobile, 4 on desktop) -->
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                 <!-- KPI 1: Forwarded Posts -->
-                <div class="glass-card stagger-1 rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
+                <div class="glass-card stagger-1 rounded-2xl p-3.5 sm:p-5 shadow-sm transition-all relative overflow-hidden group">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400" data-i18n="metric_forwarded">إجمالي المنشورات المحولة</span>
-                        <div class="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center border border-emerald-500/30 group-hover:scale-105 transition-transform shadow-glow-emerald">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                        <span class="text-[11px] sm:text-xs font-bold text-slate-400" data-i18n="metric_forwarded">المنشورات المحولة</span>
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center border border-emerald-500/30 group-hover:scale-105 transition-transform shadow-glow-emerald">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
                         </div>
                     </div>
-                    <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
-                        <span id="stat-total-forwarded" class="text-3xl font-black text-white font-mono tracking-tight group-hover:text-emerald-400 transition-colors">0</span>
-                        <span class="text-xs text-emerald-400 font-semibold" data-i18n="metric_posts_unit">منشور</span>
+                    <div class="mt-2.5 sm:mt-4 flex items-baseline space-x-1.5 rtl:space-x-reverse">
+                        <span id="stat-total-forwarded" class="text-xl sm:text-3xl font-black text-white font-mono tracking-tight group-hover:text-emerald-400 transition-colors">0</span>
+                        <span class="text-[10px] sm:text-xs text-emerald-400 font-semibold" data-i18n="metric_posts_unit">منشور</span>
                     </div>
-                    <p class="text-[11px] text-emerald-400 mt-1 font-mono flex items-center space-x-1 rtl:space-x-reverse">
+                    <p class="text-[10px] sm:text-[11px] text-emerald-400 mt-1 font-mono flex items-center space-x-1 rtl:space-x-reverse">
                         <span>↑ 99.98%</span>
-                        <span class="text-slate-500 font-normal">معدل النجاح اللحظي</span>
+                        <span class="text-slate-500 font-normal hidden sm:inline">معدل النجاح</span>
                     </p>
                 </div>
 
                 <!-- KPI 2: Active Rules & Pipelines -->
-                <div class="glass-card stagger-2 rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
+                <div class="glass-card stagger-2 rounded-2xl p-3.5 sm:p-5 shadow-sm transition-all relative overflow-hidden group">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400" data-i18n="metric_active_rules">قواعد التوجيه النشطة</span>
-                        <div class="w-10 h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center border border-cyan-500/30 group-hover:scale-105 transition-transform shadow-glow-cyan">
-                            <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                        <span class="text-[11px] sm:text-xs font-bold text-slate-400" data-i18n="metric_active_rules">القواعد النشطة</span>
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-cyan-500/15 text-cyan-400 flex items-center justify-center border border-cyan-500/30 group-hover:scale-105 transition-transform shadow-glow-cyan">
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
                         </div>
                     </div>
-                    <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
-                        <span id="stat-active-rules" class="text-3xl font-black text-white font-mono tracking-tight group-hover:text-cyan-400 transition-colors">0</span>
-                        <span class="text-xs text-slate-400 font-medium">/ <span id="stat-total-rules" class="font-mono">0</span> <span data-i18n="metric_rules_total">إجمالي</span></span>
+                    <div class="mt-2.5 sm:mt-4 flex items-baseline space-x-1.5 rtl:space-x-reverse">
+                        <span id="stat-active-rules" class="text-xl sm:text-3xl font-black text-white font-mono tracking-tight group-hover:text-cyan-400 transition-colors">0</span>
+                        <span class="text-[10px] sm:text-xs text-slate-400 font-medium">/ <span id="stat-total-rules" class="font-mono">0</span></span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-1">مسارات التحويل من القنوات المصدرية</p>
+                    <p class="text-[10px] sm:text-[11px] text-slate-400 mt-1 truncate">مسارات التحويل النشطة</p>
                 </div>
 
                 <!-- KPI 3: Latency & AlbumCollector -->
-                <div class="glass-card stagger-3 rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
+                <div class="glass-card stagger-3 rounded-2xl p-3.5 sm:p-5 shadow-sm transition-all relative overflow-hidden group">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400">سرعة التوجيه اللحظي</span>
-                        <div class="w-10 h-10 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center border border-indigo-500/30 group-hover:scale-105 transition-transform shadow-glow-indigo">
+                        <span class="text-[11px] sm:text-xs font-bold text-slate-400">سرعة التوجيه</span>
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-indigo-500/15 text-indigo-400 flex items-center justify-center border border-indigo-500/30 group-hover:scale-105 transition-transform shadow-glow-indigo text-xs sm:text-base">
                             ⏱️
                         </div>
                     </div>
-                    <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
-                        <span class="text-3xl font-black text-emerald-400 font-mono tracking-tight">&lt; 1s</span>
-                        <span class="text-xs text-slate-400 font-mono">142ms</span>
+                    <div class="mt-2.5 sm:mt-4 flex items-baseline space-x-1.5 rtl:space-x-reverse">
+                        <span class="text-xl sm:text-3xl font-black text-emerald-400 font-mono tracking-tight">&lt; 1s</span>
+                        <span class="text-[10px] sm:text-xs text-slate-400 font-mono">142ms</span>
                     </div>
-                    <p class="text-[11px] text-indigo-300 mt-1">📁 AlbumCollector نشط لتجميع الألبومات</p>
+                    <p class="text-[10px] sm:text-[11px] text-indigo-300 mt-1 truncate">📁 AlbumCollector نشط</p>
                 </div>
 
                 <!-- KPI 4: Content Scrubber & Database -->
-                <div class="glass-card stagger-4 rounded-2xl p-5 shadow-sm transition-all relative overflow-hidden group">
+                <div class="glass-card stagger-4 rounded-2xl p-3.5 sm:p-5 shadow-sm transition-all relative overflow-hidden group">
                     <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-slate-400">قاعدة البيانات والفلترة</span>
-                        <div class="w-10 h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center border border-purple-500/30 group-hover:scale-105 transition-transform">
+                        <span class="text-[11px] sm:text-xs font-bold text-slate-400">قاعدة البيانات</span>
+                        <div class="w-8 h-8 sm:w-10 sm:h-10 rounded-xl bg-purple-500/15 text-purple-400 flex items-center justify-center border border-purple-500/30 group-hover:scale-105 transition-transform text-xs sm:text-base">
                             🧹
                         </div>
                     </div>
-                    <div class="mt-4 flex items-baseline space-x-2 rtl:space-x-reverse">
-                        <span id="stat-db-type" class="text-2xl font-black text-white tracking-tight">MongoDB</span>
-                        <span class="text-xs text-cyan-300 font-mono">Scrubber Active</span>
+                    <div class="mt-2.5 sm:mt-4 flex items-baseline space-x-1.5 rtl:space-x-reverse">
+                        <span id="stat-db-type" class="text-base sm:text-2xl font-black text-white tracking-tight truncate">MongoDB</span>
                     </div>
-                    <p id="stat-db-status" class="text-xs text-emerald-400 font-medium mt-1">● Atlas Cluster Connected</p>
+                    <p id="stat-db-status" class="text-[10px] sm:text-xs text-emerald-400 font-medium mt-1 truncate">● Atlas Connected</p>
                 </div>
             </div>
 
@@ -1289,9 +1348,9 @@
                         </h2>
                         <p class="text-xs text-slate-400 mt-1" data-i18n="desc_forwarding_rules">Configure source Telegram channels to monitor and target channels to post into.</p>
                     </div>
-                    <div class="flex items-center space-x-2 rtl:space-x-reverse">
-                        <input id="rules-search-input" onkeyup="filterRules()" type="text" placeholder="Search rules..." class="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 w-48">
-                        <button onclick="openRuleModal()" class="px-4 py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-brand-600/20 transition flex items-center space-x-1.5 rtl:space-x-reverse whitespace-nowrap">
+                    <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                        <input id="rules-search-input" onkeyup="filterRules()" type="text" placeholder="Search rules..." class="bg-slate-950 border border-slate-800 rounded-xl px-3.5 py-2.5 sm:py-2 text-xs text-slate-200 focus:outline-none focus:border-brand-500 w-full sm:w-48">
+                        <button onclick="openRuleModal()" class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-brand-600 hover:bg-brand-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-brand-600/20 transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse whitespace-nowrap">
                             <svg class="w-4 h-4 inline-block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                             <span data-i18n="btn_add_rule">Add New Pipeline</span>
                         </button>
@@ -1310,8 +1369,8 @@
 
         <!-- ==================== TAB 3: TEXT TRANSFORMATION ==================== -->
         <div id="tab-content-text-rules" class="tab-pane hidden space-y-6 animate-fade-in">
-            <div class="bg-surface-900 border border-slate-800 rounded-2xl p-6 space-y-6">
-                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-5">
+            <div class="bg-surface-900 border border-slate-800 rounded-2xl p-4 sm:p-6 space-y-4 sm:space-y-6">
+                <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4 sm:pb-5">
                     <div>
                         <h2 class="text-lg font-bold text-white flex items-center space-x-2 rtl:space-x-reverse">
                             <svg class="w-5 h-5 text-purple-400 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
@@ -1319,7 +1378,7 @@
                         </h2>
                         <p class="text-xs text-slate-400 mt-1" data-i18n="desc_text_rules">Automatically replace words, strip source @usernames/links, add branding footers, and apply Regex filters.</p>
                     </div>
-                    <button onclick="openTransformModal()" class="px-4 py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-600/20 transition flex items-center space-x-1.5 rtl:space-x-reverse whitespace-nowrap">
+                    <button onclick="openTransformModal()" class="w-full sm:w-auto px-4 py-2.5 sm:py-2 bg-purple-600 hover:bg-purple-500 text-white rounded-xl text-xs font-semibold shadow-md shadow-purple-600/20 transition flex items-center justify-center space-x-1.5 rtl:space-x-reverse whitespace-nowrap">
                         <svg class="w-3.5 h-3.5 inline-block ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
                         <span data-i18n="btn_add_transform">Add Transformation</span>
                     </button>
@@ -1874,6 +1933,42 @@
 
     </main>
 
+    <!-- ==================== MOBILE BOTTOM APP NAVIGATION DOCK (FIXED 5-TAB BAR) ==================== -->
+    <nav id="mobile-bottom-nav" class="fixed bottom-0 left-0 right-0 z-40 bg-[#0b0f17]/95 backdrop-blur-2xl border-t border-slate-800/90 md:hidden safe-bottom shadow-[0_-10px_30px_rgba(0,0,0,0.6)]" dir="rtl">
+        <div class="grid grid-cols-5 h-16 max-w-lg mx-auto px-1">
+            <!-- 1. Overview -->
+            <button onclick="switchTab('overview')" id="mobile-nav-overview" class="mobile-nav-btn active flex flex-col items-center justify-center text-[#00e5ff] py-1 transition-all active:scale-90 select-none">
+                <svg class="w-5 h-5 mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9"></rect><rect x="14" y="3" width="7" height="5"></rect><rect x="14" y="12" width="7" height="9"></rect><rect x="3" y="16" width="7" height="5"></rect></svg>
+                <span class="text-[10px] font-bold" data-i18n="tab_overview">الرئيسية</span>
+            </button>
+
+            <!-- 2. Forwarding Rules -->
+            <button onclick="switchTab('forwarding')" id="mobile-nav-forwarding" class="mobile-nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-white py-1 transition-all active:scale-90 select-none relative">
+                <svg class="w-5 h-5 mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+                <span class="text-[10px] font-semibold" data-i18n="tab_forwarding">القواعد</span>
+                <span id="mobile-badge-rules" class="hidden absolute top-1.5 right-3.5 w-2 h-2 rounded-full bg-[#00e5ff]"></span>
+            </button>
+
+            <!-- 3. Text Transformations -->
+            <button onclick="switchTab('text-rules')" id="mobile-nav-text-rules" class="mobile-nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-white py-1 transition-all active:scale-90 select-none">
+                <svg class="w-5 h-5 mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path></svg>
+                <span class="text-[10px] font-semibold" data-i18n="tab_text_rules">النصوص</span>
+            </button>
+
+            <!-- 4. Real-Time Logs -->
+            <button onclick="switchTab('logs')" id="mobile-nav-logs" class="mobile-nav-btn flex flex-col items-center justify-center text-slate-400 hover:text-white py-1 transition-all active:scale-90 select-none">
+                <svg class="w-5 h-5 mb-0.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                <span class="text-[10px] font-semibold" data-i18n="tab_logs">السجلات</span>
+            </button>
+
+            <!-- 5. VIP / Subscription -->
+            <button onclick="switchTab('pricing')" id="mobile-nav-pricing" class="mobile-nav-btn flex flex-col items-center justify-center text-indigo-400 hover:text-indigo-300 py-1 transition-all active:scale-90 select-none">
+                <span class="text-base leading-none mb-0.5">👑</span>
+                <span class="text-[10px] font-bold" data-i18n="tab_pricing">الاشتراك</span>
+            </button>
+        </div>
+    </nav>
+
     <!-- ==================== MODALS ==================== -->
 
     <!-- Add/Edit Forwarding Rule Modal -->
@@ -2040,11 +2135,11 @@
     </div>
 
     <!-- Add/Edit Transformation Rule Modal -->
-    <div id="transform-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl animate-fade-in">
+    <div id="transform-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-lg w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-fade-in my-auto max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 id="transform-modal-title" class="font-bold text-white text-base">Add Text Transformation Rule</h3>
-                <button onclick="closeTransformModal()" class="text-slate-400 hover:text-white"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                <button onclick="closeTransformModal()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 text-slate-400 hover:text-white"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
             <form id="transform-form" onsubmit="saveTransformRule(event)" class="space-y-4">
                 <input type="hidden" id="transform-form-id">
@@ -2094,11 +2189,11 @@
     </div>
 
     <!-- Add to Blacklist Modal -->
-    <div id="blacklist-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-4">
-        <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl animate-fade-in">
+    <div id="blacklist-modal" class="fixed inset-0 z-50 bg-black/70 backdrop-blur-sm hidden flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+        <div class="bg-surface-900 border border-slate-800 rounded-2xl max-w-md w-full p-5 sm:p-6 space-y-4 shadow-2xl animate-fade-in my-auto max-h-[90vh] overflow-y-auto">
             <div class="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 class="font-bold text-white text-base" data-i18n="modal_add_blacklist">Add Channel to Blacklist</h3>
-                <button onclick="closeBlacklistModal()" class="text-slate-400 hover:text-white"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
+                <button onclick="closeBlacklistModal()" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-800 text-slate-400 hover:text-white"><svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg></button>
             </div>
             <form id="blacklist-form" onsubmit="saveBlacklist(event)" class="space-y-4">
                 <div>
@@ -2781,6 +2876,28 @@
         let logsPollInterval = null;
         let isEngineRunning = false;
 
+        // Polling guard flags & exponential backoff state
+        let _isFetchingStatus = false;
+        let _isFetchingLogs = false;
+        let _isFetchingSubscription = false;
+        let _statusBackoffMs = 10000;
+        let _logsBackoffMs = 10000;
+        let _subBackoffMs = 15000;
+        const _POLL_BASE_DELAY = 10000;
+        const _POLL_MAX_DELAY = 60000;
+
+        function _resetBackoff(key) {
+            if (key === 'status') _statusBackoffMs = _POLL_BASE_DELAY;
+            else if (key === 'logs') _logsBackoffMs = _POLL_BASE_DELAY;
+            else if (key === 'sub') _subBackoffMs = 15000;
+        }
+
+        function _increaseBackoff(key) {
+            if (key === 'status') _statusBackoffMs = Math.min(_statusBackoffMs * 2, _POLL_MAX_DELAY);
+            else if (key === 'logs') _logsBackoffMs = Math.min(_logsBackoffMs * 2, _POLL_MAX_DELAY);
+            else if (key === 'sub') _subBackoffMs = Math.min(_subBackoffMs * 2, _POLL_MAX_DELAY);
+        }
+
         // Apply Language
         function setLanguage(lang) {
             currentLang = lang;
@@ -3211,6 +3328,18 @@
                 }
             }
 
+            // Mobile bottom dock active state
+            const mobileNavBtns = document.querySelectorAll('.mobile-nav-btn');
+            for (let i = 0; i < mobileNavBtns.length; i++) {
+                mobileNavBtns[i].classList.remove('text-[#00e5ff]', 'text-indigo-400', 'active');
+                mobileNavBtns[i].classList.add('text-slate-400');
+            }
+            const activeMobileBtn = document.getElementById(`mobile-nav-${tabId}`);
+            if (activeMobileBtn) {
+                activeMobileBtn.classList.remove('text-slate-400');
+                activeMobileBtn.classList.add(tabId === 'pricing' ? 'text-indigo-400' : 'text-[#00e5ff]', 'active');
+            }
+
             if (tabId === 'forwarding' || tabId === 'text-rules') loadRules();
             if (tabId === 'blacklist') loadBlacklist();
             if (tabId === 'logs') loadLogs();
@@ -3283,6 +3412,9 @@
 
         // ==================== ENGINE CONTROLS ====================
         async function fetchStatus() {
+            if (_isFetchingStatus) return;
+            _isFetchingStatus = true;
+            try {
             const data = await api('/api/stats');
             isEngineRunning = data.running || false;
 
@@ -3327,6 +3459,12 @@
             if (data.last_update) {
                 const d = new Date(data.last_update);
                 safeSetText('overview-last-update', d.toLocaleTimeString());
+            }
+            _resetBackoff('status');
+            } catch (e) {
+                _increaseBackoff('status');
+            } finally {
+                _isFetchingStatus = false;
             }
         }
 
@@ -3485,7 +3623,7 @@
                         const targetAvatar = getAvatarForTarget(t);
                         return `
                         <span class="px-2 py-0.5 bg-cyan-500/10 text-cyan-400 font-mono font-semibold rounded-lg text-xs truncate max-w-[160px] inline-flex items-center gap-1.5" title="${escapeHtml(t)}">
-                            <img src="${targetAvatar}" onerror="this.style.display='none'" class="w-3.5 h-3.5 rounded-full object-cover border border-cyan-500/40 flex-shrink-0" alt="">
+                            <img src="${targetAvatar}" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><polyline points=\'21 15 16 10 5 21\'/></svg>';" class="w-3.5 h-3.5 rounded-full object-cover border border-cyan-500/40 flex-shrink-0" alt="">
                             <span>${escapeHtml(t)}</span>
                         </span>
                     `;
@@ -3514,7 +3652,7 @@
                             <div class="flex items-center space-x-2 rtl:space-x-reverse">
                                 <span class="text-[10px] text-slate-500 font-semibold uppercase">Source:</span>
                                 <span class="px-2.5 py-1 bg-brand-500/10 text-brand-400 font-mono font-semibold rounded-lg truncate max-w-[220px] inline-flex items-center gap-1.5" title="${escapeHtml(rule.source_id)}">
-                                    <img src="${sourceAvatar}" onerror="this.style.display='none'" class="w-4 h-4 rounded-full object-cover border border-brand-500/40 flex-shrink-0" alt="">
+                                    <img src="${sourceAvatar}" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><polyline points=\'21 15 16 10 5 21\'/></svg>';" class="w-4 h-4 rounded-full object-cover border border-brand-500/40 flex-shrink-0" alt="">
                                     <span>${escapeHtml(rule.source_id)}</span>
                                 </span>
                             </div>
@@ -3674,7 +3812,7 @@
                 return `
                 <div class="flex flex-col sm:flex-row sm:items-center justify-between p-2.5 rounded-xl bg-surface-850 border border-slate-800 hover:border-slate-700 hover:bg-slate-800/40 transition gap-2">
                     <div class="flex items-center space-x-3 rtl:space-x-reverse min-w-0">
-                        <img src="${avatarSrc}" class="w-9 h-9 rounded-full object-cover border border-slate-700/80 bg-slate-900 flex-shrink-0 shadow-sm" alt="" loading="lazy">
+                        <img src="${avatarSrc}" onerror="this.onerror=null; this.src='data:image/svg+xml;utf8,<svg xmlns=\'http://www.w3.org/2000/svg\' width=\'32\' height=\'32\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%2364748b\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'><rect x=\'3\' y=\'3\' width=\'18\' height=\'18\' rx=\'2\' ry=\'2\'/><circle cx=\'8.5\' cy=\'8.5\' r=\'1.5\'/><polyline points=\'21 15 16 10 5 21\'/></svg>';" class="w-9 h-9 rounded-full object-cover border border-slate-700/80 bg-slate-900 flex-shrink-0 shadow-sm" alt="" loading="lazy">
                         <div class="truncate">
                             <p class="text-xs font-bold text-white truncate max-w-[200px] sm:max-w-[280px]">${titleStr}</p>
                             <p class="text-[11px] text-slate-400 font-mono flex items-center gap-1">
@@ -3946,6 +4084,9 @@
 
         let lastSeenLogTime = null;
         async function loadLogs(isManual = false) {
+            if (_isFetchingLogs && !isManual) return;
+            _isFetchingLogs = true;
+            try {
             const endpoint = (logsScope === 'all') ? '/api/logs?all=true' : '/api/logs';
             const res = await api(endpoint);
             const freshLogs = res.logs || [];
@@ -3979,6 +4120,12 @@
             allLogs = freshLogs;
             renderLogs();
             if (isManual) showToast(currentLang === 'ar' ? 'تم تحديث السجلات' : 'Logs refreshed', 'info');
+            _resetBackoff('logs');
+            } catch (e) {
+                _increaseBackoff('logs');
+            } finally {
+                _isFetchingLogs = false;
+            }
         }
 
         function setLogLevelFilter(lvl) {
@@ -4058,7 +4205,7 @@
                 btn.className = 'px-3 py-1.5 bg-slate-800 text-xs font-medium rounded-xl text-slate-400 border border-slate-700 transition';
                 btn.innerHTML = `<svg class='w-3.5 h-3.5 inline ml-1 rtl:mr-1' viewBox='0 0 24 24' fill='currentColor'><rect x='6' y='4' width='4' height='16'></rect><rect x='14' y='4' width='4' height='16'></rect></svg> <span>${currentLang === 'ar' ? 'متوقف مؤقتاً' : 'Paused'}</span>`;
             } else {
-                logsPollInterval = setInterval(loadLogs, 3000);
+                logsPollInterval = setInterval(loadLogs, 15000);
                 btn.className = 'px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs font-medium rounded-xl text-emerald-400 border border-emerald-500/20 transition flex items-center space-x-1 rtl:space-x-reverse';
                 btn.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span> <span>${i18n[currentLang].btn_live_feed}</span>`;
                 loadLogs();
@@ -4204,14 +4351,41 @@
             }
         }
 
-        async function openAuthModal() {
+        function switchAuthTab(tab = 'login', prefix = 'gate') {
+            const loginForm = document.getElementById(`${prefix}-signin-view`);
+            const regForm = document.getElementById(`${prefix}-register-view`);
+            const tabLoginBtn = document.getElementById(`${prefix}-tab-login-btn`);
+            const tabRegBtn = document.getElementById(`${prefix}-tab-register-btn`);
+
+            if (tab === 'login') {
+                if (loginForm) loginForm.classList.remove('hidden');
+                if (regForm) regForm.classList.add('hidden');
+                if (tabLoginBtn) {
+                    tabLoginBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-cyan-500/20 text-[#00e5ff] border border-cyan-500/40 shadow-sm transition';
+                }
+                if (tabRegBtn) {
+                    tabRegBtn.className = 'flex-1 py-2 text-xs font-medium rounded-lg text-slate-400 hover:text-white transition';
+                }
+            } else {
+                if (loginForm) loginForm.classList.add('hidden');
+                if (regForm) regForm.classList.remove('hidden');
+                if (tabRegBtn) {
+                    tabRegBtn.className = 'flex-1 py-2 text-xs font-bold rounded-lg bg-cyan-500/20 text-[#00e5ff] border border-cyan-500/40 shadow-sm transition';
+                }
+                if (tabLoginBtn) {
+                    tabLoginBtn.className = 'flex-1 py-2 text-xs font-medium rounded-lg text-slate-400 hover:text-white transition';
+                }
+            }
+        }
+
+        async function openAuthModal(tab = 'login') {
             const modal = document.getElementById('auth-modal');
             const loggedInView = document.getElementById('auth-logged-in-view');
             const formView = document.getElementById('auth-form-view');
             if (!modal) return;
 
-            // If Clerk has a user but local state wasn't synced yet, sync immediately
-            if (!currentUser && window.Clerk && window.Clerk.user) {
+            // If Clerk has an authenticated session but local state wasn't synced yet, sync immediately
+            if (!currentUser && window.Clerk && window.Clerk.user && window.Clerk.session) {
                 await syncClerkUser(window.Clerk.user);
             }
 
@@ -4261,6 +4435,7 @@
             } else {
                 loggedInView.classList.add('hidden');
                 formView.classList.remove('hidden');
+                switchAuthTab(tab, 'modal');
             }
             modal.classList.remove('hidden');
         }
@@ -4304,7 +4479,8 @@
         let lastSyncAttempt = 0;
 
         async function syncClerkUser(user) {
-            if (!user) return;
+            const clerk = clerkInstance || window.Clerk;
+            if (!user || !clerk || !clerk.session) return;
             const now = Date.now();
             if (isSyncingClerk || (now - lastSyncAttempt < 2500)) {
                 return;
@@ -4313,9 +4489,8 @@
 
             try {
                 isSyncingClerk = true;
-                const clerk = clerkInstance || window.Clerk;
                 let token = null;
-                if (clerk && clerk.session && typeof clerk.session.getToken === 'function') {
+                if (typeof clerk.session.getToken === 'function') {
                     try {
                         token = await clerk.session.getToken();
                     } catch (tokErr) {
@@ -4324,7 +4499,7 @@
                 }
 
                 if (!token) {
-                    console.debug('Clerk session token not yet ready — skipping sync request.');
+                    console.debug('Clerk session token not yet ready or user unauthenticated — skipping sync request.');
                     return;
                 }
 
@@ -4361,7 +4536,7 @@
         async function initClerk() {
             try {
                 if (clerkInstance) {
-                    if (clerkInstance.user && !currentUser) {
+                    if (clerkInstance.user && clerkInstance.session && !currentUser) {
                         await syncClerkUser(clerkInstance.user);
                     }
                     return clerkInstance;
@@ -4406,13 +4581,13 @@
                     });
                     clerkInstance = window.Clerk;
 
-                    // Sync if user is logged in
-                    if (clerkInstance.user && (!currentUser || currentUser.email !== (clerkInstance.user.primaryEmailAddress?.emailAddress || ''))) {
+                    // Sync if user is logged in with active session
+                    if (clerkInstance.user && clerkInstance.session && (!currentUser || currentUser.email !== (clerkInstance.user.primaryEmailAddress?.emailAddress || ''))) {
                         await syncClerkUser(clerkInstance.user);
                     }
 
                     clerkInstance.addListener(async (emission) => {
-                        if (emission.user) {
+                        if (emission.user && emission.session) {
                             const userEmail = emission.user.primaryEmailAddress?.emailAddress || '';
                             if (!currentUser || currentUser.email !== userEmail) {
                                 await syncClerkUser(emission.user);
@@ -4438,8 +4613,8 @@
                 return;
             }
 
-            // If user is already authenticated in Clerk, synchronize immediately and update UI
-            if (clerk.user) {
+            // If user is already authenticated in Clerk with session, synchronize immediately and update UI
+            if (clerk.user && clerk.session) {
                 await syncClerkUser(clerk.user);
                 closeAuthModal();
                 showToast(currentLang === 'ar' ? 'تم تسجيل الدخول ومزامنة الحساب بنجاح!' : 'Successfully signed in & synced!', 'success');
@@ -4478,57 +4653,165 @@
             return handleOAuthSignIn('oauth_google');
         }
 
-        async function handleEmailSignIn() {
-            const clerk = await initClerk();
-            if (!clerk) {
-                showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
-                return;
-            }
+        async function submitNativeLogin(prefix = 'gate') {
+            const emailEl = document.getElementById(`${prefix}-login-email`);
+            const passEl = document.getElementById(`${prefix}-login-password`);
+            const btn = document.getElementById(`${prefix}-login-btn`);
+            const errorEl = document.getElementById(`${prefix}-login-error`);
 
-            if (clerk.user) {
-                await syncClerkUser(clerk.user);
-                closeAuthModal();
-                showToast(currentLang === 'ar' ? 'تم تسجيل الدخول ومزامنة الحساب بنجاح!' : 'Successfully signed in & synced!', 'success');
-                return;
-            }
+            if (errorEl) errorEl.classList.add('hidden');
 
-            const target = document.getElementById('clerk-mount-target');
-            if (target) {
-                try {
-                    target.innerHTML = '';
-                    clerk.mountSignIn(target);
-                } catch (e) {
-                    try { clerk.openSignIn(); } catch (err) {}
+            const email = (emailEl ? emailEl.value : '').trim();
+            const password = (passEl ? passEl.value : '').trim();
+
+            if (!email || !password) {
+                const msg = currentLang === 'ar' ? 'يرجى إدخال البريد الإلكتروني وكلمة المرور' : 'Please enter email and password';
+                if (errorEl) {
+                    errorEl.textContent = msg;
+                    errorEl.classList.remove('hidden');
                 }
+                showToast(msg, 'warning');
+                return;
+            }
+
+            const origContent = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<svg class="animate-spin w-4 h-4 inline ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> <span>${currentLang === 'ar' ? 'جارٍ التحقق...' : 'Signing in...'}</span>`;
+            }
+
+            try {
+                const res = await api('/api/auth/login', 'POST', { email, password });
+                if (res && res.success && res.user) {
+                    currentUser = res.user;
+                    if (res.token) {
+                        localStorage.setItem('teletips_auth_token', res.token);
+                    }
+                    closeAuthModal();
+                    showToast(currentLang === 'ar' ? `أهلاً بك مجدداً ${currentUser.name || ''}!` : `Welcome back ${currentUser.name || ''}!`, 'success');
+                    await checkAuthStatus();
+                    await fetchStatus();
+                    await loadRules();
+                    await loadUserSubscription();
+                } else {
+                    const err = (res && res.error) ? res.error : (currentLang === 'ar' ? 'فشل تسجيل الدخول، تأكد من صحة البريد وكلمة المرور' : 'Login failed, check email and password');
+                    if (errorEl) {
+                        errorEl.textContent = err;
+                        errorEl.classList.remove('hidden');
+                    }
+                    showToast(err, 'error');
+                }
+            } catch (err) {
+                console.error('Login request error:', err);
+                const msg = currentLang === 'ar' ? 'تعذر الاتصال بالخادم، يرجى المحاولة لاحقاً' : 'Connection failed, please try again';
+                if (errorEl) {
+                    errorEl.textContent = msg;
+                    errorEl.classList.remove('hidden');
+                }
+                showToast(msg, 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origContent || `<span>${currentLang === 'ar' ? 'تسجيل الدخول الفوري' : 'Sign In'}</span>`;
+                }
+            }
+        }
+
+        async function submitNativeRegister(prefix = 'gate') {
+            const nameEl = document.getElementById(`${prefix}-register-name`);
+            const emailEl = document.getElementById(`${prefix}-register-email`);
+            const passEl = document.getElementById(`${prefix}-register-password`);
+            const btn = document.getElementById(`${prefix}-register-btn`);
+            const errorEl = document.getElementById(`${prefix}-register-error`);
+
+            if (errorEl) errorEl.classList.add('hidden');
+
+            const name = (nameEl ? nameEl.value : '').trim();
+            const email = (emailEl ? emailEl.value : '').trim();
+            const password = (passEl ? passEl.value : '').trim();
+
+            if (!email || !password) {
+                const msg = currentLang === 'ar' ? 'يرجى إدخال البريد الإلكتروني وكلمة المرور' : 'Please enter email and password';
+                if (errorEl) {
+                    errorEl.textContent = msg;
+                    errorEl.classList.remove('hidden');
+                }
+                showToast(msg, 'warning');
+                return;
+            }
+
+            if (password.length < 6) {
+                const msg = currentLang === 'ar' ? 'كلمة المرور يجب أن لا تقل عن 6 أحرف' : 'Password must be at least 6 characters';
+                if (errorEl) {
+                    errorEl.textContent = msg;
+                    errorEl.classList.remove('hidden');
+                }
+                showToast(msg, 'warning');
+                return;
+            }
+
+            const origContent = btn ? btn.innerHTML : '';
+            if (btn) {
+                btn.disabled = true;
+                btn.innerHTML = `<svg class="animate-spin w-4 h-4 inline ml-1 rtl:mr-1" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg> <span>${currentLang === 'ar' ? 'جارٍ إنشاء الحساب...' : 'Creating account...'}</span>`;
+            }
+
+            try {
+                const res = await api('/api/auth/register', 'POST', { name, email, password });
+                if (res && res.success && res.user) {
+                    currentUser = res.user;
+                    if (res.token) {
+                        localStorage.setItem('teletips_auth_token', res.token);
+                    }
+                    closeAuthModal();
+                    showToast(currentLang === 'ar' ? 'تم إنشاء الحساب وتفعيل التجربة المجانية 3 أيام بنجاح!' : 'Account created and 3-day trial activated!', 'success');
+                    await checkAuthStatus();
+                    await fetchStatus();
+                    await loadRules();
+                    await loadUserSubscription();
+                } else {
+                    const err = (res && res.error) ? res.error : (currentLang === 'ar' ? 'فشل إنشاء الحساب' : 'Registration failed');
+                    if (errorEl) {
+                        errorEl.textContent = err;
+                        errorEl.classList.remove('hidden');
+                    }
+                    showToast(err, 'error');
+                }
+            } catch (err) {
+                console.error('Registration request error:', err);
+                const msg = currentLang === 'ar' ? 'تعذر إنشاء الحساب، يرجى المحاولة لاحقاً' : 'Registration error, please try again';
+                if (errorEl) {
+                    errorEl.textContent = msg;
+                    errorEl.classList.remove('hidden');
+                }
+                showToast(msg, 'error');
+            } finally {
+                if (btn) {
+                    btn.disabled = false;
+                    btn.innerHTML = origContent || `<span>${currentLang === 'ar' ? 'إنشاء حساب وبدء التجربة المجانية 3 أيام' : 'Create Account'}</span>`;
+                }
+            }
+        }
+
+        async function handleEmailSignIn() {
+            const loginGate = document.getElementById('login-gate-screen');
+            if (loginGate && !loginGate.classList.contains('hidden')) {
+                switchAuthTab('login', 'gate');
+                const input = document.getElementById('gate-login-email');
+                if (input) input.focus();
             } else {
-                try { clerk.openSignIn(); } catch (err) {}
+                openAuthModal('login');
             }
         }
 
         async function handleEmailSignUp() {
-            const clerk = await initClerk();
-            if (!clerk) {
-                showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
-                return;
-            }
-
-            if (clerk.user) {
-                await syncClerkUser(clerk.user);
-                closeAuthModal();
-                showToast(currentLang === 'ar' ? 'تم تسجيل الدخول ومزامنة الحساب بنجاح!' : 'Successfully signed in & synced!', 'success');
-                return;
-            }
-
-            const target = document.getElementById('clerk-mount-target');
-            if (target) {
-                try {
-                    target.innerHTML = '';
-                    clerk.mountSignUp(target);
-                } catch (e) {
-                    try { clerk.openSignUp(); } catch (err) {}
-                }
+            const loginGate = document.getElementById('login-gate-screen');
+            if (loginGate && !loginGate.classList.contains('hidden')) {
+                switchAuthTab('register', 'gate');
+                const input = document.getElementById('gate-register-name') || document.getElementById('gate-register-email');
+                if (input) input.focus();
             } else {
-                try { clerk.openSignUp(); } catch (err) {}
+                openAuthModal('register');
             }
         }
 
@@ -4655,15 +4938,21 @@
         let activeCheckoutOrderId = null;
 
         async function loadUserSubscription() {
-            if (!currentUser) return;
+            if (_isFetchingSubscription) return;
+            _isFetchingSubscription = true;
             try {
+                if (!currentUser) return;
                 const res = await api('/api/v1/user/subscription');
                 if (res && res.success && res.subscription) {
                     currentSubscription = res.subscription;
                     updateSubscriptionUI(res.subscription, res.user);
                 }
+                _resetBackoff('sub');
             } catch (e) {
                 console.debug('Could not load user subscription:', e);
+                _increaseBackoff('sub');
+            } finally {
+                _isFetchingSubscription = false;
             }
         }
 
@@ -5248,8 +5537,8 @@
             if (currentTab === 'admin' && currentUser && (currentUser.role === 'admin' || currentUser.role === 'super_admin' || currentUser.email === 'alooshpal@gmail.com')) {
                 loadAdminData();
             }
-            logsPollInterval = setInterval(loadLogs, 3500);
-            setInterval(fetchStatus, 8000);
+            logsPollInterval = setInterval(loadLogs, 15000);
+            setInterval(fetchStatus, 10000);
             setInterval(loadUserSubscription, 15000);
         });
     </script>
@@ -5428,73 +5717,106 @@
 
                 <!-- Login / Register Options View -->
                 <div id="auth-form-view" class="space-y-4">
-                    <div id="clerk-mount-target" class="w-full">
-                        <div class="space-y-4">
-                            
-                            <!-- Header Title -->
-                            <div class="text-center space-y-1.5 pb-1">
-                                <div class="inline-flex p-2 bg-[#0b0f17] rounded-2xl border border-[#00e5ff]/30 shadow-lg shadow-cyan-950/40 md:hidden mb-1">
-                                    <img src="/static/img/teletips-logo.png?v=3.0" alt="TeleTips Pro" class="h-7 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(0,229,255,0.45)]">
-                                </div>
-                                <h3 class="text-lg font-black text-white" data-i18n="auth_login_title">تسجيل الدخول إلى TeleTips Pro</h3>
-                                <p class="text-xs text-slate-400" data-i18n="auth_login_desc">اختر طريقة الدخول المفضلة لديك للمتابعة فوراً</p>
+                    <div class="space-y-4">
+                        
+                        <!-- Header Title -->
+                        <div class="text-center space-y-1.5 pb-1">
+                            <div class="inline-flex p-2 bg-[#0b0f17] rounded-2xl border border-[#00e5ff]/30 shadow-lg shadow-cyan-950/40 md:hidden mb-1">
+                                <img src="/static/img/teletips-logo.png?v=3.0" alt="TeleTips Pro" class="h-7 w-auto object-contain filter drop-shadow-[0_0_10px_rgba(0,229,255,0.45)]">
                             </div>
+                            <h3 class="text-lg font-black text-white" data-i18n="auth_login_title">تسجيل الدخول إلى TeleTips Pro</h3>
+                            <p class="text-xs text-slate-400" data-i18n="auth_login_desc">أدخل بيانات حسابك للمتابعة والوصول إلى كافة الميزات</p>
+                        </div>
 
-                            <!-- Social OAuth Buttons Grid (Google, Discord, Facebook) -->
-                            <div class="space-y-2">
-                                <span class="text-[11px] font-bold text-slate-400 block text-center uppercase tracking-wider">
-                                    المتابعة السريعة بحسابات التواصل
-                                </span>
-
-                                <div class="grid grid-cols-3 gap-2">
-                                    <!-- Google OAuth Button -->
-                                    <button type="button" onclick="handleOAuthSignIn('oauth_google')" class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#00e5ff]/40 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(0,229,255,0.2)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/50" title="تسجيل الدخول بحساب Google">
-                                        <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
-                                        <span class="hidden sm:inline text-[11px]">Google</span>
-                                    </button>
-
-                                    <!-- Discord OAuth Button -->
-                                    <button type="button" onclick="handleOAuthSignIn('oauth_discord')" class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#5865F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(88,101,242,0.3)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#5865F2]/50" title="تسجيل الدخول بحساب Discord">
-                                        <svg class="w-4 h-4 text-[#5865F2] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
-                                        <span class="hidden sm:inline text-[11px]">Discord</span>
-                                    </button>
-
-                                    <!-- Facebook OAuth Button -->
-                                    <button type="button" onclick="handleOAuthSignIn('oauth_facebook')" class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#1877F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(24,119,242,0.3)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#1877F2]/50" title="تسجيل الدخول بحساب Facebook">
-                                        <svg class="w-4 h-4 text-[#1877F2] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
-                                        <span class="hidden sm:inline text-[11px]">Facebook</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- Divider -->
-                            <div class="flex items-center my-2">
-                                <div class="flex-grow border-t border-white/10"></div>
-                                <span class="px-3 text-[11px] text-slate-400 font-semibold uppercase">أو بالبريد الإلكتروني</span>
-                                <div class="flex-grow border-t border-white/10"></div>
-                            </div>
-
-                            <!-- Email Sign In Button -->
-                            <button type="button" onclick="handleEmailSignIn()" class="w-full py-3 px-4 bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#00e5ff]/50 text-white rounded-xl text-xs font-bold transition flex items-center justify-center space-x-2.5 rtl:space-x-reverse shadow-md hover:shadow-[0_0_20px_rgba(0,229,255,0.2)] active:scale-95">
-                                <svg class="w-4 h-4 text-[#00e5ff] flex-shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg>
-                                <span data-i18n="btn_email_signin">المتابعة باستخدام البريد الإلكتروني</span>
+                        <!-- Auth Mode Switcher Tabs -->
+                        <div class="flex items-center p-1 bg-[#0b0f17] border border-white/10 rounded-xl">
+                            <button type="button" id="modal-tab-login-btn" onclick="switchAuthTab('login', 'modal')" class="flex-1 py-2 text-xs font-bold rounded-lg bg-cyan-500/20 text-[#00e5ff] border border-cyan-500/40 shadow-sm transition">
+                                <span data-i18n="tab_login">تسجيل الدخول</span>
                             </button>
+                            <button type="button" id="modal-tab-register-btn" onclick="switchAuthTab('register', 'modal')" class="flex-1 py-2 text-xs font-medium rounded-lg text-slate-400 hover:text-white transition">
+                                <span data-i18n="tab_register">حساب جديد (تجربة مجانية)</span>
+                            </button>
+                        </div>
 
-                            <!-- Sign Up Link -->
-                            <div class="pt-3 border-t border-white/5 text-center text-xs text-slate-400 flex items-center justify-center gap-1.5">
-                                <span data-i18n="lbl_no_account">ليس لديك حساب؟</span>
-                                <button type="button" onclick="handleEmailSignUp()" class="text-[#00e5ff] hover:text-cyan-300 font-bold underline">
-                                    إنشاء حساب جديد (تجربة 3 أيام مجانية)
-                                </button>
+                        <!-- 1. Native Modal Sign In Form -->
+                        <form id="modal-signin-view" onsubmit="event.preventDefault(); submitNativeLogin('modal');" class="space-y-3">
+                            <div id="modal-login-error" class="hidden p-2.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-semibold text-center"></div>
+
+                            <div class="space-y-1 text-right rtl:text-right ltr:text-left">
+                                <label class="text-[11px] font-bold text-slate-300" data-i18n="lbl_email">البريد الإلكتروني</label>
+                                <input type="email" id="modal-login-email" required autocomplete="email" placeholder="name@example.com" class="w-full py-2.5 px-3.5 bg-[#0b0f17] border border-white/15 focus:border-[#00e5ff] focus:ring-1 focus:ring-[#00e5ff] rounded-xl text-xs text-white placeholder-slate-500 outline-none transition font-sans">
                             </div>
 
-                            <!-- Reset / Sign Out Helper -->
-                            <div class="pt-1 text-center">
-                                <button type="button" onclick="handleUserLogout()" class="text-[11px] text-rose-400/80 hover:text-rose-300 underline font-medium">
-                                    تسجيل الخروج من الجلسة السابقة / إعادة تعيين
+                            <div class="space-y-1 text-right rtl:text-right ltr:text-left">
+                                <label class="text-[11px] font-bold text-slate-300" data-i18n="lbl_password">كلمة المرور</label>
+                                <input type="password" id="modal-login-password" required autocomplete="current-password" placeholder="••••••••" class="w-full py-2.5 px-3.5 bg-[#0b0f17] border border-white/15 focus:border-[#00e5ff] focus:ring-1 focus:ring-[#00e5ff] rounded-xl text-xs text-white placeholder-slate-500 outline-none transition font-sans">
+                            </div>
+
+                            <button type="submit" id="modal-login-btn" class="w-full py-3 px-4 bg-gradient-to-r from-[#00e5ff] to-[#0284c7] hover:from-cyan-400 hover:to-sky-500 text-slate-950 font-black rounded-xl text-xs transition flex items-center justify-center space-x-2 rtl:space-x-reverse shadow-[0_0_20px_rgba(0,229,255,0.3)] hover:shadow-[0_0_30px_rgba(0,229,255,0.5)] active:scale-95">
+                                <span data-i18n="btn_login_submit">تسجيل الدخول الفوري</span>
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                        </form>
+
+                        <!-- 2. Native Modal Register Form -->
+                        <form id="modal-register-view" onsubmit="event.preventDefault(); submitNativeRegister('modal');" class="hidden space-y-3">
+                            <div id="modal-register-error" class="hidden p-2.5 rounded-xl bg-rose-500/20 border border-rose-500/40 text-rose-300 text-xs font-semibold text-center"></div>
+
+                            <div class="space-y-1 text-right rtl:text-right ltr:text-left">
+                                <label class="text-[11px] font-bold text-slate-300" data-i18n="lbl_fullname">الاسم الكامل</label>
+                                <input type="text" id="modal-register-name" required autocomplete="name" placeholder="محمد علي" class="w-full py-2.5 px-3.5 bg-[#0b0f17] border border-white/15 focus:border-[#00e5ff] focus:ring-1 focus:ring-[#00e5ff] rounded-xl text-xs text-white placeholder-slate-500 outline-none transition font-sans">
+                            </div>
+
+                            <div class="space-y-1 text-right rtl:text-right ltr:text-left">
+                                <label class="text-[11px] font-bold text-slate-300" data-i18n="lbl_email">البريد الإلكتروني</label>
+                                <input type="email" id="modal-register-email" required autocomplete="email" placeholder="name@example.com" class="w-full py-2.5 px-3.5 bg-[#0b0f17] border border-white/15 focus:border-[#00e5ff] focus:ring-1 focus:ring-[#00e5ff] rounded-xl text-xs text-white placeholder-slate-500 outline-none transition font-sans">
+                            </div>
+
+                            <div class="space-y-1 text-right rtl:text-right ltr:text-left">
+                                <label class="text-[11px] font-bold text-slate-300" data-i18n="lbl_password">كلمة المرور (6 أحرف فأكثر)</label>
+                                <input type="password" id="modal-register-password" required autocomplete="new-password" placeholder="••••••••" class="w-full py-2.5 px-3.5 bg-[#0b0f17] border border-white/15 focus:border-[#00e5ff] focus:ring-1 focus:ring-[#00e5ff] rounded-xl text-xs text-white placeholder-slate-500 outline-none transition font-sans">
+                            </div>
+
+                            <button type="submit" id="modal-register-btn" class="w-full py-3 px-4 bg-gradient-to-r from-[#10b981] to-[#059669] hover:from-emerald-400 hover:to-emerald-600 text-white font-black rounded-xl text-xs transition flex items-center justify-center space-x-2 rtl:space-x-reverse shadow-[0_0_20px_rgba(16,185,129,0.3)] hover:shadow-[0_0_30px_rgba(16,185,129,0.5)] active:scale-95">
+                                <span data-i18n="btn_register_submit">إنشاء حساب وبدء التجربة المجانية 3 أيام</span>
+                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                            </button>
+                        </form>
+
+                        <!-- Social OAuth Buttons Grid (Google, Discord, Facebook) -->
+                        <div class="space-y-2 pt-1 border-t border-white/10">
+                            <span class="text-[11px] font-bold text-slate-400 block text-center uppercase tracking-wider">
+                                المتابعة السريعة بحسابات التواصل
+                            </span>
+
+                            <div class="grid grid-cols-3 gap-2">
+                                <!-- Google OAuth Button -->
+                                <button type="button" onclick="handleOAuthSignIn('oauth_google')" class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#00e5ff]/40 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(0,229,255,0.2)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#00e5ff]/50" title="تسجيل الدخول بحساب Google">
+                                    <svg class="w-4 h-4 flex-shrink-0" viewBox="0 0 24 24"><path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"/><path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"/></svg>
+                                    <span class="hidden sm:inline text-[11px]">Google</span>
+                                </button>
+
+                                <!-- Discord OAuth Button -->
+                                <button type="button" onclick="handleOAuthSignIn('oauth_discord')" class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#5865F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(88,101,242,0.3)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#5865F2]/50" title="تسجيل الدخول بحساب Discord">
+                                    <svg class="w-4 h-4 text-[#5865F2] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M20.317 4.37a19.791 19.791 0 0 0-4.885-1.515.074.074 0 0 0-.079.037c-.21.375-.444.864-.608 1.25a18.27 18.27 0 0 0-5.487 0 12.64 12.64 0 0 0-.617-1.25.077.077 0 0 0-.079-.037A19.736 19.736 0 0 0 3.677 4.37a.07.07 0 0 0-.032.027C.533 9.046-.32 13.58.099 18.057a.082.082 0 0 0 .031.057 19.9 19.9 0 0 0 5.993 3.03.078.078 0 0 0 .084-.028c.462-.63.874-1.295 1.226-1.994.021-.041.001-.09-.041-.106a13.107 13.107 0 0 1-1.872-.892.077.077 0 0 1-.008-.128 10.2 10.2 0 0 0 .372-.292.074.074 0 0 1 .077-.01c3.929 1.793 8.18 1.793 12.061 0a.074.074 0 0 1 .078.01c.12.098.246.198.373.292a.077.077 0 0 1-.006.127 12.299 12.299 0 0 1-1.873.893.077.077 0 0 0-.041.107c.36.698.772 1.362 1.225 1.993a.076.076 0 0 0 .084.028 19.839 19.839 0 0 0 6.002-3.03.077.077 0 0 0 .032-.054c.5-5.177-.838-9.674-3.549-13.66a.061.061 0 0 0-.031-.028zM8.02 15.33c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.956-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.956 2.418-2.157 2.418zm7.975 0c-1.183 0-2.157-1.085-2.157-2.419 0-1.333.955-2.419 2.157-2.419 1.21 0 2.176 1.096 2.157 2.42 0 1.333-.946 2.418-2.157 2.418z"/></svg>
+                                    <span class="hidden sm:inline text-[11px]">Discord</span>
+                                </button>
+
+                                <!-- Facebook OAuth Button -->
+                                <button type="button" onclick="handleOAuthSignIn('oauth_facebook')" class="flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl bg-[#1c2536] hover:bg-[#263248] border border-white/10 hover:border-[#1877F2]/60 text-white font-bold text-xs transition duration-200 shadow-md hover:shadow-[0_0_15px_rgba(24,119,242,0.3)] active:scale-95 group focus:outline-none focus:ring-2 focus:ring-[#1877F2]/50" title="تسجيل الدخول بحساب Facebook">
+                                    <svg class="w-4 h-4 text-[#1877F2] flex-shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z"/></svg>
+                                    <span class="hidden sm:inline text-[11px]">Facebook</span>
                                 </button>
                             </div>
                         </div>
+
+                        <!-- Reset / Sign Out Helper -->
+                        <div class="pt-1 text-center">
+                            <button type="button" onclick="handleUserLogout()" class="text-[11px] text-rose-400/80 hover:text-rose-300 underline font-medium">
+                                تسجيل الخروج من الجلسة السابقة / إعادة تعيين
+                            </button>
+                        </div>
+
                     </div>
                 </div>
             </div>
