@@ -1000,7 +1000,7 @@ def api_auth_clerk_sync():
     try:
         db = get_db()
         if not db:
-            return jsonify({"success": False, "error": "Database unavailable"}), 500
+            return jsonify({"success": False, "error": "Database unavailable"}), 503
 
         from src.web.auth import verify_clerk_token_or_payload, get_current_user_from_request
 
@@ -1022,7 +1022,7 @@ def api_auth_clerk_sync():
                     logger.debug(f"Body token verification exception: {e}")
 
         if not user:
-            return jsonify({"success": False, "error": "Unauthorized"}), 401
+            return jsonify({"success": False, "error": "Unauthorized", "detail": "No valid Clerk session found"}), 401
 
         user_id = str(user["_id"])
         token = generate_auth_token(user_id, user["email"])
@@ -1046,7 +1046,7 @@ def api_auth_clerk_sync():
         return resp
     except Exception as e:
         logger.error(f"Clerk sync error: {e}", exc_info=True)
-        return jsonify({"success": False, "error": "Unauthorized"}), 401
+        return jsonify({"success": False, "error": "Sync failed", "detail": str(e)}), 500
 
 
 @app.route("/api/auth/register", methods=["POST"])

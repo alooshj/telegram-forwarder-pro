@@ -40,6 +40,9 @@ class ForwarderEngine:
         self._pending_flood = []
         self._entity_cache: Dict[Any, Any] = {}       # channel_id/invite -> Telegram Entity
         self.username = None
+        self._channel_errors: Dict[str, int] = {}          # entity_id -> consecutive error count
+        self._permanent_errors: Dict[str, float] = {}      # entity_id -> until timestamp (skip for 1 hour)
+        self._channel_error_threshold = 5                   # after N errors, log single warning per cycle
 
         # Initialize Telethon client with error handling
         try:
@@ -79,6 +82,39 @@ class ForwarderEngine:
                 })
             except Exception:
                 pass
+
+    def _handle_channel_error(self, entity_id, error: Exception) -> bool:
+        """Track per-channel RPC errors, suppress log spam. Returns True if channel should be skipped."""
+        err_type = type(error).__name__
+        perm_key = f"{entity_id}"
+        now = time.time()
+
+        # If channel is in permanent error cooldown, skip silently
+        if perm_key in self._permanent_errors and now < self._permanent_errors[perm_key]:
+            return True
+
+        self._channel_errors[perm_key] = self._channel_errors.get(perm_key, 0) + 1
+        count = self._channel_errors[perm_key]
+        formatted = self._format_telethon_error(error)
+
+        # Permanent errors → skip for 1 hour, log single warning
+        if err_type in ("ChannelPrivateError", "ChannelInvalidError", "UserBannedInChannelError",
+                         "ChatAdminRequiredError", "PeerIdInvalidError"):
+            self._permanent_errors[perm_key] = now + 3600
+            self._channel_errors.pop(perm_key, None)
+            self._log_event("WARNING", f"⚠️ Channel {entity_id} permanently unavailable: {formatted}")
+            return True
+
+        # Transient errors (FloodWait, timeout, connection) → suppress after threshold
+        if count <= self._channel_error_threshold:
+            self._log_event("WARNING", f"⚠️ Channel {entity_id} error ({count}): {formatted}")
+
+        return False
+
+    def _clear_channel_error(self, entity_id):
+        """Reset error count for a channel after successful operation."""
+        self._channel_errors.pop(str(entity_id), None)
+        self._permanent_errors.pop(str(entity_id), None)
 
     @staticmethod
     def _normalize_entity_id(entity_id):
@@ -417,6 +453,9 @@ class ForwarderEngine:
                     if self.rules_engine.is_blacklisted(norm_source) or self._is_flood_waited(norm_source):
                         continue
 
+                    if self._handle_channel_error(norm_source, Exception("cooldown")):
+                        continue
+
                     await self._process_channel_multi(norm_source, targets, rule)
 
                 check_interval = int(self.config.get("CHECK_INTERVAL", 10))
@@ -429,7 +468,14 @@ class ForwarderEngine:
                 sid = locals().get("norm_source", 0) or locals().get("source_id", 0)
                 await self._handle_flood_wait(sid, e.seconds)
             except errors.RPCError as e:
-                logger.error(f"RPCError: {e}")
+                self._log_event("WARNING", f"RPCError in forwarding loop: {self._format_telethon_error(e)}")
+                await asyncio.sleep(self.config.get("RETRY_DELAY", 10))
+            except (errors.ChannelPrivateError, errors.ChannelInvalidError) as e:
+                sid = locals().get("norm_source", 0) or locals().get("source_id", 0)
+                self._handle_channel_error(sid, e)
+                await asyncio.sleep(1)
+            except (ConnectionError, TimeoutError, OSError) as e:
+                self._log_event("WARNING", f"⚠️ Connection error in forwarding loop: {e}")
                 await asyncio.sleep(self.config.get("RETRY_DELAY", 10))
             except Exception as e:
                 logger.error(f"Unexpected error in forwarding loop: {e}", exc_info=True)
@@ -514,6 +560,9 @@ class ForwarderEngine:
         if self._is_flood_waited(entity_id):
             return None
 
+        if self._handle_channel_error(entity_id, Exception("cooldown")):
+            return None
+
         invite_hash = self._extract_invite_hash(str(entity_id))
 
         if invite_hash:
@@ -523,6 +572,7 @@ class ForwarderEngine:
                 if hasattr(updates, 'chats') and updates.chats:
                     chat = updates.chats[0]
                     self._entity_cache[entity_id] = chat
+                    self._clear_channel_error(entity_id)
                     self._log_event("INFO", f"🔗 Joined and resolved private channel: {entity_id}")
                     return chat
             except errors.UserAlreadyParticipantError:
@@ -532,6 +582,7 @@ class ForwarderEngine:
                     res = await self.client(CheckChatInviteRequest(invite_hash))
                     if isinstance(res, ChatInviteAlready) and res.chat:
                         self._entity_cache[entity_id] = res.chat
+                        self._clear_channel_error(entity_id)
                         return res.chat
                 except Exception:
                     pass
@@ -542,6 +593,9 @@ class ForwarderEngine:
                 self._last_flood_wait[entity_id] = time.time() + 3600
                 self._log_event("WARNING", f"⚠️ Private invite link has expired or is invalid: {entity_id}")
                 return None
+            except (errors.ChannelPrivateError, errors.ChannelInvalidError) as e:
+                self._handle_channel_error(entity_id, e)
+                return None
             except Exception as e:
                 logger.debug(f"Invite import attempt: {e}")
 
@@ -551,13 +605,19 @@ class ForwarderEngine:
             for d in dialogs:
                 if str(d.title or d.name or "").strip().lower() == clean_lookup:
                     self._entity_cache[entity_id] = d.entity
+                    self._clear_channel_error(entity_id)
                     return d.entity
                 if getattr(d.entity, 'username', None) and d.entity.username.lower() == clean_lookup:
                     self._entity_cache[entity_id] = d.entity
+                    self._clear_channel_error(entity_id)
                     return d.entity
                 if str(d.id) == str(entity_id) or str(getattr(d.entity, 'id', '')) == str(entity_id):
                     self._entity_cache[entity_id] = d.entity
+                    self._clear_channel_error(entity_id)
                     return d.entity
+        except (errors.ChannelPrivateError, errors.ChannelInvalidError) as e:
+            self._handle_channel_error(entity_id, e)
+            return None
         except Exception:
             pass
 
@@ -565,7 +625,11 @@ class ForwarderEngine:
             entity = await self.client.get_entity(entity_id)
             if entity:
                 self._entity_cache[entity_id] = entity
+                self._clear_channel_error(entity_id)
                 return entity
+        except (errors.ChannelPrivateError, errors.ChannelInvalidError) as e:
+            self._handle_channel_error(entity_id, e)
+            return None
         except errors.FloodWaitError as e:
             await self._handle_flood_wait(entity_id, e.seconds)
             return None
@@ -611,6 +675,8 @@ class ForwarderEngine:
         for tgt in targets:
             norm_tgt = self._normalize_entity_id(tgt)
             if self.rules_engine.is_blacklisted(norm_tgt) or self._is_flood_waited(norm_tgt):
+                continue
+            if self._handle_channel_error(norm_tgt, Exception("cooldown")):
                 continue
             entity = await self._get_entity_safe(norm_tgt)
             if entity:
@@ -671,11 +737,22 @@ class ForwarderEngine:
                     )
                     if success:
                         self._mark_processed(post_key, message.id, source_id, norm_tgt)
+                        self._clear_channel_error(norm_tgt)
+
+            self._clear_channel_error(source_id)
 
         except errors.FloodWaitError as e:
             await self._handle_flood_wait(source_id, e.seconds)
+        except (errors.ChannelPrivateError, errors.ChannelInvalidError,
+                errors.UserBannedInChannelError, errors.ChatAdminRequiredError,
+                errors.PeerIdInvalidError) as e:
+            self._handle_channel_error(source_id, e)
         except Exception as e:
-            self._log_event("ERROR", f"Error processing messages from channel {source_id}: {e}")
+            err_type = type(e).__name__
+            if err_type in ("ConnectionError", "TimeoutError", "OSError"):
+                self._log_event("WARNING", f"⚠️ Connection error for {source_id}: {self._format_telethon_error(e)}")
+            else:
+                self._log_event("ERROR", f"Error processing messages from channel {source_id}: {e}")
 
     def _is_duplicate(self, post_key: str, source_id=None, message_id=None) -> bool:
         """Check if a post was already forwarded."""

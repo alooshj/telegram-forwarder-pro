@@ -2683,10 +2683,10 @@
         let _isFetchingStatus = false;
         let _isFetchingLogs = false;
         let _isFetchingSubscription = false;
-        let _statusBackoffMs = 10000;
-        let _logsBackoffMs = 10000;
+        let _statusBackoffMs = 15000;
+        let _logsBackoffMs = 15000;
         let _subBackoffMs = 15000;
-        const _POLL_BASE_DELAY = 10000;
+        const _POLL_BASE_DELAY = 15000;
         const _POLL_MAX_DELAY = 60000;
 
         function _resetBackoff(key) {
@@ -5311,7 +5311,7 @@
                 loadAdminData();
             }
             logsPollInterval = setInterval(loadLogs, 15000);
-            setInterval(fetchStatus, 10000);
+            setInterval(fetchStatus, 15000);
             setInterval(loadUserSubscription, 15000);
         });
     </script>

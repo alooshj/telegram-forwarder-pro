@@ -527,15 +527,25 @@
             return 'oriented-mullet-5681.clerk.accounts.dev';
         }
 
+        let isSyncingClerk = false;
+        let lastSyncAttempt = 0;
+
         async function syncClerkUser(user) {
             const clerk = clerkInstance || window.Clerk;
-            if (!user || !clerk || !clerk.session) return;
+            if (!user || !clerk || !clerk.session) return false;
+            const now = Date.now();
+            if (isSyncingClerk || (now - lastSyncAttempt < 2500)) {
+                return false;
+            }
+            lastSyncAttempt = now;
+
             try {
+                isSyncingClerk = true;
                 let token = null;
                 if (typeof clerk.session.getToken === 'function') {
                     try { token = await clerk.session.getToken(); } catch (e) {}
                 }
-                if (!token) return;
+                if (!token) return false;
                 const syncRes = await api('/api/auth/clerk-sync', 'POST', {
                     clerk_id: user.id,
                     email: user.primaryEmailAddress?.emailAddress || '',
@@ -548,6 +558,8 @@
                 }
             } catch (err) {
                 console.warn('Clerk sync error:', err);
+            } finally {
+                isSyncingClerk = false;
             }
             return false;
         }

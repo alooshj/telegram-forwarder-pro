@@ -64,7 +64,17 @@ class FlaskApiTestCase(unittest.TestCase):
         self.assertIn("last_update", data)
 
     def test_dashboard_route(self):
+        # / now redirects to /login (login/dashboard separation)
         resp = self.client.get("/")
+        self.assertEqual(resp.status_code, 302)
+        self.assertIn("/login", resp.headers.get("Location", ""))
+
+    def test_login_route(self):
+        resp = self.client.get("/login")
+        self.assertEqual(resp.status_code, 200)
+
+    def test_dashboard_route_direct(self):
+        resp = self.client.get("/dashboard")
         self.assertEqual(resp.status_code, 200)
 
     def test_debug_endpoint(self):
