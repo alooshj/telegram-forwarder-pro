@@ -621,12 +621,14 @@
                     });
                     clerkInstance = window.Clerk;
 
-                    // If Clerk session already exists, try to sync — but do NOT redirect from here.
-                    // syncClerkUser handles redirect only on backend success.
+                    // If Clerk session already exists, try to sync first.
                     if (clerkInstance.user && clerkInstance.session) {
                         const synced = await syncClerkUser(clerkInstance.user);
                         if (synced) return clerkInstance;
-                        // Sync failed — fall through to mount SignIn so user can re-authenticate
+                        // Sync failed (401/500) — sign out Clerk to clear stale session,
+                        // then fall through to mount <SignIn/> so user can re-authenticate.
+                        // Without this, Clerk blocks <SignIn/> mount with user already signed in error.
+                        try { await clerkInstance.signOut(); } catch (e) { console.debug("Clerk signOut during fallback:", e); }
                     }
 
                     // Mount Clerk sign-in component

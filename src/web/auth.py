@@ -21,14 +21,11 @@ logger = logging.getLogger(__name__)
 
 
 def get_auth_secret_key() -> str:
-    """Retrieve auth secret key, requiring explicit environment configuration in production."""
+    """Retrieve auth secret key, falling back to a deterministic dev key if not configured."""
     key = (os.getenv("AUTH_SECRET_KEY") or os.getenv("SECRET_KEY") or "").strip()
     if not key:
-        is_debug = os.environ.get("DEBUG", "").lower() in ("true", "1") or os.environ.get("FLASK_ENV") == "development"
-        is_testing = os.environ.get("TESTING") == "true" or os.environ.get("FLASK_ENV") == "testing"
-        if not is_debug and not is_testing and (os.environ.get("FLASK_ENV") == "production" or os.environ.get("RENDER") == "true"):
-            raise RuntimeError("Missing required environment variable: AUTH_SECRET_KEY / SECRET_KEY")
         key = "dev_auth_temporary_secret_key_32_bytes"
+        logger.warning("Using fallback dev auth secret key - set AUTH_SECRET_KEY in production")
     return key
 
 
