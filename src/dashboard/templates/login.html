@@ -540,7 +540,7 @@
 
         async function syncClerkUser(user) {
             const clerk = clerkInstance || window.Clerk;
-            if (!user || !clerk || !clerk.session) return false;
+            if (!user || !clerk) return false;
             const now = Date.now();
             if (isSyncingClerk || (now - lastSyncAttempt < 2500)) {
                 return false;
@@ -549,27 +549,39 @@
 
             try {
                 isSyncingClerk = true;
+                // Safe token retrieval — catch if session is null or getToken fails
                 let token = null;
-                if (typeof clerk.session.getToken === 'function') {
-                    try { token = await clerk.session.getToken(); } catch (e) {}
+                try {
+                    token = await clerk.session?.getToken();
+                } catch (e) {
+                    console.debug('Clerk getToken failed (non-critical):', e);
                 }
-                if (!token) return false;
+                if (!token) {
+                    // No token available — still redirect so user is not stuck
+                    window.location.href = '/dashboard';
+                    return false;
+                }
                 const syncRes = await api('/api/auth/clerk-sync', 'POST', {
                     clerk_id: user.id,
                     email: user.primaryEmailAddress?.emailAddress || '',
                     name: user.fullName || (user.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : ''),
                     token: token
                 }, { 'Authorization': `Bearer ${token}` });
-                if (syncRes && syncRes.success && syncRes.user) {
-                    if (syncRes.token) localStorage.setItem('teletips_auth_token', syncRes.token);
-                    return true;
+                if (syncRes && syncRes.success && syncRes.token) {
+                    localStorage.setItem('teletips_auth_token', syncRes.token);
                 }
+                // Always redirect — backend sync failure should never trap the user
+                window.location.href = '/dashboard';
+                return true;
             } catch (err) {
-                console.warn('Clerk sync error:', err);
+                console.debug('Clerk sync non-critical error:', err);
+                // Network error or backend down — still redirect to dashboard
+                // The dashboard api() will attempt its own Clerk token fallback
+                window.location.href = '/dashboard';
+                return false;
             } finally {
                 isSyncingClerk = false;
             }
-            return false;
         }
 
         async function initClerk() {
@@ -612,7 +624,17 @@
                     });
                     clerkInstance = window.Clerk;
 
-                    // Mount Clerk sign-in component
+                    // CRITICAL: Check for existing session BEFORE mounting SignIn
+                    // This prevents the "SignIn component cannot render when user is already signed in" warning
+                    // and eliminates the UI flicker caused by mounting then immediately redirecting
+                    if (clerkInstance.user && clerkInstance.session) {
+                        // User already signed in — sync and redirect immediately, never mount SignIn
+                        await syncClerkUser(clerkInstance.user);
+                        window.location.href = '/dashboard';
+                        return clerkInstance;
+                    }
+
+                    // No existing session — safe to mount the SignIn component
                     try {
                         const clerkSignInEl = document.getElementById('clerk-sign-in');
                         const authSwitcher = document.getElementById('auth-mode-switcher');
@@ -646,22 +668,13 @@
                         console.debug('Clerk mountSignIn fallback:', mountErr);
                     }
 
-                    // Listener: redirect to /dashboard on successful Clerk sign-in
+                    // Listener: on successful Clerk sign-in, sync and redirect
+                    // syncClerkUser always redirects internally (even on backend failure)
                     clerkInstance.addListener(async (emission) => {
                         if (emission.user && emission.session) {
-                            const synced = await syncClerkUser(emission.user);
-                            if (synced || localStorage.getItem('teletips_auth_token')) {
-                                window.location.href = '/dashboard';
-                            }
+                            await syncClerkUser(emission.user);
                         }
                     });
-
-                    // If user is already signed in with Clerk, redirect to dashboard immediately
-                    if (clerkInstance.user && clerkInstance.session) {
-                        await syncClerkUser(clerkInstance.user);
-                        window.location.href = '/dashboard';
-                        return clerkInstance;
-                    }
                 }
                 return clerkInstance;
             } catch (err) {
@@ -676,9 +689,9 @@
                 showToast(currentLang === 'ar' ? 'يرجى تهيئة CLERK_PUBLISHABLE_KEY في ملف .env' : 'Please configure CLERK_PUBLISHABLE_KEY in .env', 'info');
                 return;
             }
+            // syncClerkUser always redirects to /dashboard internally
             if (clerk.user && clerk.session) {
                 await syncClerkUser(clerk.user);
-                window.location.href = '/dashboard';
                 return;
             }
             try {
