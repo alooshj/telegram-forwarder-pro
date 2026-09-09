@@ -114,7 +114,22 @@ def verify_clerk_token_or_payload(token: str, db) -> dict:
         keys_to_try = []
         if jwt_key:
             keys_to_try.append(jwt_key)
-        if os.environ.get("TESTING") == "true" or os.environ.get("FLASK_ENV") == "testing":
+        is_testing = os.environ.get("TESTING") == "true" or os.environ.get("FLASK_ENV") == "testing"
+        try:
+            from flask import has_app_context, current_app
+            if has_app_context() and current_app.config.get("TESTING"):
+                is_testing = True
+        except Exception:
+            pass
+        if not is_testing:
+            try:
+                from src.web.api import app
+                if app and app.config.get("TESTING"):
+                    is_testing = True
+            except Exception:
+                pass
+
+        if is_testing:
             for k in ["secret", "sk_test_secret_key_12345"]:
                 if k not in keys_to_try:
                     keys_to_try.append(k)

@@ -17,7 +17,7 @@ import threading
 import asyncio
 import time
 from datetime import datetime, timezone
-from flask import Flask, request, jsonify, render_template, send_from_directory
+from flask import Flask, request, jsonify, render_template, send_from_directory, redirect
 try:
     from flask_cors import CORS
 except ImportError:
@@ -297,6 +297,18 @@ except Exception as e:
 # --- API Routes ---
 
 @app.route("/")
+def root_redirect():
+    """Redirect root to login page."""
+    return redirect("/login")
+
+
+@app.route("/login")
+def login_page():
+    """Serve the dedicated login page."""
+    return render_template("login.html")
+
+
+@app.route("/dashboard")
 def dashboard():
     """Serve the main dashboard page."""
     return render_template("index.html")
@@ -1992,9 +2004,13 @@ def handle_unexpected_error(error):
 
 @app.route("/<path:catch_all>", methods=["GET", "POST"])
 def catch_all(catch_all):
-    """SPA fallback — serve index.html for any unmatched route."""
+    """SPA fallback — serve index.html for dashboard routes, login for login."""
     if catch_all.startswith("api/"):
         return jsonify({"error": "Not found"}), 404
+    if catch_all == "dashboard" or catch_all.startswith("dashboard/"):
+        return render_template("index.html")
+    if catch_all == "login":
+        return render_template("login.html")
     return render_template("index.html")
 
 
