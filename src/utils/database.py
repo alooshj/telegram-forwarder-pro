@@ -189,6 +189,14 @@ class SQLiteDB:
                         temp_session TEXT,
                         created_at REAL
                     );
+                    CREATE TABLE IF NOT EXISTS channel_cooldowns (
+                        _id TEXT PRIMARY KEY,
+                        user_id TEXT,
+                        channel_id TEXT,
+                        cooldown_until TEXT,
+                        cooldown_seconds INTEGER,
+                        updated_at TEXT
+                    );
                 """)
                 # Migrations for pending_auth
                 try:
@@ -239,6 +247,10 @@ class SQLiteDB:
     @property
     def pending_auth(self):
         return _SQLiteCollection(self, "pending_auth")
+
+    @property
+    def channel_cooldowns(self):
+        return _SQLiteCollection(self, "channel_cooldowns")
 
     @property
     def rules(self):
@@ -647,6 +659,13 @@ class MongoDB:
             )
         except Exception as e:
             logger.debug(f"Could not create logs compound index: {e}")
+        try:
+            self.db["channel_cooldowns"].create_index(
+                [("user_id", 1), ("channel_id", 1)],
+                background=True,
+            )
+        except Exception as e:
+            logger.debug(f"Could not create channel_cooldowns compound index: {e}")
 
     def close(self):
         self.client.close()

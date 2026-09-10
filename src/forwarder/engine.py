@@ -43,6 +43,8 @@ class ForwarderEngine:
         self._channel_errors: Dict[str, int] = {}          # entity_id -> consecutive error count
         self._permanent_errors: Dict[str, float] = {}      # entity_id -> until timestamp (skip for 1 hour)
         self._channel_error_threshold = 5                   # after N errors, log single warning per cycle
+        self._cooldown_base_seconds = 300                   # base cooldown: 5 minutes
+        self._cooldown_max_seconds = 3600                   # max cooldown: 1 hour
 
         # Initialize Telethon client with error handling
         try:
@@ -93,6 +95,10 @@ class ForwarderEngine:
         if perm_key in self._permanent_errors and now < self._permanent_errors[perm_key]:
             return True
 
+        # If channel is in MongoDB cooldown, skip silently
+        if self._is_mongo_cooldown_active(entity_id):
+            return True
+
         self._channel_errors[perm_key] = self._channel_errors.get(perm_key, 0) + 1
         count = self._channel_errors[perm_key]
         formatted = self._format_telethon_error(error)
@@ -105,9 +111,25 @@ class ForwarderEngine:
             self._log_event("WARNING", f"⚠️ Channel {entity_id} permanently unavailable: {formatted}")
             return True
 
-        # Transient errors (FloodWait, timeout, connection) → suppress after threshold
+        # FloodWait / rate-limit errors → persist cooldown to MongoDB with exponential backoff
+        if err_type in ("FloodWaitError", "FloodError") or "flood" in str(error).lower():
+            cooldown_sec = self._get_cooldown_seconds(count)
+            self._set_mongo_cooldown(entity_id, cooldown_sec)
+            self._log_event("WARNING",
+                f"Channel {entity_id} rate-limited ({err_type}), "
+                f"cooldown {cooldown_sec}s ({cooldown_sec // 60}min). "
+                f"Consecutive errors: {count}.")
+            return True
+
+        # Transient errors (timeout, connection) → suppress after threshold, set short cooldown
         if count <= self._channel_error_threshold:
             self._log_event("WARNING", f"⚠️ Channel {entity_id} error ({count}): {formatted}")
+        elif count == self._channel_error_threshold + 1:
+            cooldown_sec = self._get_cooldown_seconds(count)
+            self._set_mongo_cooldown(entity_id, cooldown_sec)
+            self._log_event("WARNING",
+                f"Channel {entity_id} persistent errors ({count}), "
+                f"cooldown {cooldown_sec}s ({cooldown_sec // 60}min).")
 
         return False
 
@@ -115,6 +137,63 @@ class ForwarderEngine:
         """Reset error count for a channel after successful operation."""
         self._channel_errors.pop(str(entity_id), None)
         self._permanent_errors.pop(str(entity_id), None)
+        self._clear_mongo_cooldown(entity_id)
+
+    # --- MongoDB-backed cooldown persistence ---
+
+    def _set_mongo_cooldown(self, entity_id, seconds: int):
+        """Persist a cooldown timestamp to MongoDB for a channel."""
+        if not self.db:
+            return
+        try:
+            from datetime import timedelta
+            self.db.channel_cooldowns.update_one(
+                {"_id": f"{self.user_id}:{entity_id}"},
+                {"$set": {
+                    "user_id": self.user_id,
+                    "channel_id": str(entity_id),
+                    "cooldown_until": datetime.now(timezone.utc) + timedelta(seconds=seconds),
+                    "cooldown_seconds": seconds,
+                    "updated_at": datetime.now(timezone.utc),
+                }},
+                upsert=True,
+            )
+        except Exception as e:
+            logger.debug(f"Could not set MongoDB cooldown for {entity_id}: {e}")
+
+    def _is_mongo_cooldown_active(self, entity_id) -> bool:
+        """Check if a channel is currently in MongoDB-backed cooldown."""
+        if not self.db:
+            return False
+        try:
+            doc = self.db.channel_cooldowns.find_one({"_id": f"{self.user_id}:{entity_id}"})
+            if not doc:
+                return False
+            cooldown_until = doc.get("cooldown_until")
+            if not cooldown_until:
+                return False
+            if hasattr(cooldown_until, "tzinfo") and cooldown_until.tzinfo is None:
+                from datetime import timezone as tz
+                cooldown_until = cooldown_until.replace(tzinfo=tz.utc)
+            if datetime.now(timezone.utc) < cooldown_until:
+                return True
+            self.db.channel_cooldowns.delete_one({"_id": f"{self.user_id}:{entity_id}"})
+            return False
+        except Exception:
+            return False
+
+    def _clear_mongo_cooldown(self, entity_id):
+        """Remove cooldown for a channel from MongoDB."""
+        if not self.db:
+            return
+        try:
+            self.db.channel_cooldowns.delete_one({"_id": f"{self.user_id}:{entity_id}"})
+        except Exception:
+            pass
+
+    def _get_cooldown_seconds(self, error_count: int) -> int:
+        """Calculate exponential backoff cooldown: 5min -> 10min -> 20min -> ... -> 1hr max."""
+        return min(self._cooldown_base_seconds * (2 ** min(error_count - 1, 6)), self._cooldown_max_seconds)
 
     @staticmethod
     def _normalize_entity_id(entity_id):
@@ -453,6 +532,10 @@ class ForwarderEngine:
                     if self.rules_engine.is_blacklisted(norm_source) or self._is_flood_waited(norm_source):
                         continue
 
+                    # Check MongoDB-backed cooldown (survives restarts)
+                    if self._is_mongo_cooldown_active(norm_source):
+                        continue
+
                     if self._handle_channel_error(norm_source, Exception("cooldown")):
                         continue
 
@@ -466,6 +549,8 @@ class ForwarderEngine:
 
             except errors.FloodWaitError as e:
                 sid = locals().get("norm_source", 0) or locals().get("source_id", 0)
+                if sid:
+                    self._set_mongo_cooldown(sid, e.seconds + 10)
                 await self._handle_flood_wait(sid, e.seconds)
             except errors.RPCError as e:
                 self._log_event("WARNING", f"RPCError in forwarding loop: {self._format_telethon_error(e)}")
@@ -475,6 +560,9 @@ class ForwarderEngine:
                 self._handle_channel_error(sid, e)
                 await asyncio.sleep(1)
             except (ConnectionError, TimeoutError, OSError) as e:
+                sid = locals().get("norm_source", 0) or locals().get("source_id", 0)
+                if sid:
+                    self._set_mongo_cooldown(sid, 120)  # 2-minute cooldown on connection errors
                 self._log_event("WARNING", f"⚠️ Connection error in forwarding loop: {e}")
                 await asyncio.sleep(self.config.get("RETRY_DELAY", 10))
             except Exception as e:
@@ -544,9 +632,11 @@ class ForwarderEngine:
         return time.time() < wait_until
 
     async def _handle_flood_wait(self, channel_id, seconds: int):
-        """Handle FLOOD_WAIT per target."""
+        """Handle FLOOD_WAIT per target — sleep the requested time AND persist to MongoDB."""
         self._last_flood_wait[channel_id] = time.time() + seconds + 5
-        self._log_event("WARNING", f"⏳ Telegram FloodWait on channel ({channel_id}): rate limited for {seconds}s (auto-paused).")
+        # Also persist to MongoDB so cooldown survives restarts
+        self._set_mongo_cooldown(channel_id, seconds + 10)
+        self._log_event("WARNING", f"⏳ Telegram FloodWait on channel ({channel_id}): rate limited for {seconds}s (cooldown persisted).")
         await asyncio.sleep(seconds)
 
     async def _get_entity_safe(self, entity_id):
@@ -675,6 +765,9 @@ class ForwarderEngine:
         for tgt in targets:
             norm_tgt = self._normalize_entity_id(tgt)
             if self.rules_engine.is_blacklisted(norm_tgt) or self._is_flood_waited(norm_tgt):
+                continue
+            # Check MongoDB-backed cooldown for target channels
+            if self._is_mongo_cooldown_active(norm_tgt):
                 continue
             if self._handle_channel_error(norm_tgt, Exception("cooldown")):
                 continue
